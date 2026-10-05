@@ -147,6 +147,14 @@ class MasterRegistry
                 'order_by' => ['sequence', 'asc'],
             ],
 
+            'garment-parts' => [
+                'title' => 'Garment Parts', 'singular' => 'Garment Part', 'model' => Models\GarmentPart::class, 'permission' => 'msfl_garment_part',
+                'fields' => [$code, ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true, 'unique' => true, 'max' => 100]],
+                'columns' => $codeName,
+                'note' => fn () => 'Parts (Front, Back, Sleeve …) picked in Cutting → Parts Cut, part-wise Embroidery, QC / Rework and defect rows. Renaming a part doesn\'t change entries already saved with the old name.',
+                'order_by' => ['name', 'asc'],
+            ],
+
             // Planning → Setup
             'machine-types' => [
                 'title' => 'Machine Types', 'singular' => 'Machine Type', 'model' => Models\MachineType::class, 'permission' => 'msfl_machine_type',

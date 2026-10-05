@@ -33,6 +33,7 @@ class MsflDefaultMasterSeeder extends Seeder
             Currency::firstOrCreate(['code' => $code], ['name' => $name, 'symbol' => $symbol, 'exchange_rate' => $rate]);
         }
 
+        $this->call(MsflGarmentPartSeeder::class);
         $this->call(MsflPlanningSeeder::class);
     }
 }

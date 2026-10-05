@@ -25,6 +25,7 @@ return [
         'msfl_item_category' => ['label' => 'Item Categories', 'permissions' => $master],
         'msfl_item' => ['label' => 'Items (Fabric & Trims)', 'permissions' => $master],
         'msfl_sample_type' => ['label' => 'Sample Types', 'permissions' => $master],
+        'msfl_garment_part' => ['label' => 'Garment Parts', 'permissions' => $master],
 
         // Dev (R&D)
         'msfl_inquiry' => ['label' => 'Inquiries', 'permissions' => $crud],

@@ -49,6 +49,18 @@
                                     @endif
                                 </td>
                             </tr>
+                            @foreach($row['parts'] ?? [] as $part => $p)
+                                <tr class="small text-muted">
+                                    <td class="pl-4">↳ {{ $part }} <small>(sent from cutting, pass = back to cutting)</small></td>
+                                    <td class="text-right">{{ number_format($p['input']) }}</td>
+                                    <td class="text-right">{{ number_format($p['pass']) }}</td>
+                                    <td class="text-right">{{ number_format($p['rework']) }}</td>
+                                    <td class="text-right">{{ number_format($p['reject']) }}</td>
+                                    <td class="text-right">{{ number_format($p['wip']) }}</td>
+                                    <td class="text-right">{{ number_format($p['available']) }}</td>
+                                    <td></td>
+                                </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>

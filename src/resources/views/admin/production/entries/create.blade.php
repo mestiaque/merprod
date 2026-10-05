@@ -37,6 +37,17 @@
                             @foreach($sizes as $size)<option value="{{ $size->id }}" @selected(old('size_id') == $size->id)>{{ $size->name }}</option>@endforeach
                         </select>
                     </div>
+                    @if($partWise)
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Part <span class="text-danger">*</span> <small class="text-muted">(sent from cutting)</small></label>
+                            <select name="part_name" id="partInput" class="form-control form-control-sm" required>
+                                <option value="">— Select part —</option>
+                                @foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(old('part_name') === $gp)>{{ $gp }}</option>@endforeach
+                            </select>
+                            <span class="form-text text-muted small" id="poPartHint"></span>
+                            @error('part_name')<span class="form-text text-danger">{{ $message }}</span>@enderror
+                        </div>
+                    @endif
                     @if($usesLine)
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Line <span class="text-danger">*</span></label>
@@ -94,13 +105,22 @@
 <script>
 (function () {
     const balances = @json($balances);
+    const poParts = @json($poParts);
+    const partInput = document.getElementById('partInput');
     const label = @json($label);
     const poSelect = document.getElementById('poSelect');
     const box = document.getElementById('balanceBox');
     const jq = typeof $ !== 'undefined' ? $ : null;
 
     function showBalance() {
-        const b = balances[poSelect.value];
+        let b = balances[poSelect.value];
+        if (partInput) {
+            // Part-wise stage: offer the PO's cut parts and show that part's balance.
+            const cut = poParts[poSelect.value] || [];
+            document.getElementById('poPartHint').textContent = cut.length ? 'Cut for this PO: ' + cut.join(', ') : '';
+            const part = partInput.value.trim();
+            b = b && part ? ((b.parts || {})[part] || b.newPart) : null;
+        }
         if (! b) { box.style.display = 'none'; return; }
         box.style.display = '';
         box.innerHTML = 'Can take in: <strong>' + b.available + '</strong> pcs · In ' + label + ' now (WIP): <strong>' + b.wip + '</strong>'
@@ -136,6 +156,7 @@
         });
     }
 
+    if (partInput) partInput.addEventListener('change', showBalance);
     if (jq) { jq(poSelect).on('change', showBalance); if (lineSelect) jq(lineSelect).on('change', () => filterMachines()); }
     document.addEventListener('input', function (e) { if (e.target.closest('#defectRowsBody') || e.target.matches('[data-defect-total]')) defectSums(); });
     document.addEventListener('change', function (e) { if (e.target.matches('[data-defect-type]')) defectSums(); });

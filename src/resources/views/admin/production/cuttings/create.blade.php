@@ -39,17 +39,16 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-                    <h6 class="mb-0">Parts Cut <small class="text-muted">(e.g. Front, Back, Sleeve, Collar)</small></h6>
+                    <h6 class="mb-0">Parts Cut <small class="text-muted">(from Master Data → Garment Parts)</small></h6>
                     <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="part"><i class="fa-solid fa-plus"></i> Add Part</button>
                 </div>
-                <datalist id="partSuggestions">@foreach($partSuggestions as $p)<option value="{{ $p }}">@endforeach</datalist>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle" style="max-width:520px">
                         <thead><tr><th>Part</th><th style="width:140px">Pcs</th><th style="width:40px"></th></tr></thead>
                         <tbody id="partRowsBody">
                             @foreach(old('parts', [[]]) as $i => $part)
                                 <tr>
-                                    <td><input type="text" name="parts[{{ $i }}][part_name]" list="partSuggestions" class="form-control form-control-sm" value="{{ $part['part_name'] ?? '' }}"></td>
+                                    <td><select name="parts[{{ $i }}][part_name]" class="form-control form-control-sm"><option value="">— Part —</option>@foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(($part['part_name'] ?? '') === $gp)>{{ $gp }}</option>@endforeach</select></td>
                                     <td><input type="number" min="0" step="1" name="parts[{{ $i }}][qty]" class="form-control form-control-sm text-right" value="{{ $part['qty'] ?? '' }}"></td>
                                     <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
                                 </tr>
@@ -59,7 +58,7 @@
                 </div>
                 <template id="partRowTemplate">
                     <tr>
-                        <td><input type="text" name="parts[__INDEX__][part_name]" list="partSuggestions" class="form-control form-control-sm"></td>
+                        <td><select name="parts[__INDEX__][part_name]" class="form-control form-control-sm"><option value="">— Part —</option>@foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(('') === $gp)>{{ $gp }}</option>@endforeach</select></td>
                         <td><input type="number" min="0" step="1" name="parts[__INDEX__][qty]" class="form-control form-control-sm text-right"></td>
                         <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
                     </tr>

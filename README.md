@@ -60,3 +60,4 @@ Then tick the **MERCHANDISING_SFL** permissions for the role in Roles Setup — 
   Ex-Factory = Shipment − template gap · Sewing End = Ex-Factory − gap · Sewing Start = Sewing End − (⌈qty ÷ Σ line capacity⌉ − 1) · PCD = Sewing Start − gap · every step = its anchor ± its days.
   Actual dates fill themselves from order confirmation, BOM / bulletin approval, sample submit / approve, the first Buyer Store fabric receive (Inventory) and production (cutting, sewing start / complete, washing, finishing, final QC, packing). **Recalculate** re-reads the order and moves only the steps not done yet.
 - **Production balances** (`Services/ProductionFlow`): can take in = previous stage pass − this stage input; WIP = input − pass − reject (rework stays in WIP until it passes).
+

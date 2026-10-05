@@ -45,7 +45,7 @@ class TnaTemplateTask extends Model
             'sewing_done' => 'Sewing complete (sewing pass reaches order qty)',
             'washing_done' => 'Washing complete (washing pass reaches order qty)',
             'finishing_done' => 'Finishing complete (finishing pass reaches order qty)',
-            'final_qc_done' => 'Final QC complete (final QC pass reaches order qty)',
+            'final_qc_done' => 'Buyer QC complete (buyer QC pass reaches order qty)',
             'packing_done' => 'Packing complete (packed reaches order qty)',
         ];
 

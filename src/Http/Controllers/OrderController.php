@@ -75,24 +75,29 @@ class OrderController extends Controller
     {
         $this->authorize('msfl_order.view');
 
-        $order->load(['buyer', 'season', 'merchandiser', 'factory', 'inquiry', 'currency', 'confirmer',
-            'pos' => fn ($q) => $q->orderBy('po_no')->orderBy('style_id'), 'pos.style', 'pos.color', 'pos.shipMode', 'pos.sizes',
-            'boms.style']);
+        $order->load(['buyer', 'season', 'merchandiser', 'factory', 'inquiry', 'currency', 'confirmer', 'boms.style']);
+        $tnaPlans = TnaPlan::where('order_id', $order->id)->where('status', '!=', 'cancelled')->get()->keyBy('style_id');
+
+        return view('merchandising-sfl::admin.orders.show', $this->poLinesData($order) + compact('order', 'tnaPlans'));
+    }
+
+    /** What the PO lines table and its add / edit modals need (orders/partials/po-lines). */
+    private function poLinesData(Order $order): array
+    {
+        $order->load(['pos' => fn ($q) => $q->orderBy('po_no')->orderBy('style_id'), 'pos.style', 'pos.color', 'pos.shipMode', 'pos.sizes']);
 
         // Size columns: every size used by a PO line, plus all active sizes for the PO form.
         $usedSizeIds = $order->pos->flatMap(fn ($po) => $po->sizes->pluck('size_id'))->unique();
         $allSizes = Size::query()->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $usedSizeIds))
             ->orderBy('sort_order')->orderBy('name')->get();
-        $sizeColumns = $allSizes->whereIn('id', $usedSizeIds)->values();
-        $formSizes = $allSizes->where('is_active', true)->values();
 
-        $styles = Lookups::styles()->where('buyer_id', $order->buyer_id)->values();
-        $colors = Lookups::colors();
-        $shipModes = Lookups::shipModes();
-
-        $tnaPlans = TnaPlan::where('order_id', $order->id)->where('status', '!=', 'cancelled')->get()->keyBy('style_id');
-
-        return view('merchandising-sfl::admin.orders.show', compact('order', 'sizeColumns', 'formSizes', 'styles', 'colors', 'shipModes', 'tnaPlans'));
+        return [
+            'sizeColumns' => $allSizes->whereIn('id', $usedSizeIds)->values(),
+            'formSizes' => $allSizes->where('is_active', true)->values(),
+            'styles' => Lookups::styles()->where('buyer_id', $order->buyer_id)->values(),
+            'colors' => Lookups::colors(),
+            'shipModes' => Lookups::shipModes(),
+        ];
     }
 
     public function edit(Order $order): View|RedirectResponse
@@ -103,7 +108,8 @@ class OrderController extends Controller
             return redirect()->route('msfl.orders.show', $order)->with('error', 'A ' . $order->statusLabel() . ' order cannot be edited');
         }
 
-        return view('merchandising-sfl::admin.orders.edit', $this->formData() + compact('order'));
+        // PO lines are edited on this page too (same table + modals as the order page).
+        return view('merchandising-sfl::admin.orders.edit', $this->formData() + $this->poLinesData($order) + compact('order'));
     }
 
     public function update(OrderRequest $request, Order $order): RedirectResponse

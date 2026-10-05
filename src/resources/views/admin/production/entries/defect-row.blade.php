@@ -1,4 +1,4 @@
-{{-- props: index, d (old values), machines (Inventory; optional pick, for machine-wise rejection) --}}
+{{-- props: index, d (old values), garmentParts (Master Data), machines (Inventory; optional pick, for machine-wise rejection) --}}
 <tr>
     <td>
         <select name="defects[{{ $index }}][type]" class="form-control form-control-sm" data-defect-type>
@@ -6,7 +6,12 @@
             <option value="rework" @selected(($d['type'] ?? '') === 'rework')>Rework</option>
         </select>
     </td>
-    <td><input type="text" name="defects[{{ $index }}][part_name]" class="form-control form-control-sm" value="{{ $d['part_name'] ?? '' }}" placeholder="e.g. Collar, Sleeve"></td>
+    <td>
+        <select name="defects[{{ $index }}][part_name]" class="form-control form-control-sm">
+            <option value="">— Part (optional) —</option>
+            @foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(($d['part_name'] ?? '') === $gp)>{{ $gp }}</option>@endforeach
+        </select>
+    </td>
     <td>
         <select name="defects[{{ $index }}][machine_id]" class="form-control form-control-sm" data-machine-select>
             <option value="">— Machine (optional) —</option>

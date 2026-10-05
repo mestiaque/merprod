@@ -16,7 +16,7 @@ use ME\MerchandisingSfl\Services\ProductionFlow;
 use ME\MerchandisingSfl\Support\Lookups;
 
 /**
- * Production → Embroidery / Sewing / Washing / Finishing / Final QC / Packing.
+ * Production → Embroidery (part-wise) / Sewing / Washing / Finishing / Buyer QC / Packing.
  * One screen per stage, same entry: pieces in, then QC — pass, rework, reject.
  * Every reject / rework count is broken down into defect rows (part, and for
  * the Inventory machine, optional) that add up to it.
@@ -50,7 +50,12 @@ class EntryController extends Controller
         $this->authorize('msfl_prod_entry.add');
 
         $pos = Lookups::productionPos()->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
-        $balances = $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $this->flow->summary($po)[$stage]]);
+        $balances = $pos->mapWithKeys(function (OrderPo $po) use ($stage) {
+            $summary = $this->flow->summary($po);
+
+            // Part-wise: a part not sent yet can take what cutting passed.
+            return [$po->id => $summary[$stage] + (in_array($stage, ProductionFlow::PART_STAGES, true) ? ['newPart' => $this->flow->partRow($summary, $stage, '')] : [])];
+        });
 
         return view('merchandising-sfl::admin.production.entries.create', [
             'stage' => $stage,
@@ -60,6 +65,9 @@ class EntryController extends Controller
             'lines' => ProductionFlow::usesLine($stage) ? Lookups::lines() : collect(),
             'machines' => ProductionFlow::machines(),
             'selectedPo' => $request->integer('order_po_id') ?: null,
+            'partWise' => in_array($stage, ProductionFlow::PART_STAGES, true),
+            'poParts' => ProductionFlow::poParts($pos->pluck('id')),
+            'garmentParts' => Lookups::garmentParts(),
         ]);
     }
 
@@ -72,6 +80,7 @@ class EntryController extends Controller
             'order_po_id' => ['required', Rule::exists('msfl_order_pos', 'id')],
             'entry_date' => ['required', 'date', 'before_or_equal:today'],
             'size_id' => ['nullable', Rule::exists('inv_sizes', 'id')],
+            'part_name' => [in_array($stage, ProductionFlow::PART_STAGES, true) ? 'required' : 'nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'line_id' => [$usesLine ? 'required' : 'nullable', Rule::exists('msfl_lines', 'id')->whereNull('deleted_at')],
             'input_qty' => ['nullable', 'integer', 'min:0'],
             'pass_qty' => ['nullable', 'integer', 'min:0'],
@@ -80,7 +89,7 @@ class EntryController extends Controller
             'remarks' => ['nullable', 'string', 'max:255'],
             'defects' => ['nullable', 'array'],
             'defects.*.type' => ['nullable', 'in:reject,rework'],
-            'defects.*.part_name' => ['nullable', 'string', 'max:100'],
+            'defects.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'defects.*.machine_id' => ['nullable', 'integer', Rule::exists('inv_machines', 'id')],
             'defects.*.defect' => ['nullable', 'string', 'max:150'],
             'defects.*.qty' => ['nullable', 'integer', 'min:0'],
@@ -96,7 +105,7 @@ class EntryController extends Controller
             OrderPo::query()->whereKey($po->id)->lockForUpdate()->first();
 
             $errors = ($po->order->status ?? null) === 'confirmed'
-                ? $this->flow->validate($po, $stage, $qty)
+                ? $this->flow->validate($po, $stage, $qty, null, $data['part_name'] ?? null)
                 : ['order_po_id' => 'Only a confirmed order can go into production.'];
             $errors += $this->flow->defectErrors($defects, $qty);
             if ($errors) {
@@ -108,6 +117,7 @@ class EntryController extends Controller
                 'entry_date' => $data['entry_date'],
                 'order_po_id' => $po->id,
                 'size_id' => $data['size_id'] ?? null,
+                'part_name' => in_array($stage, ProductionFlow::PART_STAGES, true) ? trim($data['part_name']) : null,
                 'line_id' => $usesLine ? $data['line_id'] : null,
                 'remarks' => $data['remarks'] ?? null,
                 'created_by' => auth()->id(),
@@ -128,7 +138,7 @@ class EntryController extends Controller
         $label = ProductionFlow::label($stage);
 
         return redirect()->route($request->boolean('add_another') ? 'msfl.production.entries.create' : 'msfl.production.entries.index', ['stage' => $stage] + ($request->boolean('add_another') ? ['order_po_id' => $po->id] : []))
-            ->with('success', "{$label} entry saved: in {$entry->input_qty}, pass {$entry->pass_qty}, rework {$entry->rework_qty}, reject {$entry->reject_qty}.");
+            ->with('success', "{$label}" . ($entry->part_name ? " ({$entry->part_name})" : '') . " entry saved: in {$entry->input_qty}, pass {$entry->pass_qty}, rework {$entry->rework_qty}, reject {$entry->reject_qty}.");
     }
 
     public function destroy(string $stage, Entry $entry): RedirectResponse

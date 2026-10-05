@@ -16,7 +16,7 @@ use ME\MerchandisingSfl\Services\Reports;
 use ME\MerchandisingSfl\Http\Controllers\Production\CuttingController;
 use ME\MerchandisingSfl\Http\Controllers\Production\EntryController;
 use ME\MerchandisingSfl\Http\Controllers\Production\FabricRequisitionController;
-use ME\MerchandisingSfl\Http\Controllers\Production\RejectReworkController;
+use ME\MerchandisingSfl\Http\Controllers\Production\QcReworkController;
 use ME\MerchandisingSfl\Http\Controllers\Production\StatusController;
 use ME\MerchandisingSfl\Services\ProductionFlow;
 use ME\MerchandisingSfl\Http\Controllers\SampleController;
@@ -108,11 +108,15 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
             Route::resource('requisitions', FabricRequisitionController::class)->only(['index', 'create', 'store', 'show']);
             Route::resource('cuttings', CuttingController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
-            // Reject & Rework — one screen for every step (cutting … packing).
-            Route::get('reject-rework', [RejectReworkController::class, 'index'])->name('reject-rework.index');
-            Route::get('reject-rework/create', [RejectReworkController::class, 'create'])->name('reject-rework.create');
-            Route::post('reject-rework', [RejectReworkController::class, 'store'])->name('reject-rework.store');
-            Route::delete('reject-rework/{entry}', [RejectReworkController::class, 'destroy'])->whereNumber('entry')->name('reject-rework.destroy');
+            // QC (step-wise, not Buyer QC) and Rework — a card per step, then that step's form.
+            foreach (['qc', 'rework'] as $kind) {
+                Route::prefix($kind)->name("$kind.")->group(function () use ($kind) {
+                    Route::get('/', [QcReworkController::class, 'index'])->defaults('kind', $kind)->name('index');
+                    Route::get('create', [QcReworkController::class, 'create'])->defaults('kind', $kind)->name('create');
+                    Route::post('/', [QcReworkController::class, 'store'])->defaults('kind', $kind)->name('store');
+                    Route::delete('{entry}', [QcReworkController::class, 'destroy'])->defaults('kind', $kind)->whereNumber('entry')->name('destroy');
+                });
+            }
 
             Route::prefix('{stage}')->whereIn('stage', array_keys(ProductionFlow::STAGES))->name('entries.')->group(function () {
                 Route::get('/', [EntryController::class, 'index'])->name('index');

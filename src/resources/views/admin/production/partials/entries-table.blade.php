@@ -1,4 +1,4 @@
-{{-- props: entries, showStage (bool), showPo (bool), deleteRoute (optional: route name taking the entry; default the stage entry route) --}}
+{{-- props: entries, showStage (bool), showPo (bool) --}}
 @php use ME\MerchandisingSfl\Services\ProductionFlow; @endphp
 <table class="table table-bordered table-sm align-middle mb-0">
     <thead>
@@ -6,7 +6,7 @@
             <th>Date</th>
             @if($showStage)<th>Stage</th>@endif
             @if($showPo)<th>Order / PO</th><th>Style · Color</th>@endif
-            <th>Size</th><th>Line</th>
+            <th>Size</th><th>Part</th><th>Line</th>
             <th class="text-right">In</th><th class="text-right">Pass</th><th class="text-right">Rework</th><th class="text-right">Reject</th>
             <th>Defects (part · machine · defect · pcs)</th><th>Remarks</th><th>By</th>
             @can('msfl_prod_entry.delete')<th class="text-right">Actions</th>@endcan
@@ -16,8 +16,7 @@
         @forelse($entries as $entry)
             <tr>
                 <td>{{ $entry->entry_date->format('d-M-Y') }}
-                    @if($entry->kind === 'qc')<br><span class="badge badge-danger">Reject / Rework found</span>
-                    @elseif($entry->kind === 'rework')<br><span class="badge badge-success">Rework fixed</span>@endif
+                    @if($entry->kind !== 'production')<br><span class="badge badge-{{ $entry->kind === 'qc' ? 'info' : 'warning' }}">{{ ProductionFlow::KINDS[$entry->kind] }}</span>@endif
                 </td>
                 @if($showStage)<td>{{ ProductionFlow::label($entry->stage) }}</td>@endif
                 @if($showPo)
@@ -25,6 +24,7 @@
                     <td>{{ $entry->orderPo->style->style_no ?? '' }} · {{ $entry->orderPo->color->name ?? '' }}</td>
                 @endif
                 <td>{{ $entry->size->name ?? 'All' }}</td>
+                <td>{{ $entry->part_name ?? '-' }}</td>
                 <td>{{ $entry->line->name ?? '-' }}</td>
                 <td class="text-right">{{ $entry->input_qty }}</td>
                 <td class="text-right"><strong>{{ $entry->pass_qty }}</strong></td>
@@ -41,12 +41,12 @@
                 @can('msfl_prod_entry.delete')
                     <td class="text-right">
                         <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteEntryModal"
-                            data-action="{{ isset($deleteRoute) || $entry->stage === 'cutting' ? route($deleteRoute ?? 'msfl.production.reject-rework.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
+                            data-action="{{ $entry->kind !== 'production' ? route('msfl.production.' . $entry->kind . '.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 @endcan
             </tr>
         @empty
-            <tr><td colspan="14" class="text-center text-muted">No entries yet.</td></tr>
+            <tr><td colspan="15" class="text-center text-muted">No entries yet.</td></tr>
         @endforelse
     </tbody>
 </table>

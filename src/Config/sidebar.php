@@ -30,6 +30,7 @@ return [
                         ['title' => 'Item Categories', 'icon' => 'fa-solid fa-layer-group', 'icon_color' => 'text-primary', 'permission' => 'msfl_item_category', 'route' => "$base/masters/item-categories"],
                         ['title' => 'Items (Fabric & Trims)', 'icon' => 'fa-solid fa-boxes-stacked', 'icon_color' => 'text-primary', 'permission' => 'msfl_item', 'route' => "$base/masters/items"],
                         ['title' => 'Sample Types', 'icon' => 'fa-solid fa-list-ol', 'icon_color' => 'text-primary', 'permission' => 'msfl_sample_type', 'route' => "$base/masters/sample-types"],
+                        ['title' => 'Garment Parts', 'icon' => 'fa-solid fa-puzzle-piece', 'icon_color' => 'text-primary', 'permission' => 'msfl_garment_part', 'route' => "$base/masters/garment-parts"],
                     ],
                 ],
                 [
@@ -97,9 +98,10 @@ return [
                 ['title' => 'Sewing', 'icon' => 'fa-solid fa-shirt', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/sewing"],
                 ['title' => 'Washing', 'icon' => 'fa-solid fa-soap', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/washing"],
                 ['title' => 'Finishing', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/finishing"],
-                ['title' => 'Final QC', 'icon' => 'fa-solid fa-clipboard-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/final_qc"],
+                ['title' => 'Buyer QC', 'icon' => 'fa-solid fa-clipboard-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/final_qc"],
                 ['title' => 'Packing', 'icon' => 'fa-solid fa-box', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/packing"],
-                ['title' => 'Reject & Rework', 'icon' => 'fa-solid fa-rotate-left', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/reject-rework"],
+                ['title' => 'QC', 'icon' => 'fa-solid fa-magnifying-glass', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/qc"],
+                ['title' => 'Rework', 'icon' => 'fa-solid fa-rotate-left', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/rework"],
                 [
                     'title' => 'Reports',
                     'icon' => 'fa-solid fa-chart-pie',

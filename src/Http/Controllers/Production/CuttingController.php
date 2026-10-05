@@ -11,7 +11,6 @@ use Illuminate\View\View;
 use ME\MerchandisingSfl\Http\Controllers\Controller;
 use ME\MerchandisingSfl\Models\OrderPo;
 use ME\MerchandisingSfl\Models\Production\Cutting;
-use ME\MerchandisingSfl\Models\Production\CuttingPart;
 use ME\MerchandisingSfl\Models\Size;
 use ME\MerchandisingSfl\Services\DocumentNumberService;
 use ME\MerchandisingSfl\Support\Lookups;
@@ -52,7 +51,7 @@ class CuttingController extends Controller
             'pos' => $pos,
             'cutBySize' => $cutBySize,
             'sizes' => Size::query()->get(['id', 'name']),
-            'partSuggestions' => CuttingPart::query()->distinct()->orderBy('part_name')->limit(200)->pluck('part_name'),
+            'garmentParts' => Lookups::garmentParts(),
             'selectedPo' => $request->integer('order_po_id') ?: null,
         ]);
     }
@@ -72,7 +71,7 @@ class CuttingController extends Controller
             'sizes' => ['required', 'array'],
             'sizes.*' => ['nullable', 'integer', 'min:0'],
             'parts' => ['nullable', 'array'],
-            'parts.*.part_name' => ['nullable', 'string', 'max:100'],
+            'parts.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'parts.*.qty' => ['nullable', 'integer', 'min:0'],
         ]);
 

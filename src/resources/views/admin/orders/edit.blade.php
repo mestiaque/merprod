@@ -23,6 +23,12 @@
             </form>
         </div>
     </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            @include('merchandising-sfl::admin.orders.partials.po-lines')
+        </div>
+    </div>
 </div>
 
 @include('merchandising-sfl::admin.partials.select2-init')

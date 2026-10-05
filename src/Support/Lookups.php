@@ -97,6 +97,12 @@ class Lookups
             ->get(['id', 'order_no', 'buyer_id', 'buyer_order_ref']);
     }
 
+    /** Active garment part names (Master Data → Garment Parts). */
+    public static function garmentParts(): Collection
+    {
+        return Models\GarmentPart::query()->active()->orderBy('name')->pluck('name');
+    }
+
     public static function machineTypes(): Collection
     {
         \ME\MerchandisingSfl\Services\InventoryMachines::syncTypes();

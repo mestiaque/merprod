@@ -5,25 +5,23 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Production entries get a kind (Production → QC / Rework screens):
- *   production — pieces in + QC (the stage screens)
- *   qc         — reject / rework found among pieces the stage already passed
- *   rework     — rework pieces fixed: pass / reject
- * Existing rows are production.
+ * Part-wise production: embroidery works on cut parts (Front, Back …) — sent from
+ * cutting part by part and passed back to cutting — and cutting / embroidery QC
+ * and rework name the part. Other stages leave it null (whole garment).
  */
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('msfl_prod_entries', function (Blueprint $table) {
-            $table->string('kind', 12)->default('production')->after('stage');
+            $table->string('part_name', 100)->nullable()->after('size_id');
         });
     }
 
     public function down(): void
     {
         Schema::table('msfl_prod_entries', function (Blueprint $table) {
-            $table->dropColumn('kind');
+            $table->dropColumn('part_name');
         });
     }
 };
