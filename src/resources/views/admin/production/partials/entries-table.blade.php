@@ -5,7 +5,7 @@
         <tr>
             <th>Date</th>
             @if($showStage)<th>Stage</th>@endif
-            @if($showPo)<th>Order / PO</th><th>Style · Color</th>@endif
+            @if($showPo)<th>Buyer</th><th>Order / PO</th><th>Style · Color</th>@endif
             <th>Size</th><th>Part</th><th>Line</th>
             <th class="text-right">In</th><th class="text-right">Pass</th><th class="text-right">Rework</th><th class="text-right">Reject</th>
             <th>Defects (part · machine · defect · pcs)</th><th>Remarks</th><th>By</th>
@@ -20,6 +20,7 @@
                 </td>
                 @if($showStage)<td>{{ ProductionFlow::label($entry->stage) }}</td>@endif
                 @if($showPo)
+                    <td>{{ $entry->orderPo->order->buyer->name ?? '-' }}</td>
                     <td><a href="{{ route('msfl.production.status.show', $entry->order_po_id) }}">{{ $entry->orderPo->order->order_no ?? '' }} · {{ $entry->orderPo->po_no ?? '' }}</a></td>
                     <td>{{ $entry->orderPo->style->style_no ?? '' }} · {{ $entry->orderPo->color->name ?? '' }}</td>
                 @endif
@@ -46,7 +47,7 @@
                 @endcan
             </tr>
         @empty
-            <tr><td colspan="15" class="text-center text-muted">No entries yet.</td></tr>
+            <tr><td colspan="16" class="text-center text-muted">No entries yet.</td></tr>
         @endforelse
     </tbody>
 </table>

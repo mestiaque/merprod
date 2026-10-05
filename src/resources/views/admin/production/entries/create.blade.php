@@ -31,11 +31,12 @@
                     @include('merchandising-sfl::admin.production.partials.po-select', ['selected' => $selectedPo])
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'entry_date', 'label' => 'Date', 'type' => 'date', 'required' => true, 'value' => now(), 'attrs' => 'max="' . now()->format('Y-m-d') . '"'])
                     <div class="col-md-3 mb-3">
-                        <label class="form-label">Size <small class="text-muted">(optional)</small></label>
-                        <select name="size_id" class="form-control form-control-sm msfl-select2">
-                            <option value="">All sizes</option>
+                        <label class="form-label">Size <span class="text-danger">*</span> <small class="text-muted">(of the PO)</small></label>
+                        <select name="size_id" id="sizeSelect" class="form-control form-control-sm" required>
+                            <option value="">— Select size —</option>
                             @foreach($sizes as $size)<option value="{{ $size->id }}" @selected(old('size_id') == $size->id)>{{ $size->name }}</option>@endforeach
                         </select>
+                        @error('size_id')<span class="form-text text-danger">{{ $message }}</span>@enderror
                     </div>
                     @if($partWise)
                         <div class="col-md-3 mb-3">
@@ -106,14 +107,24 @@
 (function () {
     const balances = @json($balances);
     const poParts = @json($poParts);
+    const poSizes = @json($poSizes);
+    const sizeSelect = document.getElementById('sizeSelect');
     const partInput = document.getElementById('partInput');
     const label = @json($label);
     const poSelect = document.getElementById('poSelect');
     const box = document.getElementById('balanceBox');
     const jq = typeof $ !== 'undefined' ? $ : null;
 
+    // Only the PO's sizes can be picked.
+    function filterSizes() {
+        const allowed = (poSizes[poSelect.value] || []).map(String);
+        Array.from(sizeSelect.options).forEach(o => { if (o.value) { o.hidden = o.disabled = ! allowed.includes(o.value); } });
+        if (sizeSelect.selectedOptions[0]?.disabled) sizeSelect.value = '';
+    }
+
     function showBalance() {
-        let b = balances[poSelect.value];
+        filterSizes();
+        let b = (balances[poSelect.value] || {})[sizeSelect.value];
         if (partInput) {
             // Part-wise stage: offer the PO's cut parts and show that part's balance.
             const cut = poParts[poSelect.value] || [];
@@ -123,7 +134,7 @@
         }
         if (! b) { box.style.display = 'none'; return; }
         box.style.display = '';
-        box.innerHTML = 'Can take in: <strong>' + b.available + '</strong> pcs · In ' + label + ' now (WIP): <strong>' + b.wip + '</strong>'
+        box.innerHTML = 'Size ' + sizeSelect.selectedOptions[0].text + ' — can take in: <strong>' + b.available + '</strong> pcs · In ' + label + ' now (WIP): <strong>' + b.wip + '</strong>'
             + ' · So far — in ' + b.input + ', pass ' + b.pass + ', rework ' + b.rework + ', reject ' + b.reject;
     }
 
@@ -157,6 +168,7 @@
     }
 
     if (partInput) partInput.addEventListener('change', showBalance);
+    sizeSelect.addEventListener('change', showBalance);
     if (jq) { jq(poSelect).on('change', showBalance); if (lineSelect) jq(lineSelect).on('change', () => filterMachines()); }
     document.addEventListener('input', function (e) { if (e.target.closest('#defectRowsBody') || e.target.matches('[data-defect-total]')) defectSums(); });
     document.addEventListener('change', function (e) { if (e.target.matches('[data-defect-type]')) defectSums(); });

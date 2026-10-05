@@ -6,6 +6,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use ME\MerchandisingSfl\Models\OrderPo;
 use ME\MerchandisingSfl\Models\Production\Cutting;
+use ME\MerchandisingSfl\Models\Production\CuttingSize;
+use ME\MerchandisingSfl\Models\Size;
 use ME\MerchandisingSfl\Models\Production\Entry;
 
 /**
@@ -88,16 +90,21 @@ class ProductionFlow
      * stage pass is the garments whose every embroidery part came back (min over
      * parts), and sewing takes from min(cutting pass, that).
      * $ignoreEntryId leaves one entry out (used when re-checking an edit).
+     * $sizeId: the same figures for one size only (cut of that size, entries of that size).
      *
      * @return array<string, array<string, mixed>>
      */
-    public function summary(OrderPo $po, ?int $ignoreEntryId = null): array
+    public function summary(OrderPo $po, ?int $ignoreEntryId = null, ?int $sizeId = null): array
     {
-        $cut = (int) Cutting::query()->where('order_po_id', $po->id)->sum('total_qty');
+        $cut = $sizeId
+            ? (int) CuttingSize::query()->where('size_id', $sizeId)
+                ->whereHas('cutting', fn ($q) => $q->where('order_po_id', $po->id))->sum('qty')
+            : (int) Cutting::query()->where('order_po_id', $po->id)->sum('total_qty');
 
         // P = pass of production + rework-fixed entries; qcOut = pieces taken back out of pass by QC entries.
         $sums = Entry::query()->where('order_po_id', $po->id)
             ->when($ignoreEntryId, fn ($q) => $q->whereKeyNot($ignoreEntryId))
+            ->when($sizeId, fn ($q) => $q->where('size_id', $sizeId))
             ->selectRaw("stage, CASE WHEN stage IN ('" . implode("','", self::PART_STAGES) . "') THEN COALESCE(part_name, '') ELSE '' END part, SUM(input_qty) i,
                 SUM(CASE WHEN kind = 'qc' THEN 0 ELSE pass_qty END) p,
                 SUM(CASE WHEN kind = 'qc' THEN reject_qty + rework_qty ELSE 0 END) qo,
@@ -173,7 +180,7 @@ class ProductionFlow
      *
      * @param array{input_qty:int, pass_qty:int, rework_qty:int, reject_qty:int} $qty
      */
-    public function validate(OrderPo $po, string $stage, array $qty, ?int $ignoreEntryId = null, ?string $part = null): array
+    public function validate(OrderPo $po, string $stage, array $qty, ?int $ignoreEntryId = null, ?string $part = null, ?int $sizeId = null): array
     {
         if (! in_array($stage, $this->route($po), true)) {
             $what = $stage === 'embroidery' ? 'embroidery' : 'washing';
@@ -181,19 +188,26 @@ class ProductionFlow
             return ['order_po_id' => "This PO has no {$what} — tick it on the order PO if it needs one."];
         }
 
-        $summary = $this->summary($po, $ignoreEntryId);
+        // The size's own balance first (size-wise flow), then the PO's total (covers older entries without a size).
+        $errors = $sizeId ? $this->checkRow($po, $stage, $qty, $this->summary($po, $ignoreEntryId, $sizeId), $part, ' of size ' . (Size::find($sizeId)->name ?? '')) : [];
+
+        return $errors + $this->checkRow($po, $stage, $qty, $this->summary($po, $ignoreEntryId), $part, '');
+    }
+
+    private function checkRow(OrderPo $po, string $stage, array $qty, array $summary, ?string $part, string $of): array
+    {
         $row = in_array($stage, self::PART_STAGES, true) ? $this->partRow($summary, $stage, (string) $part) : $summary[$stage];
         $what = self::label($stage) . ($part ? " ({$part})" : '');
         $prev = self::label($this->previous($po, $stage));
         $errors = [];
 
         if ($qty['input_qty'] > $row['available']) {
-            $errors['input_qty'] = "Only {$row['available']} pcs can come in to {$what} — {$prev} has passed " . ($row['available'] + $row['input']) . ", {$row['input']} already taken in.";
+            $errors['input_qty'] = "Only {$row['available']} pcs{$of} can come in to {$what} — {$prev} has passed " . ($row['available'] + $row['input']) . ", {$row['input']} already taken in.";
         }
 
         $inStage = $row['wip'] + min($qty['input_qty'], $row['available']);
         if ($qty['pass_qty'] + $qty['reject_qty'] > $inStage) {
-            $errors['pass_qty'] = "Pass + reject is " . ($qty['pass_qty'] + $qty['reject_qty']) . " pcs but only {$inStage} are in {$what}.";
+            $errors['pass_qty'] = 'Pass + reject is ' . ($qty['pass_qty'] + $qty['reject_qty']) . " pcs but only {$inStage} pcs{$of} are in {$what}.";
         }
 
         if ($qty['input_qty'] + $qty['pass_qty'] + $qty['rework_qty'] + $qty['reject_qty'] === 0) {
@@ -237,8 +251,20 @@ class ProductionFlow
     /** Why an entry can't be deleted (its passed pieces already moved on), or null. */
     public function deleteBlocked(Entry $entry): ?string
     {
+        // The entry's size, then the PO total.
+        foreach (array_unique([$entry->size_id, null]) as $sizeId) {
+            if ($error = $this->deleteBlockedFor($entry, $sizeId)) {
+                return $error;
+            }
+        }
+
+        return null;
+    }
+
+    private function deleteBlockedFor(Entry $entry, ?int $sizeId): ?string
+    {
         $po = $entry->orderPo;
-        $after = $this->summary($po, $entry->id);
+        $after = $this->summary($po, $entry->id, $sizeId);
         $row = in_array($entry->stage, self::PART_STAGES, true) ? $this->partRow($after, $entry->stage, (string) $entry->part_name) : $after[$entry->stage];
         // Later entries of this stage passed / rejected pieces this one brought in (e.g. rework after a QC).
         if ($row['pass'] + $row['reject'] + $row['wip'] > $row['input']) {
@@ -289,6 +315,25 @@ class ProductionFlow
             }
         }
         return $errors;
+    }
+
+    /**
+     * Entry-form balances of one stage for a PO, per size of the PO:
+     * size_id => stage row (+ 'parts' / 'newPart' for part-wise stages) and 'ready' (passed, not moved on).
+     */
+    public function sizeBalances(OrderPo $po, string $stage): array
+    {
+        $partWise = in_array($stage, self::PART_STAGES, true);
+
+        return $po->sizes->mapWithKeys(function ($s) use ($po, $stage, $partWise) {
+            $summary = $this->summary($po, null, $s->size_id);
+            $row = $summary[$stage] + ['ready' => $this->ready($po, $stage, $summary)];
+            if ($partWise) {
+                $row['newPart'] = $this->partRow($summary, $stage, '');
+            }
+
+            return [$s->size_id => $row];
+        })->all();
     }
 
     /** po_id => part names cut for it (Cutting → Parts Cut), for part-wise entries. */

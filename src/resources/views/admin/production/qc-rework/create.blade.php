@@ -46,11 +46,12 @@
                         </div>
                     @endif
                     <div class="col-md-3 mb-3">
-                        <label class="form-label">Size <small class="text-muted">(optional)</small></label>
-                        <select name="size_id" class="form-control form-control-sm msfl-select2">
-                            <option value="">All sizes</option>
+                        <label class="form-label">Size <span class="text-danger">*</span> <small class="text-muted">(of the PO)</small></label>
+                        <select name="size_id" id="sizeSelect" class="form-control form-control-sm" required>
+                            <option value="">— Select size —</option>
                             @foreach($sizes as $size)<option value="{{ $size->id }}" @selected(old('size_id') == $size->id)>{{ $size->name }}</option>@endforeach
                         </select>
+                        @error('size_id')<span class="form-text text-danger">{{ $message }}</span>@enderror
                     </div>
                     @if($usesLine)
                         <div class="col-md-3 mb-3">
@@ -122,6 +123,8 @@
 <script>
 (function () {
     const balances = @json($balances);
+    const poSizes = @json($poSizes);
+    const sizeSelect = document.getElementById('sizeSelect');
     const kind = @json($kind);
     const poSelect = document.getElementById('poSelect');
     const partInput = document.getElementById('partInput');
@@ -136,7 +139,12 @@
             if (o.disabled && o.selected) o.parentElement.value = 'reject';
         });
 
-        let b = balances[poSelect.value];
+        // Only the PO's sizes can be picked.
+        const allowed = (poSizes[poSelect.value] || []).map(String);
+        Array.from(sizeSelect.options).forEach(o => { if (o.value) { o.hidden = o.disabled = ! allowed.includes(o.value); } });
+        if (sizeSelect.selectedOptions[0]?.disabled) sizeSelect.value = '';
+
+        let b = (balances[poSelect.value] || {})[sizeSelect.value];
         if (partInput) {
             const part = partInput.value.trim();
             b = b && part ? ((b.parts || {})[part] || {ready: 0, wip: 0}) : null;
@@ -180,6 +188,7 @@
     }
 
     if (partInput) partInput.addEventListener('change', refresh);
+    sizeSelect.addEventListener('change', refresh);
     if (jq) { jq(poSelect).on('change', refresh); if (lineSelect) jq(lineSelect).on('change', () => filterMachines()); }
     document.addEventListener('input', function (e) { if (e.target.closest('#defectRowsBody') || e.target.matches('[data-defect-total]')) defectSums(); });
     document.addEventListener('change', function (e) { if (e.target.matches('[data-defect-type]')) defectSums(); });

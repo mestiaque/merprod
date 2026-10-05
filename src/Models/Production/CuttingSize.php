@@ -14,6 +14,11 @@ class CuttingSize extends Model
 
     protected $fillable = ['cutting_id', 'size_id', 'qty'];
 
+    public function cutting(): BelongsTo
+    {
+        return $this->belongsTo(Cutting::class);
+    }
+
     public function size(): BelongsTo
     {
         return $this->belongsTo(Size::class)->withTrashed();

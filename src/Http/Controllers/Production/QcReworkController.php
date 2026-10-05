@@ -66,23 +66,19 @@ class QcReworkController extends Controller
             return redirect()->route("msfl.production.{$kind}.index");
         }
 
-        $pos = Lookups::productionPos()->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
+        $pos = Lookups::productionPos()->load('sizes')->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
         $partWise = ProductionFlow::partWise($stage);
-        // po => [ready (passed, still here), wip (waiting, incl. rework)] — per part for part-wise steps.
-        $balances = $pos->mapWithKeys(function (OrderPo $po) use ($stage, $partWise) {
-            $summary = $this->flow->summary($po);
-            $b = ['ready' => $this->flow->ready($po, $stage, $summary), 'wip' => $summary[$stage]['wip']];
+        // po => size => [ready (passed, still here), wip (waiting, incl. rework)] — and per part for part-wise steps.
+        $balances = $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $po->sizes->mapWithKeys(function ($ps) use ($po, $stage, $partWise) {
+            $summary = $this->flow->summary($po, null, $ps->size_id);
+            $b = $this->balance($po, $stage, $summary, null);
             if ($partWise) {
-                $b['parts'] = collect(ProductionFlow::poParts([$po->id])[$po->id] ?? [])
-                    ->merge(array_keys($summary[$stage]['parts'] ?? []))->unique()
-                    ->mapWithKeys(fn ($part) => [$part => [
-                        'ready' => $this->flow->ready($po, $stage, $summary, $part),
-                        'wip' => $stage === 'cutting' ? $summary[$stage]['wip'] : $this->flow->partRow($summary, $stage, $part)['wip'],
-                    ]])->all();
+                $b['parts'] = collect(ProductionFlow::poParts([$po->id])[$po->id] ?? [])->merge(array_keys($summary[$stage]['parts'] ?? []))->unique()
+                    ->mapWithKeys(fn ($part) => [$part => $this->balance($po, $stage, $summary, $part)])->all();
             }
 
-            return [$po->id => $b];
-        });
+            return [$ps->size_id => $b];
+        })->all()]);
 
         return view('merchandising-sfl::admin.production.qc-rework.create', [
             'kind' => $kind,
@@ -95,7 +91,19 @@ class QcReworkController extends Controller
             'machines' => ProductionFlow::machines(),
             'garmentParts' => Lookups::garmentParts(),
             'selectedPo' => $request->integer('order_po_id') ?: null,
+            'poSizes' => $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $po->sizes->pluck('size_id')->all()]),
         ]);
+    }
+
+    /** ready / wip of a step (one size, optionally one part) for the form's balance box. */
+    private function balance(OrderPo $po, string $stage, array $summary, ?string $part): array
+    {
+        $partRow = $part !== null && in_array($stage, ProductionFlow::PART_STAGES, true);
+
+        return [
+            'ready' => $this->flow->ready($po, $stage, $summary, $part),
+            'wip' => $partRow ? $this->flow->partRow($summary, $stage, $part)['wip'] : $summary[$stage]['wip'],
+        ];
     }
 
     public function store(Request $request): RedirectResponse
@@ -108,7 +116,7 @@ class QcReworkController extends Controller
             'stage' => ['required', Rule::in(array_keys(self::stages($kind)))],
             'order_po_id' => ['required', Rule::exists('msfl_order_pos', 'id')],
             'entry_date' => ['required', 'date', 'before_or_equal:today'],
-            'size_id' => ['nullable', Rule::exists('inv_sizes', 'id')],
+            'size_id' => ['required', Rule::exists('inv_sizes', 'id')],
             'part_name' => [ProductionFlow::partWise($stage) ? 'required' : 'nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'line_id' => [Rule::requiredIf(ProductionFlow::usesLine($stage)), 'nullable', Rule::exists('msfl_lines', 'id')->whereNull('deleted_at')],
             'pass_qty' => ['nullable', 'integer', 'min:0'],
@@ -141,7 +149,7 @@ class QcReworkController extends Controller
         $entry = DB::transaction(function () use ($po, $stage, $qc, $part, $qty, $defects, $data, $usesLine) {
             OrderPo::query()->whereKey($po->id)->lockForUpdate()->first();
 
-            $errors = $this->balanceErrors($po, $stage, $qc, $part, $qty) + $this->flow->defectErrors($defects, $qty);
+            $errors = $this->balanceErrors($po, $stage, $qc, $part, (int) $data['size_id'], $qty) + $this->flow->defectErrors($defects, $qty);
             if ($errors) {
                 throw ValidationException::withMessages($errors);
             }
@@ -151,7 +159,7 @@ class QcReworkController extends Controller
                 'kind' => $qc ? 'qc' : 'rework',
                 'entry_date' => $data['entry_date'],
                 'order_po_id' => $po->id,
-                'size_id' => $data['size_id'] ?? null,
+                'size_id' => $data['size_id'],
                 'part_name' => $part,
                 'line_id' => $usesLine ? $data['line_id'] : null,
                 'remarks' => $data['remarks'] ?? null,
@@ -207,7 +215,7 @@ class QcReworkController extends Controller
         return $request->route('kind') === 'rework' ? 'rework' : 'qc';
     }
 
-    private function balanceErrors(OrderPo $po, string $stage, bool $qc, ?string $part, array $qty): array
+    private function balanceErrors(OrderPo $po, string $stage, bool $qc, ?string $part, int $sizeId, array $qty): array
     {
         if (($po->order->status ?? null) !== 'confirmed') {
             return ['order_po_id' => 'Only a confirmed order can go into production.'];
@@ -215,12 +223,17 @@ class QcReworkController extends Controller
         if (! in_array($stage, $this->flow->route($po), true)) {
             return ['order_po_id' => 'This PO has no ' . strtolower(ProductionFlow::label($stage)) . ' on its route.'];
         }
+        if (! $po->sizes()->where('size_id', $sizeId)->exists()) {
+            return ['size_id' => 'This size is not in the PO.'];
+        }
 
-        $summary = $this->flow->summary($po);
-        $label = ProductionFlow::label($stage) . ($part ? " ({$part})" : '');
+        // The size's balance and the PO total (older entries may have no size) — the smaller one counts.
+        $size = $this->balance($po, $stage, $this->flow->summary($po, null, $sizeId), $part);
+        $total = $this->balance($po, $stage, $this->flow->summary($po), $part);
+        $label = ProductionFlow::label($stage) . ($part ? " ({$part})" : '') . ' size ' . (Size::find($sizeId)->name ?? '');
 
         if ($qc) {
-            $ready = $this->flow->ready($po, $stage, $summary, $part);
+            $ready = min($size['ready'], $total['ready']);
             if ($qty['reject_qty'] + $qty['rework_qty'] === 0) {
                 return ['reject_qty' => 'Enter the reject or rework quantity.'];
             }
@@ -231,7 +244,7 @@ class QcReworkController extends Controller
             return [];
         }
 
-        $wip = in_array($stage, ProductionFlow::PART_STAGES, true) ? $this->flow->partRow($summary, $stage, (string) $part)['wip'] : $summary[$stage]['wip'];
+        $wip = min($size['wip'], $total['wip']);
         if ($qty['pass_qty'] + $qty['reject_qty'] === 0) {
             return ['pass_qty' => 'Enter how many reworked pcs passed or were rejected.'];
         }

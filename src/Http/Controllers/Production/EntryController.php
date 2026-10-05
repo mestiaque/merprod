@@ -49,19 +49,16 @@ class EntryController extends Controller
     {
         $this->authorize('msfl_prod_entry.add');
 
-        $pos = Lookups::productionPos()->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
-        $balances = $pos->mapWithKeys(function (OrderPo $po) use ($stage) {
-            $summary = $this->flow->summary($po);
-
-            // Part-wise: a part not sent yet can take what cutting passed.
-            return [$po->id => $summary[$stage] + (in_array($stage, ProductionFlow::PART_STAGES, true) ? ['newPart' => $this->flow->partRow($summary, $stage, '')] : [])];
-        });
+        $pos = Lookups::productionPos()->load('sizes')->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
+        // po => size => balance (size-wise flow); part-wise stages add parts / newPart.
+        $balances = $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $this->flow->sizeBalances($po, $stage)]);
 
         return view('merchandising-sfl::admin.production.entries.create', [
             'stage' => $stage,
             'pos' => $pos,
             'balances' => $balances,
             'sizes' => Size::query()->orderBy('sort_order')->get(['id', 'name']),
+            'poSizes' => $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $po->sizes->pluck('size_id')->all()]),
             'lines' => ProductionFlow::usesLine($stage) ? Lookups::lines() : collect(),
             'machines' => ProductionFlow::machines(),
             'selectedPo' => $request->integer('order_po_id') ?: null,
@@ -79,7 +76,7 @@ class EntryController extends Controller
         $data = $request->validate([
             'order_po_id' => ['required', Rule::exists('msfl_order_pos', 'id')],
             'entry_date' => ['required', 'date', 'before_or_equal:today'],
-            'size_id' => ['nullable', Rule::exists('inv_sizes', 'id')],
+            'size_id' => ['required', Rule::exists('inv_sizes', 'id')],
             'part_name' => [in_array($stage, ProductionFlow::PART_STAGES, true) ? 'required' : 'nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'line_id' => [$usesLine ? 'required' : 'nullable', Rule::exists('msfl_lines', 'id')->whereNull('deleted_at')],
             'input_qty' => ['nullable', 'integer', 'min:0'],
@@ -99,13 +96,16 @@ class EntryController extends Controller
         $defects = collect($data['defects'] ?? [])->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, ['reject', 'rework'], true))->values();
 
         $po = OrderPo::with('order')->findOrFail($data['order_po_id']);
+        if (! $po->sizes()->where('size_id', $data['size_id'])->exists()) {
+            throw ValidationException::withMessages(['size_id' => 'This size is not in the PO.']);
+        }
 
         $entry = DB::transaction(function () use ($po, $stage, $qty, $defects, $data, $usesLine) {
             // Lock the PO so two entries can't both pass the balance check.
             OrderPo::query()->whereKey($po->id)->lockForUpdate()->first();
 
             $errors = ($po->order->status ?? null) === 'confirmed'
-                ? $this->flow->validate($po, $stage, $qty, null, $data['part_name'] ?? null)
+                ? $this->flow->validate($po, $stage, $qty, null, $data['part_name'] ?? null, (int) $data['size_id'])
                 : ['order_po_id' => 'Only a confirmed order can go into production.'];
             $errors += $this->flow->defectErrors($defects, $qty);
             if ($errors) {
@@ -116,7 +116,7 @@ class EntryController extends Controller
                 'stage' => $stage,
                 'entry_date' => $data['entry_date'],
                 'order_po_id' => $po->id,
-                'size_id' => $data['size_id'] ?? null,
+                'size_id' => $data['size_id'],
                 'part_name' => in_array($stage, ProductionFlow::PART_STAGES, true) ? trim($data['part_name']) : null,
                 'line_id' => $usesLine ? $data['line_id'] : null,
                 'remarks' => $data['remarks'] ?? null,
