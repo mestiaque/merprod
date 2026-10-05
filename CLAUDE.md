@@ -4,7 +4,7 @@ Guide for Claude Code working in this package. Read it before changing anything.
 
 ## What this is
 
-The **only** merchandising + production module of the Suhana Fashions ERP (sidebar: **"Merchandising v2"**).
+The **only** merchandising + production module of the Suhana Fashions ERP. In the sidebar it is **three top-level menus** (`Config/sidebar.php`, one group, in this order): **Merchandising** (dashboard, masters, dev, order + BOM, samples, reports), **Planning** (setup, bulletin, T&A, T&A Sheet, T&A Status) and **Production** (status, fabric requisition, cutting … packing, production reports). "v2" is just how we call the package internally.
 It covers inquiry → style / tech pack → costing → samples → order + PO → BOM → bulletin → T&A → production
 (cutting … packing) → Finish Store (Inventory), plus dashboard, post-costing and reports.
 
@@ -98,7 +98,9 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 ## How to add things
 - **Master**: migration (`msfl_*`), model using `Concerns/IsMaster`, one `MasterRegistry` entry, permission key in `Config/permission.php`, sidebar entry in `Config/sidebar.php`.
 - **Report**: add to `Reports::LIST` + a private method returning `['headers','align','rows','totals'(,'period','status_col')]` — screen and print come for free.
-- **Production stage**: `ProductionFlow::STAGES` + `route()`; sidebar; T&A auto source if needed.
+- **Production stage**: `ProductionFlow::STAGES` + `route()`; sidebar (under **Production**); T&A auto source if needed.
+- **Page help** ("এই পাতা কী কাজে" box on top of every screen, Bengali): add an entry to `Support/PageHelp::all()` for every new screen / master / stage / report — rendered by `partials/page-help` via `partials/ui-kit`, collapsed by default, only for permission `msfl_page_help.view`.
+- **Sidebar**: put a new screen under the right top menu — Merchandising / Planning / Production; items render in array order.
 - **T&A auto source**: `TnaTemplateTask::autoSources()` + a `match` arm in `TnaPlanner::autoActualDate()`.
 - **Permissions/sidebar**: after adding a key, grant it to the role(s) (Super Admin = permission id 1, JSON in `permissions.permission`) or the menu stays hidden.
 - **Migrations**: always a new file in `src/database/migrations`; never edit one that has run. Run only this package's file: `php artisan migrate --path=/home/estiaque/Desktop/NIT/SFL/merchandising-sfl/src/database/migrations/<file>.php --realpath --force`. No FKs to `hr_*` / `inv_*`.

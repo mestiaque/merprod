@@ -11,6 +11,8 @@ $master = ['list' => 'List', 'add' => 'Create', 'edit' => 'Edit', 'delete' => 'D
 return [
     'MERCHANDISING_SFL' => [
         'msfl_dashboard' => ['label' => 'Dashboard', 'permissions' => ['view' => 'View', 'all' => 'All']],
+        // Shows the "এই পাতা কী কাজে" help box (Support/PageHelp) on every screen.
+        'msfl_page_help' => ['label' => 'Page Help (এই পাতা কী কাজে)', 'permissions' => ['view' => 'View']],
 
         // Master Data
         'msfl_buyer' => ['label' => 'Buyers', 'permissions' => $master + ['approve' => 'Approve / Reject']],

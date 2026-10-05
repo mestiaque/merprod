@@ -23,3 +23,5 @@
     .msfl-module .table td.text-right:last-child { white-space: nowrap; }
     .msfl-module .table td:last-child > form { display: inline-block; }
 </style>
+
+@include('merchandising-sfl::admin.partials.page-help')

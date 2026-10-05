@@ -1,6 +1,6 @@
 # Merchandising v2 (`mestiaque/merchandising-sfl`)
 
-The merchandising **and production** module of the Suhana ERP (Laravel 12), shown in the sidebar as **Merchandising v2**.
+The merchandising **and production** module of the Suhana ERP (Laravel 12), shown in the sidebar as three menus: **Merchandising**, **Planning** and **Production**.
 It replaced the old `merchandising-trace` and `production-trace` packages (removed 2026-10-05).
 
 > Working on this package with Claude Code? Read [`CLAUDE.md`](CLAUDE.md) — ownership of master data, domain rules, conventions and how to verify changes.
