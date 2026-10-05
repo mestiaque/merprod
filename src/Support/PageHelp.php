@@ -51,9 +51,9 @@ class PageHelp
             'what' => $what,
             'steps' => [
                 '<strong>+ New Entry</strong> চাপুন, PO (buyer · style · color) আর <strong>Size</strong> বেছে নিন — "can take in" দেখাবে আগের stage থেকে ওই size-এর কত pcs নেওয়া যাবে। প্রতিটা size আলাদা entry।',
-                'দিনের <strong>Input</strong> (এই stage-এ কত pcs ঢুকল) আর QC ফল দিন: <strong>Pass</strong>, <strong>Rework</strong>, <strong>Reject</strong>।',
-                'Rework / Reject থাকলে defect row-এ ভাগ করে দিন (কোন part, defect, চাইলে কোন machine, কত pcs) — যোগফল মিলতে হবে।',
-                'WIP = Input − Pass − Reject। Rework WIP-এই থাকে যতক্ষণ না pass হয়; reject flow থেকে বেরিয়ে যায়।',
+                'দিনের <strong>Input</strong> (এই step-এ কত pcs ঢুকল) আর <strong>Output</strong> (কত শেষ হলো) দিন।',
+                'Reject / Rework এখানে না — <strong>Production → QC</strong> আর <strong>Production → Rework</strong>-এ step-এর card থেকে দিন। (শুধু Buyer QC-তে Pass / Rework / Reject এখানেই।)',
+                'WIP = Input − Output (এখনো এই step-এ আছে)।',
             ],
             'example' => $example,
             'before' => $before,

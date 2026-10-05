@@ -5,6 +5,8 @@
     $label = ProductionFlow::label($stage);
     $usesLine = ProductionFlow::usesLine($stage);
     $oldDefects = old('defects', []);
+    // Reject / rework go through Production → QC / Rework; only Buyer QC (ready-product QC) records them here.
+    $isQc = $stage === 'final_qc';
 @endphp
 
 @section('title')
@@ -65,11 +67,17 @@
 
                 <div class="row">
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'input_qty', 'label' => 'Input (pcs in)', 'type' => 'number', 'attrs' => 'data-qty'])
-                    @include('merchandising-sfl::admin.partials.input', ['name' => 'pass_qty', 'label' => 'QC Pass', 'type' => 'number', 'attrs' => 'data-qty'])
-                    @include('merchandising-sfl::admin.partials.input', ['name' => 'rework_qty', 'label' => 'Rework', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="rework"'])
-                    @include('merchandising-sfl::admin.partials.input', ['name' => 'reject_qty', 'label' => 'Reject', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="reject"'])
+                    @include('merchandising-sfl::admin.partials.input', ['name' => 'pass_qty', 'label' => $isQc ? 'QC Pass' : 'Output (done)', 'type' => 'number', 'attrs' => 'data-qty'])
+                    @if($isQc)
+                        @include('merchandising-sfl::admin.partials.input', ['name' => 'rework_qty', 'label' => 'Rework', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="rework"'])
+                        @include('merchandising-sfl::admin.partials.input', ['name' => 'reject_qty', 'label' => 'Reject', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="reject"'])
+                    @endif
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6])
                 </div>
+                @unless($isQc)
+                    <p class="small text-muted mt-n2">Reject / rework of {{ strtolower($label) }} go in <strong>Production → QC</strong> and <strong>Production → Rework</strong>.</p>
+                @endunless
+                @if($isQc)
                 <p class="small text-muted mt-n2">Rework pieces stay in {{ strtolower($label) }} until they pass; rejects leave the flow. Break every reject / rework down below — part and machine are optional (pick the machine to see machine-wise rejection).</p>
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -89,6 +97,7 @@
                 <template id="defectRowTemplate">
                     @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => '__INDEX__', 'd' => []])
                 </template>
+                @endif
 
                 <button type="submit" class="btn btn-primary mt-2 btn-sm">Save</button>
                 <button type="submit" name="add_another" value="1" class="btn btn-outline-primary mt-2 btn-sm">Save &amp; Add Another</button>
@@ -145,6 +154,7 @@
                 if (row.querySelector('[data-defect-type]').value === type) sum += parseInt(row.querySelector('[data-defect-qty]').value || 0, 10);
             });
             const el = document.querySelector('[data-defect-sum="' + type + '"]');
+            if (! el) return;
             const want = parseInt(document.querySelector('[data-defect-total="' + type + '"]').value || 0, 10);
             el.textContent = sum + (sum !== want ? ' ≠ ' + want : ' ✓');
             el.className = sum === want ? 'text-success' : 'text-danger';
@@ -172,7 +182,7 @@
     if (jq) { jq(poSelect).on('change', showBalance); if (lineSelect) jq(lineSelect).on('change', () => filterMachines()); }
     document.addEventListener('input', function (e) { if (e.target.closest('#defectRowsBody') || e.target.matches('[data-defect-total]')) defectSums(); });
     document.addEventListener('change', function (e) { if (e.target.matches('[data-defect-type]')) defectSums(); });
-    document.getElementById('defectRowsBody').addEventListener('msfl:rows-changed', function (e) { filterMachines(e.detail?.row); defectSums(); });
+    document.getElementById('defectRowsBody')?.addEventListener('msfl:rows-changed', function (e) { filterMachines(e.detail?.row); defectSums(); });
     showBalance(); defectSums(); filterMachines();
 })();
 </script>

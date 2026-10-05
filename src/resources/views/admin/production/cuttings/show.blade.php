@@ -42,12 +42,13 @@
                 </table>
             </div>
             <div class="card mb-3">
-                <div class="card-header"><h6 class="mb-0">Parts Cut</h6></div>
+                <div class="card-header"><h6 class="mb-0">Parts Cut <small class="text-muted">— size + color wise</small></h6></div>
                 <table class="table table-bordered table-sm mb-0">
-                    <thead><tr><th>Part</th><th class="text-right">Pcs</th></tr></thead>
+                    <thead><tr><th>Part</th><th>Color</th><th>Size</th><th class="text-right">Pcs</th></tr></thead>
                     <tbody>
-                        @forelse($cutting->parts as $p)<tr><td>{{ $p->part_name }}</td><td class="text-right">{{ $p->qty }}</td></tr>
-                        @empty<tr><td colspan="2" class="text-center text-muted">No parts entered.</td></tr>@endforelse
+                        @forelse($cutting->parts->sortBy(fn ($p) => $p->part_name . str_pad((string) ($p->size->sort_order ?? 0), 5, '0', STR_PAD_LEFT)) as $p)
+                            <tr><td>{{ $p->part_name }}</td><td>{{ $cutting->orderPo->color->name ?? '-' }}</td><td>{{ $p->size->name ?? 'All' }}</td><td class="text-right">{{ $p->qty }}</td></tr>
+                        @empty<tr><td colspan="4" class="text-center text-muted">No parts entered.</td></tr>@endforelse
                     </tbody>
                 </table>
             </div>

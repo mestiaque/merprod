@@ -17,7 +17,7 @@ use ME\MerchandisingSfl\Support\Lookups;
 
 /**
  * Production → Cutting: pieces cut per size for an order PO (buyer, style
- * and color come from the PO), parts cut, and bundles of N pieces made
+ * and color come from the PO), parts cut per size, and bundles of N pieces made
  * automatically per size.
  */
 class CuttingController extends Controller
@@ -72,7 +72,8 @@ class CuttingController extends Controller
             'sizes.*' => ['nullable', 'integer', 'min:0'],
             'parts' => ['nullable', 'array'],
             'parts.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
-            'parts.*.qty' => ['nullable', 'integer', 'min:0'],
+            'parts.*.sizes' => ['nullable', 'array'],
+            'parts.*.sizes.*' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $po = OrderPo::with('order')->findOrFail($data['order_po_id']);
@@ -84,7 +85,13 @@ class CuttingController extends Controller
         if ($sizes->isEmpty()) {
             throw ValidationException::withMessages(['sizes' => 'Enter the cut quantity for at least one size.']);
         }
-        $parts = collect($data['parts'] ?? [])->filter(fn ($p) => filled($p['part_name'] ?? null) && (int) ($p['qty'] ?? 0) > 0);
+        // Parts cut per size: part => [size_id => qty], only for sizes cut here.
+        $parts = collect($data['parts'] ?? [])->filter(fn ($p) => filled($p['part_name'] ?? null))
+            ->map(fn ($p) => ['part_name' => trim($p['part_name']), 'sizes' => collect($p['sizes'] ?? [])->map(fn ($q) => (int) $q)->filter()])
+            ->filter(fn ($p) => $p['sizes']->isNotEmpty());
+        if ($parts->contains(fn ($p) => $p['sizes']->keys()->diff($sizes->keys())->isNotEmpty())) {
+            throw ValidationException::withMessages(['parts' => 'Parts can only be entered for sizes cut in this cutting.']);
+        }
 
         $cutting = DB::transaction(function () use ($data, $sizes, $parts, $numbers) {
             $cutting = Cutting::create([
@@ -106,7 +113,9 @@ class CuttingController extends Controller
                 }
             }
             foreach ($parts as $part) {
-                $cutting->parts()->create(['part_name' => trim($part['part_name']), 'qty' => (int) $part['qty']]);
+                foreach ($part['sizes'] as $sizeId => $qty) {
+                    $cutting->parts()->create(['part_name' => $part['part_name'], 'size_id' => $sizeId, 'qty' => $qty]);
+                }
             }
 
             return $cutting;
@@ -120,7 +129,7 @@ class CuttingController extends Controller
     {
         $this->authorize('msfl_prod_cutting.view');
 
-        $cutting->load(['orderPo.order.buyer', 'orderPo.style', 'orderPo.color', 'sizes.size', 'parts', 'bundles.size', 'creator']);
+        $cutting->load(['orderPo.order.buyer', 'orderPo.style', 'orderPo.color', 'sizes.size', 'parts.size', 'bundles.size', 'creator']);
 
         return view('merchandising-sfl::admin.production.cuttings.show', compact('cutting'));
     }

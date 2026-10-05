@@ -10,5 +10,10 @@ class CuttingPart extends Model
 
     protected $table = 'msfl_prod_cutting_parts';
 
-    protected $fillable = ['cutting_id', 'part_name', 'qty'];
+    protected $fillable = ['cutting_id', 'part_name', 'size_id', 'qty'];
+
+    public function size(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\ME\MerchandisingSfl\Models\Size::class)->withTrashed();
+    }
 }

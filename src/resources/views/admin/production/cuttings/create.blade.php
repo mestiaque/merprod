@@ -39,17 +39,21 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-                    <h6 class="mb-0">Parts Cut <small class="text-muted">(from Master Data → Garment Parts)</small></h6>
+                    <h6 class="mb-0">Parts Cut — Color <span id="partColor" class="badge badge-light border">select PO</span> × Size <small class="text-muted">(part from Master Data → Garment Parts; picking a part fills the cut qty — change it if a part has 2 per piece, e.g. Sleeve)</small></h6>
                     <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="part"><i class="fa-solid fa-plus"></i> Add Part</button>
                 </div>
+                @error('parts')<div class="alert alert-danger py-1 small">{{ $message }}</div>@enderror
                 <div class="table-responsive">
-                    <table class="table table-bordered table-sm align-middle" style="max-width:520px">
-                        <thead><tr><th>Part</th><th style="width:140px">Pcs</th><th style="width:40px"></th></tr></thead>
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead><tr><th style="min-width:150px">Part</th>@foreach($sizes as $size)<th class="text-center" data-size-col="{{ $size->id }}" style="width:90px">{{ $size->name }}</th>@endforeach<th class="text-right" style="width:80px">Total</th><th style="width:40px"></th></tr></thead>
                         <tbody id="partRowsBody">
                             @foreach(old('parts', [[]]) as $i => $part)
                                 <tr>
-                                    <td><select name="parts[{{ $i }}][part_name]" class="form-control form-control-sm"><option value="">— Part —</option>@foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(($part['part_name'] ?? '') === $gp)>{{ $gp }}</option>@endforeach</select></td>
-                                    <td><input type="number" min="0" step="1" name="parts[{{ $i }}][qty]" class="form-control form-control-sm text-right" value="{{ $part['qty'] ?? '' }}"></td>
+                                    <td><select name="parts[{{ $i }}][part_name]" class="form-control form-control-sm" data-part-name><option value="">— Part —</option>@foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(($part['part_name'] ?? '') === $gp)>{{ $gp }}</option>@endforeach</select></td>
+                                    @foreach($sizes as $size)
+                                        <td data-size-col="{{ $size->id }}"><input type="number" min="0" step="1" name="parts[{{ $i }}][sizes][{{ $size->id }}]" class="form-control form-control-sm text-right" value="{{ $part['sizes'][$size->id] ?? '' }}" data-part-size="{{ $size->id }}"></td>
+                                    @endforeach
+                                    <td class="text-right" data-part-total>0</td>
                                     <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
                                 </tr>
                             @endforeach
@@ -58,8 +62,11 @@
                 </div>
                 <template id="partRowTemplate">
                     <tr>
-                        <td><select name="parts[__INDEX__][part_name]" class="form-control form-control-sm"><option value="">— Part —</option>@foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(('') === $gp)>{{ $gp }}</option>@endforeach</select></td>
-                        <td><input type="number" min="0" step="1" name="parts[__INDEX__][qty]" class="form-control form-control-sm text-right"></td>
+                        <td><select name="parts[__INDEX__][part_name]" class="form-control form-control-sm" data-part-name><option value="">— Part —</option>@foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(('') === $gp)>{{ $gp }}</option>@endforeach</select></td>
+                        @foreach($sizes as $size)
+                            <td data-size-col="{{ $size->id }}"><input type="number" min="0" step="1" name="parts[__INDEX__][sizes][{{ $size->id }}]" class="form-control form-control-sm text-right" data-part-size="{{ $size->id }}"></td>
+                        @endforeach
+                        <td class="text-right" data-part-total>0</td>
                         <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
                     </tr>
                 </template>
@@ -95,9 +102,33 @@
         });
         document.getElementById('sizeHint').style.display = po ? 'none' : '';
     }
-    document.addEventListener('input', e => { if (e.target.matches('[data-cut-qty]')) total(); });
-    if (typeof $ !== 'undefined') { $(select).on('change', hint); } else { select.addEventListener('change', hint); }
-    hint(); total();
+    // Parts per size: only the PO's sizes, row totals, and a new part starts from the cut qty.
+    const poColor = @json($pos->mapWithKeys(fn ($po) => [$po->id => $po->color->name ?? '']));
+    function partColumns() {
+        document.getElementById('partColor').textContent = poColor[select.value] || 'select PO';
+        const ordered = orderQty[select.value] || null;
+        document.querySelectorAll('[data-size-col]').forEach(el => el.style.display = ! ordered || ordered[el.dataset.sizeCol] ? '' : 'none');
+        document.querySelectorAll('[data-size-box]').forEach(el => el.style.display = ! ordered || ordered[el.dataset.sizeBox] ? '' : 'none');
+    }
+    function partTotals() {
+        document.querySelectorAll('#partRowsBody tr').forEach(row => {
+            let t = 0;
+            row.querySelectorAll('[data-part-size]').forEach(i => t += parseInt(i.value || 0, 10));
+            row.querySelector('[data-part-total]').textContent = t;
+        });
+    }
+    document.addEventListener('change', e => {
+        if (! e.target.matches('[data-part-name]') || ! e.target.value) return;
+        const row = e.target.closest('tr');
+        row.querySelectorAll('[data-part-size]').forEach(i => {
+            if (i.value === '') i.value = document.querySelector('[name="sizes[' + i.dataset.partSize + ']"]').value;
+        });
+        partTotals();
+    });
+    document.getElementById('partRowsBody').addEventListener('msfl:rows-changed', () => { partColumns(); partTotals(); });
+    document.addEventListener('input', e => { if (e.target.matches('[data-cut-qty]')) total(); if (e.target.matches('[data-part-size]')) partTotals(); });
+    if (typeof $ !== 'undefined') { $(select).on('change', () => { hint(); partColumns(); }); } else { select.addEventListener('change', () => { hint(); partColumns(); }); }
+    hint(); total(); partColumns(); partTotals();
 })();
 </script>
 @endpush

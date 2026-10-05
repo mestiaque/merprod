@@ -92,8 +92,14 @@ class EntryController extends Controller
             'defects.*.qty' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $qty = collect(['input_qty', 'pass_qty', 'rework_qty', 'reject_qty'])->mapWithKeys(fn ($k) => [$k => (int) ($data[$k] ?? 0)])->all();
-        $defects = collect($data['defects'] ?? [])->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, ['reject', 'rework'], true))->values();
+        // Step screens record input / output only — reject & rework go through Production → QC / Rework.
+        // Buyer QC (final_qc) is itself a QC and keeps pass / rework / reject with defect rows.
+        $isQc = $stage === 'final_qc';
+        $qty = collect(['input_qty', 'pass_qty', 'rework_qty', 'reject_qty'])
+            ->mapWithKeys(fn ($k) => [$k => $isQc || in_array($k, ['input_qty', 'pass_qty'], true) ? (int) ($data[$k] ?? 0) : 0])->all();
+        $defects = $isQc
+            ? collect($data['defects'] ?? [])->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, ['reject', 'rework'], true))->values()
+            : collect();
 
         $po = OrderPo::with('order')->findOrFail($data['order_po_id']);
         if (! $po->sizes()->where('size_id', $data['size_id'])->exists()) {
