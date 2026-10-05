@@ -99,6 +99,7 @@ return [
                 ['title' => 'Finishing', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/finishing"],
                 ['title' => 'Final QC', 'icon' => 'fa-solid fa-clipboard-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/final_qc"],
                 ['title' => 'Packing', 'icon' => 'fa-solid fa-box', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/packing"],
+                ['title' => 'Reject & Rework', 'icon' => 'fa-solid fa-rotate-left', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/reject-rework"],
                 [
                     'title' => 'Reports',
                     'icon' => 'fa-solid fa-chart-pie',
@@ -108,6 +109,8 @@ return [
                         ['title' => 'Daily Production', 'icon' => 'fa-solid fa-industry', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/daily-production"],
                         ['title' => 'Defect Analysis', 'icon' => 'fa-solid fa-triangle-exclamation', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/defects"],
                         ['title' => 'Shipment Status', 'icon' => 'fa-solid fa-truck-fast', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/shipment-status"],
+                        ['title' => 'Requisition Details', 'icon' => 'fa-solid fa-dolly', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/requisition-details"],
+                        ['title' => 'Requisition Summary', 'icon' => 'fa-solid fa-boxes-stacked', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/requisition-summary"],
                     ],
                 ],
             ],

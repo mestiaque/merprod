@@ -58,7 +58,7 @@
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'reject_qty', 'label' => 'Reject', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="reject"'])
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6])
                 </div>
-                <p class="small text-muted mt-n2">Rework pieces stay in {{ strtolower($label) }} until they pass; rejects leave the flow. Break every reject / rework down below{{ $usesLine ? ' — sewing rejects need the part and the machine' : '' }}.</p>
+                <p class="small text-muted mt-n2">Rework pieces stay in {{ strtolower($label) }} until they pass; rejects leave the flow. Break every reject / rework down below — part and machine are optional (pick the machine to see machine-wise rejection).</p>
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="mb-0">Reject / Rework Detail <small class="text-muted">(reject <span data-defect-sum="reject">0</span>, rework <span data-defect-sum="rework">0</span>)</small></h6>
@@ -66,7 +66,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">
-                        <thead><tr><th style="width:120px">Type</th><th>Part</th>@if($usesLine)<th>Machine <small class="text-muted">(Inventory, on this line)</small></th>@endif<th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
+                        <thead><tr><th style="width:120px">Type</th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
                         <tbody id="defectRowsBody">
                             @foreach($oldDefects ?: [[]] as $i => $d)
                                 @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => $i, 'd' => $d])

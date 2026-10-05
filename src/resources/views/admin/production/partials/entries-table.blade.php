@@ -1,4 +1,4 @@
-{{-- props: entries, showStage (bool), showPo (bool), stage (for delete route, when !showStage) --}}
+{{-- props: entries, showStage (bool), showPo (bool), deleteRoute (optional: route name taking the entry; default the stage entry route) --}}
 @php use ME\MerchandisingSfl\Services\ProductionFlow; @endphp
 <table class="table table-bordered table-sm align-middle mb-0">
     <thead>
@@ -15,7 +15,10 @@
     <tbody>
         @forelse($entries as $entry)
             <tr>
-                <td>{{ $entry->entry_date->format('d-M-Y') }}</td>
+                <td>{{ $entry->entry_date->format('d-M-Y') }}
+                    @if($entry->kind === 'qc')<br><span class="badge badge-danger">Reject / Rework found</span>
+                    @elseif($entry->kind === 'rework')<br><span class="badge badge-success">Rework fixed</span>@endif
+                </td>
                 @if($showStage)<td>{{ ProductionFlow::label($entry->stage) }}</td>@endif
                 @if($showPo)
                     <td><a href="{{ route('msfl.production.status.show', $entry->order_po_id) }}">{{ $entry->orderPo->order->order_no ?? '' }} · {{ $entry->orderPo->po_no ?? '' }}</a></td>
@@ -38,7 +41,7 @@
                 @can('msfl_prod_entry.delete')
                     <td class="text-right">
                         <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteEntryModal"
-                            data-action="{{ route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
+                            data-action="{{ isset($deleteRoute) || $entry->stage === 'cutting' ? route($deleteRoute ?? 'msfl.production.reject-rework.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 @endcan
             </tr>

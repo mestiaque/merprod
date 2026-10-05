@@ -16,6 +16,7 @@ use ME\MerchandisingSfl\Services\Reports;
 use ME\MerchandisingSfl\Http\Controllers\Production\CuttingController;
 use ME\MerchandisingSfl\Http\Controllers\Production\EntryController;
 use ME\MerchandisingSfl\Http\Controllers\Production\FabricRequisitionController;
+use ME\MerchandisingSfl\Http\Controllers\Production\RejectReworkController;
 use ME\MerchandisingSfl\Http\Controllers\Production\StatusController;
 use ME\MerchandisingSfl\Services\ProductionFlow;
 use ME\MerchandisingSfl\Http\Controllers\SampleController;
@@ -104,8 +105,14 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
             Route::get('status', [StatusController::class, 'index'])->name('status.index');
             Route::get('status/{po}', [StatusController::class, 'show'])->name('status.show');
 
-            Route::resource('requisitions', FabricRequisitionController::class)->only(['index', 'create', 'store']);
+            Route::resource('requisitions', FabricRequisitionController::class)->only(['index', 'create', 'store', 'show']);
             Route::resource('cuttings', CuttingController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+
+            // Reject & Rework — one screen for every step (cutting … packing).
+            Route::get('reject-rework', [RejectReworkController::class, 'index'])->name('reject-rework.index');
+            Route::get('reject-rework/create', [RejectReworkController::class, 'create'])->name('reject-rework.create');
+            Route::post('reject-rework', [RejectReworkController::class, 'store'])->name('reject-rework.store');
+            Route::delete('reject-rework/{entry}', [RejectReworkController::class, 'destroy'])->whereNumber('entry')->name('reject-rework.destroy');
 
             Route::prefix('{stage}')->whereIn('stage', array_keys(ProductionFlow::STAGES))->name('entries.')->group(function () {
                 Route::get('/', [EntryController::class, 'index'])->name('index');

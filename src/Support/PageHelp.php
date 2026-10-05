@@ -52,7 +52,7 @@ class PageHelp
             'steps' => [
                 '<strong>+ New Entry</strong> চাপুন, PO বেছে নিন — "can take in" দেখাবে আগের stage থেকে কত pcs নেওয়া যাবে।',
                 'দিনের <strong>Input</strong> (এই stage-এ কত pcs ঢুকল) আর QC ফল দিন: <strong>Pass</strong>, <strong>Rework</strong>, <strong>Reject</strong>।',
-                'Rework / Reject থাকলে defect row-এ ভাগ করে দিন (কোন defect কত pcs) — যোগফল মিলতে হবে।',
+                'Rework / Reject থাকলে defect row-এ ভাগ করে দিন (কোন part, defect, চাইলে কোন machine, কত pcs) — যোগফল মিলতে হবে।',
                 'WIP = Input − Pass − Reject। Rework WIP-এই থাকে যতক্ষণ না pass হয়; reject flow থেকে বেরিয়ে যায়।',
             ],
             'example' => $example,
@@ -364,7 +364,7 @@ class PageHelp
                 'example' => 'Next-এর জন্য Denim 12 oz 1,100 yrd চাওয়া হলো → store issue করার পর cutting শুরু করা যাবে।',
                 'before' => 'BOM / Buyer Store GRN (মাল ঢোকা)',
                 'after' => 'Cutting',
-                'actions' => ['create' => 'Buyer Store থেকে issue হয় শুধু তখনই যখন একই buyer + style-এর <strong>posted GRN</strong> আছে। "only has 0 left in the Buyer Store" error মানে ওই style-এর জন্য এখনো মাল receive (GRN) হয়নি — আগে Inventory-তে GRN করুন।'],
+                'actions' => ['show' => 'উপরে requisition-এর তথ্য, মাঝে item-wise চাওয়া / approve / নেওয়া / বাকি, নিচে store কোন তারিখে কোন challan-এ কত দিয়েছে।', 'index' => 'Requisition No-তে click করলে details দেখবেন। Buyer / style অনুযায়ী দেখতে উপরের <strong>Buyer / Style Details</strong> আর মোট হিসাবের জন্য <strong>Summary</strong> বাটন।', 'create' => 'Buyer Store থেকে issue হয় শুধু তখনই যখন একই buyer + style-এর <strong>posted GRN</strong> আছে। "only has 0 left in the Buyer Store" error মানে ওই style-এর জন্য এখনো মাল receive (GRN) হয়নি — আগে Inventory-তে GRN করুন।'],
             ],
             'production.cuttings' => [
                 'title' => 'Cutting',
@@ -373,17 +373,33 @@ class PageHelp
                     'PO, Cutting Date, Table No, Lay / Ply Count আর Fabric Used দিন।',
                     'Size অনুযায়ী pcs আর Pcs per Bundle দিন — bundle নিজে তৈরি হয় (print করা যায়)।',
                     'পরের stage এই pcs নিয়ে ফেললে cutting আর delete করা যায় না।',
+                    'কাটা panel-এ reject বা rework পাওয়া গেলে <strong>Production → Reject &amp; Rework</strong>-এ Step = Cutting বেছে দিন।',
                 ],
                 'example' => 'ধরুন 450 pcs কাটা হলো, 25 pcs করে bundle → 18টা bundle।',
                 'before' => 'Fabric Requisition (issue)',
                 'after' => 'Embroidery (থাকলে) / Sewing',
             ],
             'production.entries.embroidery' => $stage('Embroidery', 'কাটা panel-এ embroidery — শুধু সেই PO-তে যেখানে "needs embroidery" টিক দেওয়া।', 'Cutting', 'Sewing', 'Kids Hoodie (front embroidery): কাটা 800 pcs থেকে আজ 300 input, 295 pass, 5 rework।'),
-            'production.entries.sewing' => $stage('Sewing', 'Line-এ সেলাই — দিনে কোন line কত pcs নিল, কত pass, rework, reject। Sewing reject-এ কোন part আর কোন মেশিনে হয়েছে তাও দিতে হয়।', 'Cutting / Embroidery', 'Washing (থাকলে) / Finishing', 'ধরুন Line 2-এ আজ 200 input, 180 pass, 12 rework (open seam), 3 reject (needle hole — front part, একটা SNLS মেশিনে)।'),
+            'production.entries.sewing' => $stage('Sewing', 'Line-এ সেলাই — দিনে কোন line কত pcs নিল, কত pass, rework, reject। Reject কোন part-এ আর কোন মেশিনে হয়েছে তাও দেওয়া যায় (মেশিন optional)।', 'Cutting / Embroidery', 'Washing (থাকলে) / Finishing', 'ধরুন Line 2-এ আজ 200 input, 180 pass, 12 rework (open seam), 3 reject (needle hole — front part, একটা SNLS মেশিনে)।'),
             'production.entries.washing' => $stage('Washing', 'Garment wash — শুধু সেই PO-তে যেখানে "needs washing" টিক দেওয়া।', 'Sewing', 'Finishing', 'Ladies Denim Jacket (Stone Wash): 480 input, 478 pass, 2 reject (shade)।'),
             'production.entries.finishing' => $stage('Finishing', 'Thread cutting, ironing, button, tag লাগানো ইত্যাদি।', 'Sewing / Washing', 'Final QC', 'ধরুন 950 pcs input, 950 pass।'),
             'production.entries.final_qc' => $stage('Final QC', 'Packing-এর আগে শেষ quality check।', 'Finishing', 'Packing', 'ধরুন 950 input, 945 pass, 5 reject (stain)।'),
             'production.entries.packing' => $stage('Packing', 'Polybag, carton-এ ভরা। Packed qty-ই Inventory-র <strong>Finish Store</strong>-এ receive করা যায় (তার বেশি না)।', 'Final QC', 'Inventory → Finish Store receive', '945 pcs packed → Inventory-তে সর্বোচ্চ 945 pcs Finish Store-এ receive করা যাবে।'),
+
+            'production.reject-rework' => [
+                'title' => 'Reject & Rework',
+                'what' => 'যেকোনো step-এ (Cutting, Embroidery, Sewing, Washing, Finishing, Final QC, Packing) reject বা rework দেওয়ার <strong>একটাই পাতা</strong> — শুধু Step বেছে নিন। দুই রকম entry: <strong>Reject / Rework found</strong> (pass হওয়া pcs-এ খারাপ পাওয়া গেল) আর <strong>Rework fixed</strong> (rework-এর pcs ঠিক হলো)।',
+                'steps' => [
+                    '<strong>Step</strong>, <strong>PO</strong>, তারিখ দিন (Sewing হলে Line-ও)।',
+                    '<strong>Reject / Rework found:</strong> Reject আর Rework সংখ্যা দিন — এগুলো ওই step-এর pass থেকে কমে যায়। Reject flow থেকে বেরিয়ে যায়, rework ওই step-এ আটকে থাকে।',
+                    '<strong>Rework fixed:</strong> rework-এর pcs ঠিক হলে "Passed after rework" দিন (পরের step নিতে পারবে); ঠিক না হলে Reject দিন।',
+                    'নিচের Detail-এ প্রতিটা reject / rework-এর Part, Defect আর (চাইলে) Machine দিন — যোগফল মিলতে হবে। Machine বাধ্যতামূলক না, দিলে Defect Analysis-এ machine-wise rejection দেখা যায়।',
+                ],
+                'example' => 'Cutting-এ Black PO-র কাটা 810 pcs-এর মধ্যে 3টা Front panel-এ fabric hole (Reject 3) আর 5টা Sleeve বাঁকা কাটা (Rework 5) → Cutting pass 802। পরে 5টা recut হলে "Rework fixed": Passed 5 → Cutting pass 807।',
+                'before' => 'যেকোনো step-এর entry',
+                'after' => 'Production Status / Defect Analysis / Post Costing',
+                'actions' => ['create' => 'উপরের বক্সে দেখাবে কত pcs-এর মধ্যে থেকে reject / rework দেওয়া যাবে — পরের step যা নিয়ে ফেলেছে তা আর এখানে ধরা যায় না।'],
+            ],
 
             // ---------------------------------------------------------------- Reports
             'reports' => [
@@ -399,6 +415,8 @@ class PageHelp
             'reports.defects' => self::report('Defect Analysis', 'Reject আর rework কোন stage-এ, কোন part-এ, কোন মেশিনে, কোন defect-এ বেশি হচ্ছে।', 'Stage entry-র defect row'),
             'reports.shipment-status' => self::report('Shipment Status', 'Shipment তারিখ অনুযায়ী PO, কত কাটা / সেলাই / packed, আর সময়মতো হবে কিনা (risk)।', 'Order / Production'),
             'reports.tna-status' => self::report('T&A Status', 'চলমান T&A-র যে task এখনো খোলা — overdue আর সামনের 7 দিনে due।', 'T&A Plan'),
+            'reports.requisition-details' => self::report('Requisition Details', 'Buyer / style / PO অনুযায়ী প্রতিটা requisition-এর item: কত চাওয়া হলো, কত approve, কত store থেকে নেওয়া হলো, আর কবে কত নেওয়া হলো (তারিখ: qty, challan)। Style দিয়ে filter করলে এক style-এর সব requisition একসাথে দেখা যায়।', 'Fabric Requisition / Inventory issue'),
+            'reports.requisition-summary' => self::report('Requisition Summary', 'Buyer → style → item অনুযায়ী মোট: কয়টা requisition, কত চাওয়া, approve, নেওয়া, কত এখনো বাকি, আর প্রথম ও শেষ কবে নেওয়া হলো।', 'Fabric Requisition / Inventory issue'),
             'reports.sample-turnaround' => self::report('Sample Turnaround', 'প্রতিটা sample: request → submit → decision, কত দিন লাগল।', 'Samples'),
         ];
     }

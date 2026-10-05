@@ -23,6 +23,10 @@
                     <div class="col-md-3 mb-2"><select name="buyer_id" class="form-control form-control-sm msfl-select2"><option value="">All Buyers</option>
                         @foreach($buyers as $b)<option value="{{ $b->id }}" @selected(request('buyer_id') == $b->id)>{{ $b->name }}</option>@endforeach</select></div>
                 @endif
+                @if(in_array('style', $filters, true))
+                    <div class="col-md-2 mb-2"><select name="style_id" class="form-control form-control-sm msfl-select2"><option value="">All Styles</option>
+                        @foreach($styles as $st)<option value="{{ $st->id }}" @selected(request('style_id') == $st->id)>{{ $st->style_no }} — {{ $st->name }}</option>@endforeach</select></div>
+                @endif
                 @if(in_array('dates', $filters, true))
                     <div class="col-md-2 mb-2"><input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}" title="From"></div>
                     <div class="col-md-2 mb-2"><input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}" title="To"></div>

@@ -16,6 +16,7 @@ use ME\MerchandisingSfl\Models\Size;
  * One day's piece count at a stage for a PO: pieces taken in, then the QC
  * result — passed on, sent back for rework (stays in the stage until it
  * passes), or rejected — with defect rows saying which part / machine.
+ * kind: production (stage screens) | qc / rework (Reject & Rework screen, see ProductionFlow).
  */
 class Entry extends Model
 {
@@ -24,7 +25,7 @@ class Entry extends Model
 
     protected $table = 'msfl_prod_entries';
 
-    protected $fillable = ['stage', 'entry_date', 'order_po_id', 'size_id', 'line_id', 'input_qty', 'pass_qty', 'rework_qty', 'reject_qty', 'remarks', 'created_by'];
+    protected $fillable = ['stage', 'kind', 'entry_date', 'order_po_id', 'size_id', 'line_id', 'input_qty', 'pass_qty', 'rework_qty', 'reject_qty', 'remarks', 'created_by'];
 
     protected $casts = ['entry_date' => 'date'];
 

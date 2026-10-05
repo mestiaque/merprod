@@ -12,11 +12,17 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Fabric Requisition</h4>
+            <div class="d-flex flex-wrap gap-1">
+            @can('msfl_report.view')
+                <a href="{{ route('msfl.reports.show', 'requisition-details') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-list"></i> Buyer / Style Details</a>
+                <a href="{{ route('msfl.reports.show', 'requisition-summary') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-boxes-stacked"></i> Summary</a>
+            @endcan
             @if($available)
                 @can('msfl_prod_requisition.add')
                     <a href="{{ route('msfl.production.requisitions.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Requisition</a>
                 @endcan
             @endif
+            </div>
         </div>
         <div class="card-body">
             <p class="small text-muted">Sent to the Inventory store as a normal requisition — the store approves and issues it there; issued quantities show here.</p>
@@ -30,12 +36,12 @@
 
             <div class="table-responsive">
                 <table class="table table-bordered table-sm align-middle">
-                    <thead><tr><th>Requisition</th><th>Date</th><th>Order / PO</th><th>Style · Color</th><th>Store</th><th>Status</th><th>Items (requested / issued)</th><th>By</th></tr></thead>
+                    <thead><tr><th>Requisition</th><th>Date</th><th>Order / PO</th><th>Style · Color</th><th>Store</th><th>Status</th><th>Items (requested / issued)</th><th>By</th><th class="text-right">Actions</th></tr></thead>
                     <tbody>
                         @forelse($requisitions as $link)
                             @php $req = $link->requisition; @endphp
                             <tr>
-                                <td>{{ $req->requisition_no ?? '(deleted in Inventory)' }}</td>
+                                <td>@if($req)<a href="{{ route('msfl.production.requisitions.show', $link) }}">{{ $req->requisition_no }}</a>@else(deleted in Inventory)@endif</td>
                                 <td>{{ $req?->requisition_date?->format('d-M-Y') ?? '-' }}</td>
                                 <td><a href="{{ route('msfl.production.status.show', $link->order_po_id) }}">{{ $link->orderPo->order->order_no ?? '' }} · {{ $link->orderPo->po_no ?? '' }}</a></td>
                                 <td>{{ $link->orderPo->style->style_no ?? '' }} · {{ $link->orderPo->color->name ?? '' }}</td>
@@ -47,9 +53,10 @@
                                     @endforeach
                                 </td>
                                 <td>{{ $link->creator->name ?? '-' }}</td>
+                                <td class="text-right">@if($req)<a href="{{ route('msfl.production.requisitions.show', $link) }}" class="btn-custom success" title="Details"><i class="fa-solid fa-eye"></i></a>@endif</td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="text-center text-muted">No requisition yet.</td></tr>
+                            <tr><td colspan="9" class="text-center text-muted">No requisition yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

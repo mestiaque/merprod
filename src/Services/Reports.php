@@ -13,7 +13,7 @@ use ME\MerchandisingSfl\Models\TnaTask;
 /**
  * Merchandising v2 reports. Each returns
  *   ['headers' => [label, ...], 'align' => [i => 'right'], 'rows' => [[...], ...], 'totals' => [i => value] | null].
- * Filters come from the request: buyer_id, from, to, stage, line_id.
+ * Filters come from the request: buyer_id, style_id, from, to, stage, line_id.
  */
 class Reports
 {
@@ -25,6 +25,8 @@ class Reports
         'shipment-status' => ['Shipment Status', 'fa-truck-fast', ['buyer', 'dates'], 'POs by shipment date with cut / sewn / packed progress and risk.'],
         'tna-status' => ['T&A Status', 'fa-calendar-check', ['buyer'], 'Open T&A tasks of running plans — overdue and due within 7 days.'],
         'sample-turnaround' => ['Sample Turnaround', 'fa-vial', ['buyer', 'dates'], 'Each sample: requested → submitted → decided, with days taken.'],
+        'requisition-details' => ['Requisition Details', 'fa-dolly', ['buyer', 'style', 'dates'], 'Every fabric requisition item by buyer / style / PO: requested, approved, issued — and on which dates the store issued how much.'],
+        'requisition-summary' => ['Requisition Summary', 'fa-boxes-stacked', ['buyer', 'style', 'dates'], 'Totals per buyer → style → item: requested, approved, issued, still to issue, first / last issue date.'],
     ];
 
     public function run(string $key, Request $r): array
@@ -39,6 +41,8 @@ class Reports
             'shipment-status' => $this->shipmentStatus($r, $from ?? today()->subDays(7), $to ?? today()->addDays(60)),
             'tna-status' => $this->tnaStatus($r),
             'sample-turnaround' => $this->sampleTurnaround($r, $from, $to),
+            'requisition-details' => $this->requisitionDetails($r, $from, $to),
+            'requisition-summary' => $this->requisitionSummary($r, $from, $to),
         };
     }
 
@@ -52,7 +56,7 @@ class Reports
     private function passByStage($poIds): array
     {
         $out = [];
-        foreach (Entry::query()->whereIn('order_po_id', $poIds)->selectRaw('order_po_id, stage, SUM(pass_qty) p')->groupBy('order_po_id', 'stage')->get() as $row) {
+        foreach (Entry::query()->whereIn('order_po_id', $poIds)->selectRaw("order_po_id, stage, SUM(CASE WHEN kind = 'qc' THEN -(reject_qty + rework_qty) ELSE pass_qty END) p")->groupBy('order_po_id', 'stage')->get() as $row) {
             $out[$row->order_po_id][$row->stage] = (int) $row->p;
         }
 
@@ -102,7 +106,7 @@ class Reports
             ->orderBy('entry_date')->orderBy('stage')->get();
 
         $rows = $entries->map(fn ($e) => [
-            $e->entry_date->format('d-M-y'), ProductionFlow::label($e->stage), $e->line->name ?? '',
+            $e->entry_date->format('d-M-y'), ProductionFlow::label($e->stage) . ($e->kind !== 'production' ? ' — ' . ProductionFlow::KINDS[$e->kind] : ''), $e->line->name ?? '',
             ($e->orderPo->order->order_no ?? '') . ' · ' . ($e->orderPo->po_no ?? ''), $e->orderPo->order->buyer->name ?? '', $e->orderPo->style->style_no ?? '',
             $e->size->name ?? 'All', $e->input_qty, $e->pass_qty, $e->rework_qty, $e->reject_qty,
             ($e->pass_qty + $e->reject_qty) > 0 ? round($e->reject_qty / ($e->pass_qty + $e->reject_qty) * 100, 1) . '%' : '',
@@ -130,6 +134,9 @@ class Reports
             ->orderByRaw('SUM(d.qty) DESC')->get();
         $checked = Entry::query()->whereBetween('entry_date', [$from->toDateString(), $to->toDateString()])
             ->selectRaw('stage, SUM(pass_qty + reject_qty) c')->groupBy('stage')->pluck('c', 'stage');
+        // Cutting has no production entries: what it checked is what it cut.
+        $checked['cutting'] = (int) \ME\MerchandisingSfl\Models\Production\Cutting::query()
+            ->whereBetween('cutting_date', [$from->toDateString(), $to->toDateString()])->sum('total_qty');
 
         $data = $rows->map(fn ($x) => [
             ProductionFlow::label($x->stage), $x->part_name ?: '—', $x->machine ?: '—', $x->defect ?: '—', (int) $x->rj, (int) $x->rw,
@@ -219,6 +226,95 @@ class Reports
         return [
             'headers' => ['Sample', 'Buyer', 'Style', 'Type', 'Rev', 'Requested', 'Submitted', 'Decided', 'Days to submit', 'Buyer days', 'Status'],
             'align' => [8 => 'right', 9 => 'right'], 'rows' => $rows->all(), 'totals' => null, 'status_col' => 10,
+        ];
+    }
+
+    /**
+     * Requisition items raised from Production → Fabric Requisition (Inventory requisitions),
+     * with buyer / style / PO / item. Filters: buyer, style, requisition date.
+     */
+    private function requisitionItems(Request $r, $from, $to)
+    {
+        return DB::table('msfl_prod_fabric_requisitions as fr')
+            ->join('inv_requisitions as rq', 'rq.id', '=', 'fr.inv_requisition_id')
+            ->join('inv_requisition_items as ri', 'ri.requisition_id', '=', 'rq.id')
+            ->join('msfl_order_pos as po', 'po.id', '=', 'fr.order_po_id')
+            ->join('msfl_orders as o', 'o.id', '=', 'po.order_id')
+            ->join('msfl_buyers as b', 'b.id', '=', 'o.buyer_id')
+            ->join('msfl_styles as st', 'st.id', '=', 'po.style_id')
+            ->leftJoin('inv_colors as c', 'c.id', '=', 'po.color_id')
+            ->leftJoin('inv_items as it', 'it.id', '=', 'ri.item_id')
+            ->leftJoin('inv_units as u', 'u.id', '=', 'it.unit_id')
+            ->whereNull('rq.deleted_at')
+            ->when($r->filled('buyer_id'), fn ($q) => $q->where('o.buyer_id', $r->buyer_id))
+            ->when($r->filled('style_id'), fn ($q) => $q->where('po.style_id', $r->style_id))
+            ->when($from, fn ($q) => $q->whereDate('rq.requisition_date', '>=', $from->toDateString()))
+            ->when($to, fn ($q) => $q->whereDate('rq.requisition_date', '<=', $to->toDateString()));
+    }
+
+    /** requisition_item_id => issue lines [date, issue no, qty] of issues not cancelled. */
+    private function issueLines($itemIds)
+    {
+        return DB::table('inv_issue_items as ii')->join('inv_issues as i', 'i.id', '=', 'ii.issue_id')
+            ->whereIn('ii.requisition_item_id', $itemIds)->whereNull('i.deleted_at')->where('i.status', '!=', 'cancelled')
+            ->orderBy('i.issue_date')->orderBy('i.id')
+            ->get(['ii.requisition_item_id', 'i.issue_date', 'i.issue_no', 'ii.issued_qty'])->groupBy('requisition_item_id');
+    }
+
+    private function requisitionDetails(Request $r, $from, $to): array
+    {
+        $items = $this->requisitionItems($r, $from, $to)
+            ->orderByDesc('rq.requisition_date')->orderByDesc('rq.id')
+            ->get(['ri.id', 'rq.requisition_no', 'rq.requisition_date', 'rq.status', 'b.name as buyer', 'st.style_no', 'po.po_no', 'o.order_no',
+                'c.name as color', 'it.item_code', 'it.item_name', 'u.short_name as unit', 'ri.requested_qty', 'ri.approved_qty', 'ri.issued_qty']);
+        $issues = $this->issueLines($items->pluck('id'));
+        $q = fn ($v) => round((float) $v, 2);
+
+        $rows = $items->map(fn ($x) => [
+            Carbon::parse($x->requisition_date)->format('d-M-y'), $x->requisition_no, $x->buyer, $x->style_no, $x->order_no . ' · ' . $x->po_no . ' · ' . $x->color,
+            trim($x->item_code . ' ' . $x->item_name), $x->unit, $q($x->requested_qty), $q($x->approved_qty), $q($x->issued_qty),
+            $q(max(0, (float) ($x->approved_qty ?? $x->requested_qty) - (float) $x->issued_qty)),
+            ($issues[$x->id] ?? collect())->map(fn ($i) => Carbon::parse($i->issue_date)->format('d-M-y') . ': ' . $q($i->issued_qty) . ' (' . $i->issue_no . ')')->implode(', ') ?: '—',
+            ucfirst(str_replace('_', ' ', $x->status)),
+        ]);
+
+        return [
+            'headers' => ['Req. Date', 'Requisition', 'Buyer', 'Style', 'Order · PO · Color', 'Item', 'Unit', 'Requested', 'Approved', 'Issued', 'To Issue', 'Issued on (date: qty)', 'Status'],
+            'align' => [7 => 'right', 8 => 'right', 9 => 'right', 10 => 'right'],
+            'rows' => $rows->all(),
+            'totals' => [7 => $rows->sum(7), 8 => $rows->sum(8), 9 => $rows->sum(9), 10 => $rows->sum(10)],
+            'period' => $from || $to ? ($from?->format('d-M-Y') ?? '…') . ' – ' . ($to?->format('d-M-Y') ?? '…') : null,
+        ];
+    }
+
+    private function requisitionSummary(Request $r, $from, $to): array
+    {
+        $items = $this->requisitionItems($r, $from, $to)
+            ->get(['ri.id', 'rq.id as req_id', 'b.name as buyer', 'st.style_no', 'it.item_code', 'it.item_name', 'u.short_name as unit',
+                'ri.requested_qty', 'ri.approved_qty', 'ri.issued_qty']);
+        $issues = $this->issueLines($items->pluck('id'));
+        $q = fn ($v) => round((float) $v, 2);
+
+        $rows = $items->groupBy(fn ($x) => $x->buyer . '|' . $x->style_no . '|' . $x->item_code)
+            ->map(function ($g) use ($issues, $q) {
+                $x = $g->first();
+                $dates = $g->flatMap(fn ($i) => $issues[$i->id] ?? [])->pluck('issue_date')->sort()->values();
+                $approved = $g->sum(fn ($i) => (float) ($i->approved_qty ?? $i->requested_qty));
+
+                return [
+                    $x->buyer, $x->style_no, trim($x->item_code . ' ' . $x->item_name), $x->unit, $g->pluck('req_id')->unique()->count(),
+                    $q($g->sum('requested_qty')), $q($approved), $q($g->sum('issued_qty')), $q(max(0, $approved - $g->sum('issued_qty'))),
+                    $dates->isEmpty() ? '—' : Carbon::parse($dates->first())->format('d-M-y'),
+                    $dates->isEmpty() ? '—' : Carbon::parse($dates->last())->format('d-M-y'),
+                ];
+            })->sortBy(fn ($row) => $row[0] . $row[1] . $row[2])->values();
+
+        return [
+            'headers' => ['Buyer', 'Style', 'Item', 'Unit', 'Requisitions', 'Requested', 'Approved', 'Issued', 'To Issue', 'First Issue', 'Last Issue'],
+            'align' => [4 => 'right', 5 => 'right', 6 => 'right', 7 => 'right', 8 => 'right'],
+            'rows' => $rows->all(),
+            'totals' => [4 => $rows->sum(4), 5 => $rows->sum(5), 6 => $rows->sum(6), 7 => $rows->sum(7), 8 => $rows->sum(8)],
+            'period' => $from || $to ? ($from?->format('d-M-Y') ?? '…') . ' – ' . ($to?->format('d-M-Y') ?? '…') : null,
         ];
     }
 }

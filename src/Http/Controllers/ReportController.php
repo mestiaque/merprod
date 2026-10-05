@@ -41,6 +41,7 @@ class ReportController extends Controller
             'result' => $reports->run($report, $request),
             'buyers' => in_array('buyer', $filters, true) ? Lookups::buyers() : collect(),
             'lines' => in_array('line', $filters, true) ? Lookups::lines() : collect(),
+            'styles' => in_array('style', $filters, true) ? Lookups::styles() : collect(),
             'stages' => ['cutting' => 'Cutting'] + collect(ProductionFlow::STAGES)->map(fn ($s) => $s[0])->all(),
         ];
     }

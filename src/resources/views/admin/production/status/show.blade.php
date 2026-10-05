@@ -39,7 +39,7 @@
                                 <td class="text-right"><strong>{{ number_format($row['pass']) }}</strong></td>
                                 <td class="text-right">{{ number_format($row['rework']) }}</td>
                                 <td class="text-right {{ $row['reject'] ? 'text-danger' : '' }}">{{ number_format($row['reject']) }}</td>
-                                <td class="text-right">{{ $stage === 'cutting' ? '-' : number_format($row['wip']) }}</td>
+                                <td class="text-right">{{ number_format($row['wip']) }}</td>
                                 <td class="text-right">{{ $stage === 'cutting' ? '-' : number_format($row['available']) }}</td>
                                 <td class="text-right">
                                     @if($stage === 'cutting')

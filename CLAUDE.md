@@ -57,9 +57,10 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 | Lines / Bulletin | `msfl.lines.*`, `msfl.bulletins.*` (+ print) | `LineController`, `Models/Bulletin::recalculate()/machineSummary()` |
 | T&A plan | `msfl.tna.*`, `.tasks.update`, `.recalculate` | `TnaPlanController`, `Services/TnaPlanner`, `WorkingCalendar` |
 | T&A Sheet (81 cols, buyer format) | `msfl.tna-sheet.index`, `.print` | `TnaSheetController`, `Services/TnaSheet` |
-| Fabric requisition | `msfl.production.requisitions.*` | creates an **Inventory** `InvRequisition` (+ central approval); store approves/issues in Inventory |
+| Fabric requisition | `msfl.production.requisitions.*` (+ show: items requested / approved / issued, issue challans by date) | creates an **Inventory** `InvRequisition` (+ central approval); store approves/issues in Inventory. Reports `requisition-details` / `requisition-summary` (buyer, style, dates) read `msfl_prod_fabric_requisitions` → `inv_requisition_items` / `inv_issue_items` |
 | Cutting (sizes, parts, auto bundles) | `msfl.production.cuttings.*` | `Production/CuttingController` |
 | Embroidery / Sewing / Washing / Finishing / Final QC / Packing | `msfl.production.entries.*` (`production/{stage}`) | `Production/EntryController`, `Services/ProductionFlow` |
+| Reject & Rework (one screen, pick the step incl. cutting) | `msfl.production.reject-rework.*` | `Production/RejectReworkController` — entries with `kind` qc / rework |
 | Production status per PO | `msfl.production.status.*` | `Production/StatusController` |
 | Finish Store receive | Inventory `inventory.fg-receives.*` | capped by v2 packed qty (`SflInventory\Services\MerchandisingLink::finishSummary`) |
 | Post cost sheet | `msfl.post-costing.*` (+ print) | `Services/PostCosting` |
@@ -71,8 +72,10 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 **Production (`Services/ProductionFlow`)**
 - Route per PO: `cutting → [embroidery] → sewing → [washing] → finishing → final_qc → packing`; embroidery / washing only when `msfl_order_pos.needs_embroidery / needs_washing`.
 - Each entry = input pcs + QC (pass, rework, reject). Cutting "passes" all it cuts.
+- Entry `kind`: `production` (stage screens), `qc` = reject / rework **found among pieces the stage already passed** (they leave pass; rework goes back to WIP), `rework` = rework fixed (pass / reject out of WIP, no input). Cutting has only qc / rework entries (Reject & Rework screen). Anything summing `pass_qty` directly must use net pass `CASE WHEN kind='qc' THEN -(reject_qty+rework_qty) ELSE pass_qty END` — prefer `ProductionFlow::summary()`.
+- Found ≤ `ProductionFlow::ready()` (passed, not yet taken by the next stage); fixed ≤ WIP. `deleteBlocked()` refuses deletes that break `input = pass + reject + wip` or leave the next stage with more than this one passed.
 - `can take in = previous stage pass − this stage input`; `WIP = input − pass − reject` (rework stays in WIP until it passes; rejects leave the flow).
-- Guards: input ≤ can take in; pass + reject ≤ pieces in stage; reject/rework must be broken into defect rows that add up; **sewing rejects need part + Inventory machine**; the PO row is locked during the check; you can't delete a cutting / entry whose pieces a later stage already took.
+- Guards: input ≤ can take in; pass + reject ≤ pieces in stage; reject/rework must be broken into defect rows that add up; part / Inventory machine on a defect row are optional at every stage (machine = machine-wise rejection in Defect Analysis); the PO row is locked during the check; you can't delete a cutting / entry whose pieces a later stage already took.
 - Only **confirmed** orders go into production (`Lookups::productionPos()`).
 
 **T&A (`Services/TnaPlanner`)**

@@ -39,6 +39,19 @@ class FabricRequisitionController extends Controller
         ]);
     }
 
+    /** One requisition: what was asked, approved and issued — and each issue challan with its date. */
+    public function show(FabricRequisition $requisition): View
+    {
+        $this->authorize('msfl_prod_requisition.list');
+
+        $requisition->load(['orderPo.order.buyer', 'orderPo.style', 'orderPo.color', 'creator',
+            'requisition.store', 'requisition.department', 'requisition.purpose', 'requisition.requester', 'requisition.approver',
+            'requisition.items.item.unit', 'requisition.issues' => fn ($q) => $q->orderBy('issue_date')->orderBy('id'),
+            'requisition.issues.items.item.unit', 'requisition.issues.issuer']);
+
+        return view('merchandising-sfl::admin.production.requisitions.show', ['link' => $requisition, 'req' => $requisition->requisition]);
+    }
+
     public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('msfl_prod_requisition.add');

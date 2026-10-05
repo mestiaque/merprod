@@ -19,7 +19,7 @@ use ME\MerchandisingSfl\Support\Lookups;
  * Production → Embroidery / Sewing / Washing / Finishing / Final QC / Packing.
  * One screen per stage, same entry: pieces in, then QC — pass, rework, reject.
  * Every reject / rework count is broken down into defect rows (part, and for
- * sewing the Inventory machine) that add up to it.
+ * the Inventory machine, optional) that add up to it.
  */
 class EntryController extends Controller
 {
@@ -58,7 +58,7 @@ class EntryController extends Controller
             'balances' => $balances,
             'sizes' => Size::query()->orderBy('sort_order')->get(['id', 'name']),
             'lines' => ProductionFlow::usesLine($stage) ? Lookups::lines() : collect(),
-            'machines' => ProductionFlow::usesLine($stage) ? $this->machines() : collect(),
+            'machines' => ProductionFlow::machines(),
             'selectedPo' => $request->integer('order_po_id') ?: null,
         ]);
     }
@@ -98,7 +98,7 @@ class EntryController extends Controller
             $errors = ($po->order->status ?? null) === 'confirmed'
                 ? $this->flow->validate($po, $stage, $qty)
                 : ['order_po_id' => 'Only a confirmed order can go into production.'];
-            $errors += $this->defectErrors($defects, $qty, $usesLine);
+            $errors += $this->flow->defectErrors($defects, $qty);
             if ($errors) {
                 throw ValidationException::withMessages($errors);
             }
@@ -116,7 +116,7 @@ class EntryController extends Controller
                 $entry->defects()->create([
                     'type' => $d['type'],
                     'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : null,
-                    'machine_id' => $usesLine ? ($d['machine_id'] ?? null) : null,
+                    'machine_id' => $d['machine_id'] ?? null,
                     'defect' => $d['defect'] ?? null,
                     'qty' => (int) $d['qty'],
                 ]);
@@ -137,53 +137,12 @@ class EntryController extends Controller
         abort_unless($entry->stage === $stage, 404);
 
         // Deleting this entry's passed pieces mustn't leave the next stage with more than it got.
-        $po = $entry->orderPo;
-        $route = $this->flow->route($po);
-        $next = $route[array_search($stage, $route, true) + 1] ?? null;
-        if ($next && $entry->pass_qty > 0) {
-            $after = $this->flow->summary($po, $entry->id);
-            if ($after[$next]['input'] > $after[$stage]['pass']) {
-                return back()->with('error', ProductionFlow::label($next) . ' has already taken in these pieces — delete its entries first.');
-            }
+        if ($error = $this->flow->deleteBlocked($entry)) {
+            return back()->with('error', $error);
         }
 
         $entry->delete();
 
         return back()->with('success', ProductionFlow::label($stage) . ' entry deleted.');
-    }
-
-    /**
-     * Reject / rework counts must be explained: defect rows of that type add
-     * up to the count; sewing rejects name the part and the machine.
-     */
-    private function defectErrors($defects, array $qty, bool $usesLine): array
-    {
-        $errors = [];
-        foreach (['reject' => 'reject_qty', 'rework' => 'rework_qty'] as $type => $field) {
-            $rows = $defects->where('type', $type);
-            $sum = (int) $rows->sum(fn ($d) => (int) $d['qty']);
-            if ($qty[$field] > 0 && $sum !== $qty[$field]) {
-                $errors['defects'] = ucfirst($type) . " is {$qty[$field]} pcs but the {$type} rows add up to {$sum} — say which part"
-                    . ($usesLine ? ' / machine' : '') . ' each one is.';
-            } elseif ($qty[$field] === 0 && $sum > 0) {
-                $errors['defects'] = "There are {$type} rows but the {$type} quantity is 0.";
-            }
-        }
-        if ($usesLine && $defects->where('type', 'reject')->contains(fn ($d) => blank($d['part_name'] ?? null) || blank($d['machine_id'] ?? null))) {
-            $errors['defects'] = 'Each sewing reject row needs the part and the machine.';
-        }
-
-        return $errors;
-    }
-
-    /** Active Inventory machines, with the line text they are on (to filter by the chosen line). */
-    private function machines()
-    {
-        if (! class_exists(\ME\SflInventory\Models\InvMachine::class)) {
-            return collect();
-        }
-
-        return DB::table('inv_machines')->whereNull('deleted_at')->where('is_active', true)
-            ->orderBy('code')->get(['id', 'code', 'name', 'type', 'line']);
     }
 }
