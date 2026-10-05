@@ -1,0 +1,25 @@
+{{-- props: result --}}
+@php $align = $result['align'] ?? []; $statusCol = $result['status_col'] ?? null; @endphp
+<table class="table table-bordered table-sm align-middle report-table">
+    <thead><tr><th>#</th>@foreach($result['headers'] as $i => $h)<th class="{{ ($align[$i] ?? '') === 'right' ? 'text-right' : '' }}">{{ $h }}</th>@endforeach</tr></thead>
+    <tbody>
+        @forelse($result['rows'] as $row)
+            @php $status = $statusCol !== null ? ($row[$statusCol] ?? '') : null; @endphp
+            <tr class="{{ in_array($status, ['Late', 'Rejected'], true) ? 'table-danger' : (in_array($status, ['At risk'], true) ? 'table-warning' : (in_array($status, ['Packed', 'Approved'], true) ? 'table-success' : '')) }}">
+                <td>{{ $loop->iteration }}</td>
+                @foreach($row as $i => $v)
+                    <td class="{{ ($align[$i] ?? '') === 'right' ? 'text-right' : '' }}">{{ is_float($v) ? number_format($v, 2) : (is_int($v) && ($align[$i] ?? '') === 'right' ? number_format($v) : $v) }}</td>
+                @endforeach
+            </tr>
+        @empty
+            <tr><td colspan="{{ count($result['headers']) + 1 }}" class="text-center text-muted">No data for these filters.</td></tr>
+        @endforelse
+    </tbody>
+    @if(! empty($result['totals']) && count($result['rows']))
+        <tfoot><tr class="font-weight-bold"><td>Total</td>
+            @foreach($result['headers'] as $i => $h)
+                <td class="text-right">{{ array_key_exists($i, $result['totals']) ? (is_float($result['totals'][$i]) ? number_format($result['totals'][$i], 2) : number_format($result['totals'][$i])) : '' }}</td>
+            @endforeach
+        </tr></tfoot>
+    @endif
+</table>

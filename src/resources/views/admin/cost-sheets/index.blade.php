@@ -1,0 +1,93 @@
+@extends(adminTheme() . 'layouts.app')
+
+@section('title')
+    <title>{{ websiteTitle('Cost Sheets') }}</title>
+@endsection
+
+@section('contents')
+<div class="flex-grow-1 msfl-module">
+    @include('merchandising-sfl::admin.partials.alerts')
+    @include('merchandising-sfl::admin.partials.ui-kit')
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Costing (Pre-order)</h4>
+            @can('msfl_cost_sheet.add')
+                <a href="{{ route('msfl.cost-sheets.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Cost Sheet</a>
+            @endcan
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row mb-3 align-items-end">
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search No / Style Ref" value="{{ request('search') }}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select name="buyer_id" class="form-control form-control-sm msfl-select2">
+                        <option value="">All Buyers</option>
+                        @foreach($buyers as $buyer)
+                            <option value="{{ $buyer->id }}" @selected(request('buyer_id') == $buyer->id)>{{ $buyer->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select name="status" class="form-control form-control-sm msfl-select2">
+                        <option value="">All Status</option>
+                        @foreach(\ME\MerchandisingSfl\Models\CostSheet::statusOptions() as $value => $label)
+                            <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
+                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+                    <a href="{{ route('msfl.cost-sheets.index') }}" class="btn btn-light btn-sm">Reset</a>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm align-middle">
+                    <thead>
+                        <tr><th>#</th><th>Cost Sheet No</th><th>Date</th><th>Buyer</th><th>Style</th><th>Order Qty</th><th>Total Cost / dz</th><th>Offer / pc</th><th>Target / pc</th><th>Final / pc</th><th>Status</th><th class="text-right">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        @forelse($costSheets as $sheet)
+                            <tr>
+                                <td>{{ $loop->iteration + $costSheets->firstItem() - 1 }}</td>
+                                <td>{{ $sheet->cost_sheet_no }}</td>
+                                <td>{{ $sheet->costing_date->format('d M Y') }}</td>
+                                <td>{{ $sheet->buyer->name ?? '-' }}</td>
+                                <td>{{ $sheet->style->style_no ?? $sheet->style_ref ?? '-' }}</td>
+                                <td>{{ $sheet->order_qty !== null ? number_format($sheet->order_qty) : '-' }}</td>
+                                <td>{{ number_format($sheet->total_cost, 2) }}</td>
+                                <td>{{ ($sheet->currency->code ?? '') }} {{ number_format($sheet->offer_price, 4) }}</td>
+                                <td>{{ $sheet->buyer_target_price !== null ? number_format($sheet->buyer_target_price, 4) : '-' }}</td>
+                                <td>{{ $sheet->final_price !== null ? number_format($sheet->final_price, 4) : '-' }}</td>
+                                <td>@include('merchandising-sfl::admin.partials.status-badge', ['model' => $sheet])</td>
+                                <td class="text-right">
+                                    @can('msfl_cost_sheet.view')
+                                        <a href="{{ route('msfl.cost-sheets.show', $sheet) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>
+                                    @endcan
+                                    @if($sheet->isEditable())
+                                        @can('msfl_cost_sheet.edit')
+                                            <a href="{{ route('msfl.cost-sheets.edit', $sheet) }}" class="btn-custom yellow"><i class="fa-solid fa-pen"></i></a>
+                                        @endcan
+                                        @can('msfl_cost_sheet.delete')
+                                            <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteCostSheetModal" data-action="{{ route('msfl.cost-sheets.destroy', $sheet) }}"><i class="fa-solid fa-trash"></i></button>
+                                        @endcan
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="12" class="text-center text-muted">No cost sheets found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{ $costSheets->links('pagination::bootstrap-5') }}
+        </div>
+    </div>
+</div>
+
+@include('merchandising-sfl::admin.partials.delete-confirm-modal', ['modalId' => 'deleteCostSheetModal', 'label' => 'cost sheet'])
+@include('merchandising-sfl::admin.partials.select2-init')
+@endsection
