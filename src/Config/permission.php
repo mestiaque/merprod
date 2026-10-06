@@ -1,21 +1,27 @@
 <?php
 
-// Merged into config('permission')['modules']['MERCHANDISING_SFL'] at runtime by
+// Merged into config('permission')['modules'] at runtime by
 // MerchandisingSflServiceProvider::mergePermissions(). Feeds the host's Roles
 // Setup checkbox UI — permission strings are "<module_key>.<action_key>",
 // e.g. 'msfl_buyer.list', 'msfl_order.add'.
+//
+// One group per top sidebar menu (Merchandising / Planning / Production).
+// Checks read the keys across all groups, so moving a key between groups
+// keeps every role's saved permissions working.
 
 $crud = ['list' => 'List', 'add' => 'Create', 'edit' => 'Edit', 'view' => 'View', 'delete' => 'Delete', 'all' => 'All'];
 $master = ['list' => 'List', 'add' => 'Create', 'edit' => 'Edit', 'delete' => 'Delete', 'all' => 'All'];
 
 return [
-    'MERCHANDISING_SFL' => [
+    'MERCHANDISING' => [
         'msfl_dashboard' => ['label' => 'Dashboard', 'permissions' => ['view' => 'View', 'all' => 'All']],
         // Shows the "এই পাতা কী কাজে" help box (Support/PageHelp) on every screen.
         'msfl_page_help' => ['label' => 'Page Help (এই পাতা কী কাজে)', 'permissions' => ['view' => 'View']],
 
         // Master Data
         'msfl_buyer' => ['label' => 'Buyers', 'permissions' => $master + ['approve' => 'Approve / Reject']],
+        // Master Data → Styles (quick style list); Tech Pack / Styles has its own msfl_style.
+        'msfl_style_master' => ['label' => 'Styles (Master Data)', 'permissions' => $master],
         'msfl_season' => ['label' => 'Seasons', 'permissions' => $master],
         'msfl_product_type' => ['label' => 'Product Types', 'permissions' => $master],
         'msfl_wash_type' => ['label' => 'Wash Types', 'permissions' => $master],
@@ -38,26 +44,30 @@ return [
         'msfl_order' => ['label' => 'Orders', 'permissions' => $crud + ['approve' => 'Confirm Order']],
         'msfl_bom' => ['label' => 'BOM', 'permissions' => $crud + ['approve' => 'Approve']],
 
-        // Planning
-        'msfl_machine_type' => ['label' => 'Planning — Machine Types', 'permissions' => $master],
-        'msfl_line' => ['label' => 'Planning — Lines', 'permissions' => $master],
-        'msfl_operation' => ['label' => 'Planning — Operations Library', 'permissions' => $master],
-        'msfl_tna_template' => ['label' => 'Planning — T&A Templates', 'permissions' => $master],
-        'msfl_bulletin' => ['label' => 'Planning — Bulletin', 'permissions' => $crud + ['approve' => 'Approve']],
-        // 'edit' = update step dates / recalculate.
-        'msfl_tna' => ['label' => 'Planning — T&A', 'permissions' => $crud],
-
         // Sample Stages
         'msfl_sample' => ['label' => 'Sample Stages', 'permissions' => $crud + ['approve' => 'Approve / Reject']],
 
         'msfl_post_costing' => ['label' => 'Post Cost Sheet (Budget vs Actual)', 'permissions' => ['list' => 'List', 'view' => 'View', 'all' => 'All']],
 
-        'msfl_report' => ['label' => 'Reports', 'permissions' => ['view' => 'View', 'all' => 'All']],
+        // Also opens Production → Reports and Planning → T&A Status (same report screens).
+        'msfl_report' => ['label' => 'Reports (+ Production Reports, T&A Status)', 'permissions' => ['view' => 'View', 'all' => 'All']],
+    ],
 
-        // Production
-        'msfl_prod_status' => ['label' => 'Production — Status', 'permissions' => ['list' => 'List', 'all' => 'All']],
-        'msfl_prod_requisition' => ['label' => 'Production — Fabric Requisition', 'permissions' => ['list' => 'List', 'add' => 'Create', 'all' => 'All']],
-        'msfl_prod_cutting' => ['label' => 'Production — Cutting', 'permissions' => ['list' => 'List', 'add' => 'Create', 'view' => 'View', 'delete' => 'Delete', 'all' => 'All']],
-        'msfl_prod_entry' => ['label' => 'Production — Stage Entries (Embroidery … Packing)', 'permissions' => ['list' => 'List', 'add' => 'Create', 'delete' => 'Delete', 'all' => 'All']],
+    'PLANNING' => [
+        // Setup
+        'msfl_machine_type' => ['label' => 'Machine Types', 'permissions' => $master],
+        'msfl_line' => ['label' => 'Lines', 'permissions' => $master],
+        'msfl_operation' => ['label' => 'Operations Library', 'permissions' => $master],
+        'msfl_tna_template' => ['label' => 'T&A Templates', 'permissions' => $master],
+        'msfl_bulletin' => ['label' => 'Bulletin', 'permissions' => $crud + ['approve' => 'Approve']],
+        // 'edit' = update step dates / recalculate. Also opens T&A Sheet.
+        'msfl_tna' => ['label' => 'T&A (+ T&A Sheet)', 'permissions' => $crud],
+    ],
+
+    'PRODUCTION' => [
+        'msfl_prod_status' => ['label' => 'Production Status', 'permissions' => ['list' => 'List', 'all' => 'All']],
+        'msfl_prod_requisition' => ['label' => 'Fabric Requisition', 'permissions' => ['list' => 'List', 'add' => 'Create', 'all' => 'All']],
+        'msfl_prod_cutting' => ['label' => 'Cutting', 'permissions' => ['list' => 'List', 'add' => 'Create', 'view' => 'View', 'delete' => 'Delete', 'all' => 'All']],
+        'msfl_prod_entry' => ['label' => 'Stage Entries (Embroidery … Packing, QC, Rework, Buyer QC)', 'permissions' => ['list' => 'List', 'add' => 'Create', 'delete' => 'Delete', 'all' => 'All']],
     ],
 ];

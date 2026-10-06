@@ -59,7 +59,7 @@ class MasterRegistry
             // The style list itself (same table as Tech Pack / Styles): quick add by
             // buyer + style no; Inventory picks buyer → style from here.
             'styles' => [
-                'title' => 'Styles', 'singular' => 'Style', 'model' => Models\Style::class, 'permission' => 'msfl_style',
+                'title' => 'Styles', 'singular' => 'Style', 'model' => Models\Style::class, 'permission' => 'msfl_style_master',
                 'fields' => [
                     ['name' => 'buyer_id', 'label' => 'Buyer', 'type' => 'select', 'required' => true, 'options' => $active(Models\Buyer::class), 'exists' => 'msfl_buyers'],
                     ['name' => 'style_no', 'label' => 'Style No', 'type' => 'text', 'required' => true, 'unique' => true, 'max' => 100],

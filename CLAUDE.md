@@ -27,14 +27,14 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 | Tables | `msfl_*` |
 | Routes | prefix `admin/merchandising-sfl`, names `msfl.*` (config `merchandising-sfl.route`) |
 | Views | `merchandising-sfl::admin.*` (`src/resources/views/admin`) |
-| Permissions | group `MERCHANDISING_SFL`, keys `msfl_<module>.<action>` (list / add / edit / view / delete / approve / all) |
+| Permissions | three groups like the sidebar — `MERCHANDISING`, `PLANNING`, `PRODUCTION` (`Config/permission.php`); keys `msfl_<module>.<action>` (list / add / edit / view / delete / approve / all) |
 | Document numbers | `<PREFIX>-<YYYY>-<0001>` via `Services/DocumentNumberService` (prefixes in `Config/config.php`: INQ CST ORD BOM SMP BLT TNA CUT) |
 
 ## Who owns which master (no duplicates!)
 
 | Master | Owner | v2 reads it through |
 |---|---|---|
-| Buyers (with approval), Styles (Master Data → Styles = same `msfl_styles` as Tech Pack), Seasons, Product Types, Wash Types, Ship Modes, Factories, Currencies, Item Categories, Items (fabric & trims for costing/BOM), Sample Types, Garment Parts, Machine Types, Operations | **v2** | `Support/MasterRegistry` (+ `Lines` screen) |
+| Buyers (with approval), Styles (Master Data → Styles = same `msfl_styles` as Tech Pack, own permission `msfl_style_master`), Seasons, Product Types, Wash Types, Ship Modes, Factories, Currencies, Item Categories, Items (fabric & trims for costing/BOM), Sample Types, Garment Parts, Machine Types, Operations | **v2** | `Support/MasterRegistry` (+ `Lines` screen) |
 | Departments, Holidays, Floor-lines | **HR** (`hr_departments`, `hr_holidays`, `hr_floor_lines`) | read-only models `Models/Department`, `Models/Holiday`, `Models/FloorLine` |
 | Colors, Sizes, Units (UOM), Suppliers, Machines, Stores, stock items | **Inventory** (`inv_*`) | read-only models `Models/Color`, `Size`, `Uom` (`code` accessor = short_name), `Supplier`; machines via `Services/InventoryMachines` |
 

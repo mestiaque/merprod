@@ -21,7 +21,7 @@ return [
                     'permission' => '',
                     'children' => [
                         ['title' => 'Buyers', 'icon' => 'fa-solid fa-handshake', 'icon_color' => 'text-primary', 'permission' => 'msfl_buyer', 'route' => "$base/masters/buyers"],
-                        ['title' => 'Styles', 'icon' => 'fa-solid fa-shirt', 'icon_color' => 'text-primary', 'permission' => 'msfl_style', 'route' => "$base/masters/styles"],
+                        ['title' => 'Styles', 'icon' => 'fa-solid fa-shirt', 'icon_color' => 'text-primary', 'permission' => 'msfl_style_master', 'route' => "$base/masters/styles"],
                         ['title' => 'Seasons', 'icon' => 'fa-solid fa-snowflake', 'icon_color' => 'text-primary', 'permission' => 'msfl_season', 'route' => "$base/masters/seasons"],
                         ['title' => 'Product Types', 'icon' => 'fa-solid fa-shapes', 'icon_color' => 'text-primary', 'permission' => 'msfl_product_type', 'route' => "$base/masters/product-types"],
                         ['title' => 'Wash Types', 'icon' => 'fa-solid fa-soap', 'icon_color' => 'text-primary', 'permission' => 'msfl_wash_type', 'route' => "$base/masters/wash-types"],
