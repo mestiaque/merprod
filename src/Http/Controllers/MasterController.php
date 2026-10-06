@@ -19,7 +19,7 @@ class MasterController extends Controller
             ($definition['before_index'])();
         }
 
-        $searchable = collect($definition['fields'])->whereIn('name', ['code', 'name'])->pluck('name')->all();
+        $searchable = $definition['search'] ?? collect($definition['fields'])->whereIn('name', ['code', 'name'])->pluck('name')->all();
         [$orderColumn, $orderDirection] = $definition['order_by'] ?? ['id', 'desc'];
 
         $query = $definition['model']::query()
@@ -38,6 +38,10 @@ class MasterController extends Controller
         }
 
         $records = $query->orderBy($orderColumn, $orderDirection)->paginate(20)->withQueryString();
+
+        foreach ($definition['filters'] ?? [] as $filter => $options) {
+            $definition['filters'][$filter] = $options instanceof \Closure ? $options() : $options;
+        }
 
         // Resolve lazy select options once — every edit modal reuses them.
         foreach ($definition['fields'] as $i => $field) {
@@ -86,7 +90,11 @@ class MasterController extends Controller
         $definition = MasterRegistry::get($master);
         $this->authorize($definition['permission'] . '.delete');
 
-        $definition['model']::findOrFail($id)->delete();
+        $record = $definition['model']::findOrFail($id);
+        if (isset($definition['delete_blocked']) && ($reason = ($definition['delete_blocked'])($record))) {
+            return back()->with('error', $reason);
+        }
+        $record->delete();
 
         return back()->with('success', $definition['singular'] . ' deleted successfully.');
     }

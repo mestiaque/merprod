@@ -35,7 +35,7 @@
                 @foreach($definition['filters'] ?? [] as $filter => $filterOptions)
                     <div class="col-md-3 mb-2">
                         <select name="{{ $filter }}" class="form-control form-control-sm msfl-select2">
-                            <option value="">All {{ ucfirst($filter) }}</option>
+                            <option value="">All {{ ucfirst(trim(str_replace(['_id', '_'], ['', ' '], $filter))) }}</option>
                             @foreach($filterOptions as $optionValue => $optionLabel)
                                 <option value="{{ $optionValue }}" @selected(request($filter) === (string) $optionValue)>{{ $optionLabel }}</option>
                             @endforeach

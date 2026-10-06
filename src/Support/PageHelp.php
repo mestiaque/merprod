@@ -88,6 +88,18 @@ class PageHelp
                 'before' => '—',
                 'after' => 'Inquiry / Style / Order',
             ],
+            'masters.styles' => [
+                'title' => 'Styles (স্টাইল)',
+                'what' => 'Buyer-ভিত্তিক style-এর তালিকা। Merchandising আর Inventory — দুই জায়গাতেই style এখান থেকে আসে; Inventory-তে Buyer বাছলে সেই buyer-এর style-ই দেখায়। Inventory-তে আর style হাতে লেখা যায় না।',
+                'steps' => [
+                    '<strong>+ Add</strong> চেপে Buyer, Style No আর Style Name দিন (Season / Product Type চাইলে)।',
+                    'Tech pack, ছবি, SMV, CM দরকার হলে <strong>Tech Pack / Styles</strong> পাতায় একই style খুলে দিন — দুই পাতা একই style।',
+                    'Order, BOM বা sample-এ ব্যবহার হলে style delete করা যায় না — Inactive করে দিন।',
+                ],
+                'example' => 'BYSL-এর 266407 = Men\'s Pique Polo Shirt add করলে Inventory → Buyer Supplied Challan-এ BYSL বাছলেই 266407 আসবে।',
+                'before' => 'Buyers',
+                'after' => 'Order / Inventory (GRN, Requisition, Issue …)',
+            ],
             'masters.seasons' => [
                 'title' => 'Seasons',
                 'what' => 'Buyer কোন মৌসুমের জন্য অর্ডার দিচ্ছে (Spring/Summer, Autumn/Winter)। Inquiry, Style, Order-এ season বেছে নেওয়া হয় — report-এ season অনুযায়ী দেখা যায়।',

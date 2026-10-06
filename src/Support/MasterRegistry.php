@@ -15,6 +15,8 @@ use ME\MerchandisingSfl\Models;
  *   required (bool), unique (bool), max (int), col (bootstrap col-md-*),
  *   options (array, or callable returning [value => label]) for select.
  * Column keys: label, value (attribute name, or Closure(Model): string).
+ * Optional: filters (column => options array or Closure), search (columns,
+ * default code + name), delete_blocked (Closure(Model): ?string reason).
  * `is_active` is added to every master automatically.
  */
 class MasterRegistry
@@ -52,7 +54,34 @@ class MasterRegistry
                     ['label' => 'Approval', 'value' => fn ($m) => $m->approvalLabel()],
                 ],
                 'with' => ['merchandiser'],
-                'note' => fn () => 'A new buyer goes to <strong>Approvals</strong> and can be used (orders, Inventory) only once approved. Editing a rejected buyer sends it again.',
+                'note' => fn () => 'A new buyer goes to <strong>Approvals</strong> and can be used (orders, Inventory) only once approved. Editing a rejected buyer sends it again. Inventory has no buyer list of its own — it shows these.',
+            ],
+            // The style list itself (same table as Tech Pack / Styles): quick add by
+            // buyer + style no; Inventory picks buyer → style from here.
+            'styles' => [
+                'title' => 'Styles', 'singular' => 'Style', 'model' => Models\Style::class, 'permission' => 'msfl_style',
+                'fields' => [
+                    ['name' => 'buyer_id', 'label' => 'Buyer', 'type' => 'select', 'required' => true, 'options' => $active(Models\Buyer::class), 'exists' => 'msfl_buyers'],
+                    ['name' => 'style_no', 'label' => 'Style No', 'type' => 'text', 'required' => true, 'unique' => true, 'max' => 100],
+                    ['name' => 'name', 'label' => 'Style Name', 'type' => 'text', 'required' => true, 'max' => 255],
+                    ['name' => 'season_id', 'label' => 'Season', 'type' => 'select', 'options' => $active(Models\Season::class), 'exists' => 'msfl_seasons'],
+                    ['name' => 'product_type_id', 'label' => 'Product Type', 'type' => 'select', 'options' => $active(Models\ProductType::class), 'exists' => 'msfl_product_types'],
+                ],
+                'columns' => [
+                    ['label' => 'Style No', 'value' => 'style_no'],
+                    ['label' => 'Name', 'value' => 'name'],
+                    ['label' => 'Buyer', 'value' => fn ($m) => $m->buyer->name ?? '-'],
+                    ['label' => 'Season', 'value' => fn ($m) => $m->season->name ?? '-'],
+                    ['label' => 'Product Type', 'value' => fn ($m) => $m->productType->name ?? '-'],
+                ],
+                'with' => ['buyer', 'season', 'productType'],
+                'filters' => ['buyer_id' => fn () => Models\Buyer::query()->orderBy('name')->pluck('name', 'id')->all()],
+                'search' => ['style_no', 'name'],
+                'delete_blocked' => fn ($m) => ($m->orderPos()->exists() || $m->boms()->exists() || $m->samples()->exists())
+                    ? 'This style is used in an order, BOM or sample — it cannot be deleted.'
+                    : null,
+                'note' => fn () => 'One list of styles for Merchandising <strong>and Inventory</strong> (Buyer → Style in every Inventory form). Tech pack details, files and images: <a href="' . e(route('msfl.styles.index')) . '">Tech Pack / Styles</a>.',
+                'order_by' => ['style_no', 'asc'],
             ],
             'seasons' => [
                 'title' => 'Seasons', 'singular' => 'Season', 'model' => Models\Season::class, 'permission' => 'msfl_season',

@@ -34,7 +34,7 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 
 | Master | Owner | v2 reads it through |
 |---|---|---|
-| Buyers (with approval), Seasons, Product Types, Wash Types, Ship Modes, Factories, Currencies, Item Categories, Items (fabric & trims for costing/BOM), Sample Types, Garment Parts, Machine Types, Operations | **v2** | `Support/MasterRegistry` (+ `Lines` screen) |
+| Buyers (with approval), Styles (Master Data → Styles = same `msfl_styles` as Tech Pack), Seasons, Product Types, Wash Types, Ship Modes, Factories, Currencies, Item Categories, Items (fabric & trims for costing/BOM), Sample Types, Garment Parts, Machine Types, Operations | **v2** | `Support/MasterRegistry` (+ `Lines` screen) |
 | Departments, Holidays, Floor-lines | **HR** (`hr_departments`, `hr_holidays`, `hr_floor_lines`) | read-only models `Models/Department`, `Models/Holiday`, `Models/FloorLine` |
 | Colors, Sizes, Units (UOM), Suppliers, Machines, Stores, stock items | **Inventory** (`inv_*`) | read-only models `Models/Color`, `Size`, `Uom` (`code` accessor = short_name), `Supplier`; machines via `Services/InventoryMachines` |
 
@@ -96,6 +96,8 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 **Approvals (host central Approvals page)** — modules `msfl.buyer` (`Approvals/BuyerApprovalHandler`, permission `msfl_buyer.approve`) and `msfl.sample` (`Approvals/SampleApprovalHandler`, `msfl_sample.approve`), registered in `MerchandisingSflServiceProvider::registerApprovalModules()`. Buyer `active()` scope = active **and** approved, so unapproved buyers never reach dropdowns or Inventory. Sample decided on its own page → `SampleDecision::closeCentral()` closes the central request.
 
 ## Inventory integration (package `SFL/sfl-inventory`)
+- **Inventory has no buyer / style entry of its own.** Every Inventory form picks Buyer → Style (→ PO) from v2 via `partials/mer-buyer-style` (or `partials/mer-buyer-select` for buyer-only forms: Item, Gate Pass, Shipment) + request trait `Concerns/PicksMerchandisingStyle`; `MerchandisingLink::formOptions()` feeds them, `resolvePick()` fills inventory `buyer_id` / `style` / `order_ref`. Inventory → Buyers is a read-only list of v2 buyers (+ their styles); store / update / delete are refused. Requisition link (`requisition_merchandising_link`) is on by default.
+- Older Inventory styles (style text on earlier Buyer GRNs / FG receives, for inventory buyers whose name matches a v2 buyer) are offered next to v2 styles as `inv:<style no>` (`MerchandisingLink::legacyStyles()`); they save as style text with no `msfl_style_id` / PO. Older records keep their inventory buyer (`inv-buyer:<id>` on edit); old unlinked documents still edit the old way.
 - `inv_requisitions / inv_issues / inv_grns / inv_finished_goods_receives / inv_production_consumptions` carry `msfl_buyer_id`, `msfl_style_id`, `msfl_order_po_id`.
 - `ME\SflInventory\Services\MerchandisingLink` = the bridge (v2 buyers/styles/POs, validation, `inventoryBuyerId()` maps a v2 buyer to `inv_buyers` by name, `finishSummary()` uses v2 `ProductionFlow` packing pass).
 - Buyer Store issue only works if a posted GRN exists for the same inventory buyer + style text — v2 requisitions set both.
