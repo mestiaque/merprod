@@ -93,7 +93,7 @@ class PageHelp
                 'what' => 'Buyer-ভিত্তিক style-এর তালিকা। Merchandising আর Inventory — দুই জায়গাতেই style এখান থেকে আসে; Inventory-তে Buyer বাছলে সেই buyer-এর style-ই দেখায়। Inventory-তে আর style হাতে লেখা যায় না।',
                 'steps' => [
                     '<strong>+ Add</strong> চেপে Buyer, Style No আর Style Name দিন (Season / Product Type চাইলে)।',
-                    'Tech pack, ছবি, SMV, CM দরকার হলে <strong>Tech Pack / Styles</strong> পাতায় একই style খুলে দিন — দুই পাতা একই style।',
+                    'Tech pack, ছবি, SMV, CM দরকার হলে <strong>Tech Pack / Styles → New Tech Pack</strong>-এ এই style বেছে নিন — দুই পাতা একই style।',
                     'Order, BOM বা sample-এ ব্যবহার হলে style delete করা যায় না — Inactive করে দিন।',
                 ],
                 'example' => 'BYSL-এর 266407 = Men\'s Pique Polo Shirt add করলে Inventory → Buyer Supplied Challan-এ BYSL বাছলেই 266407 আসবে।',
@@ -225,7 +225,8 @@ class PageHelp
                 'title' => 'Style / Tech Pack',
                 'what' => 'একটা পোশাকের ডিজাইনের সব তথ্য: style no, কাপড়, wash, SMV, CM, ছবি আর tech pack file। পরের সব ধাপ (costing, sample, order, BOM, bulletin) এই style ধরে চলে।',
                 'steps' => [
-                    'Style No, Name, Buyer, Season, Product Type, Wash Type দিন; inquiry থেকে এলে Inquiry বেছে নিন।',
+                    '<strong>New Tech Pack</strong>-এ Style বাছুন — style (Style No, Name, Buyer) আগে <strong>Master Data → Styles</strong>-এ add করতে হয়; এখানে হাতে লেখা যায় না। তালিকায় শুধু যেসব style-এর tech pack এখনো হয়নি সেগুলো আসে।',
+                    'Season, Product Type, Wash Type দিন; inquiry থেকে এলে Inquiry বেছে নিন।',
                     'SMV, Target / Confirm CM (প্রতি dozen) দিন।',
                     'Show পাতায় ছবি আর tech pack file upload করুন।',
                     'Development Status এগিয়ে নিন: in development → sample stage → approved।',

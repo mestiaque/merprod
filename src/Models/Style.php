@@ -51,6 +51,25 @@ class Style extends Model
         return $query->where('is_active', true);
     }
 
+    /**
+     * Tech pack details (Dev → Tech Pack). Style No / Name / Buyer / Season /
+     * Product Type come from Master Data → Styles; these are added on top.
+     */
+    public const TECH_PACK_FIELDS = [
+        'inquiry_id', 'merchandiser_id', 'wash_type_id', 'smv', 'target_cm', 'confirm_cm',
+        'fabric_description', 'description', 'tech_pack_file', 'artwork_file', 'size_chart_file',
+    ];
+
+    /** Master styles nobody has written a tech pack for yet (offered on Tech Pack → New). */
+    public function scopeWithoutTechPack(Builder $query): Builder
+    {
+        foreach (self::TECH_PACK_FIELDS as $field) {
+            $query->whereNull($this->qualifyColumn($field));
+        }
+
+        return $query;
+    }
+
     public function buyer(): BelongsTo
     {
         return $this->belongsTo(Buyer::class);

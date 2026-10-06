@@ -34,7 +34,7 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 
 | Master | Owner | v2 reads it through |
 |---|---|---|
-| Buyers (with approval), Styles (Master Data → Styles = same `msfl_styles` as Tech Pack, own permission `msfl_style_master`), Seasons, Product Types, Wash Types, Ship Modes, Factories, Currencies, Item Categories, Items (fabric & trims for costing/BOM), Sample Types, Garment Parts, Machine Types, Operations | **v2** | `Support/MasterRegistry` (+ `Lines` screen) |
+| Buyers (with approval), Styles (Master Data → Styles = same `msfl_styles` as Tech Pack, same permission `msfl_style`), Seasons, Product Types, Wash Types, Ship Modes, Factories, Currencies, Item Categories, Items (fabric & trims for costing/BOM), Sample Types, Garment Parts, Machine Types, Operations | **v2** | `Support/MasterRegistry` (+ `Lines` screen) |
 | Departments, Holidays, Floor-lines | **HR** (`hr_departments`, `hr_holidays`, `hr_floor_lines`) | read-only models `Models/Department`, `Models/Holiday`, `Models/FloorLine` |
 | Colors, Sizes, Units (UOM), Suppliers, Machines, Stores, stock items | **Inventory** (`inv_*`) | read-only models `Models/Color`, `Size`, `Uom` (`code` accessor = short_name), `Supplier`; machines via `Services/InventoryMachines` |
 
@@ -49,7 +49,7 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 |---|---|---|
 | Masters | `msfl.masters.*` (`masters/{master}`) | `MasterController` + `Support/MasterRegistry` (fields, columns, `note`, `before_index` hook). New buyer → `submitForApproval()` |
 | Inquiry | `msfl.inquiries.*` | `InquiryController`, `Models/Inquiry` |
-| Style / tech pack | `msfl.styles.*` (+ images) | `StyleController`, `FileUploadService` |
+| Style / tech pack | `msfl.styles.*` (+ images) | `StyleController`, `FileUploadService`. A style is created only in Master Data → Styles; New Tech Pack picks one (`Style::withoutTechPack()`, `style_id`) and writes `Style::TECH_PACK_FIELDS` onto it; Style No / Name / Buyer are read-only there |
 | Cost sheet (per dozen) | `msfl.cost-sheets.*`, `.approve` | `CostSheet::recalculate()` is the only place totals are derived |
 | Samples | `msfl.samples.*`, `.submit`, `.decide`, `.status` | `SampleController`, `Services/SampleDecision` (shared with central Approvals) |
 | Order + PO lines (size breakdown) | `msfl.orders.*`, `.status` (confirm), `msfl.orders.pos.*` | `OrderController`, `OrderPoController` (logs revisions after confirm), `OrderPo::syncSizes()` |

@@ -17,9 +17,11 @@ class StyleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'style_no' => ['required', 'string', 'max:100', Rule::unique('msfl_styles', 'style_no')->ignore($this->route('style'))],
-            'name' => ['required', 'string', 'max:255'],
-            'buyer_id' => ['required', Rule::exists('msfl_buyers', 'id')],
+            // Style No / Name / Buyer live in Master Data → Styles: a new tech
+            // pack picks one of those styles; an edit can't change them.
+            'style_id' => $this->route('style')
+                ? ['prohibited']
+                : ['required', Rule::exists('msfl_styles', 'id')->whereNull('deleted_at')],
             'inquiry_id' => ['nullable', Rule::exists('msfl_inquiries', 'id')],
             'season_id' => ['nullable', Rule::exists('msfl_seasons', 'id')],
             'merchandiser_id' => ['nullable', Rule::exists('users', 'id')],

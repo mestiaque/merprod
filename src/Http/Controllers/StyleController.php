@@ -46,36 +46,50 @@ class StyleController extends Controller
     {
         $this->authorize('msfl_style.add');
 
-        // "Create Tech Pack" from an inquiry pre-fills what the inquiry already knows.
+        // The style itself comes from Master Data → Styles; offer those without a tech pack yet.
+        $masterStyles = Style::query()->active()->withoutTechPack()->with('buyer:id,name')->orderBy('style_no')->get();
+
+        // "Create Tech Pack" from an inquiry pre-fills what the inquiry already knows
+        // and picks the master style whose Style No matches the inquiry's style ref.
         $style = null;
+        $pickedStyleId = null;
         if ($inquiry = Inquiry::find($request->integer('inquiry_id'))) {
             $style = new Style([
                 'inquiry_id' => $inquiry->id,
-                'buyer_id' => $inquiry->buyer_id,
                 'season_id' => $inquiry->season_id,
                 'merchandiser_id' => $inquiry->merchandiser_id,
                 'product_type_id' => $inquiry->product_type_id,
-                'style_no' => $inquiry->style_ref,
-                'name' => $inquiry->style_ref,
                 'description' => $inquiry->description,
             ]);
+            $pickedStyleId = $masterStyles->first(fn ($s) => $inquiry->style_ref
+                && mb_strtolower(trim($s->style_no)) === mb_strtolower(trim($inquiry->style_ref))
+                && (int) $s->buyer_id === (int) $inquiry->buyer_id)?->id;
         }
 
-        return view('merchandising-sfl::admin.styles.create', $this->formData() + compact('style'));
+        return view('merchandising-sfl::admin.styles.create', $this->formData() + compact('style', 'masterStyles', 'pickedStyleId'));
     }
 
+    /** Writes the tech pack onto a style picked from Master Data → Styles. */
     public function store(StyleRequest $request): RedirectResponse
     {
-        $data = Arr::except($request->validated(), self::FILES);
+        $style = Style::query()->findOrFail($request->integer('style_id'));
+        if (! Style::query()->whereKey($style->id)->withoutTechPack()->exists()) {
+            return redirect()->route('msfl.styles.edit', $style)->with('error', 'Style ' . $style->style_no . ' already has a tech pack — edit it here.');
+        }
+
+        $data = Arr::except($request->validated(), [...self::FILES, 'style_id']);
         foreach (self::FILES as $file) {
             $data[$file] = $this->files->store($request->file($file), 'styles');
         }
+        // Season / Product Type left blank keep what Master Data has.
+        foreach (['season_id', 'product_type_id'] as $field) {
+            $data[$field] = $data[$field] ?? $style->{$field};
+        }
         $data['is_active'] = $data['is_active'] ?? true;
-        $data['created_by'] = auth()->id();
 
-        $style = Style::create($data);
+        $style->update($data);
 
-        return redirect()->route('msfl.styles.show', $style)->with('success', 'Style ' . $style->style_no . ' created successfully.');
+        return redirect()->route('msfl.styles.show', $style)->with('success', 'Tech pack saved for style ' . $style->style_no . '.');
     }
 
     public function show(Style $style): View

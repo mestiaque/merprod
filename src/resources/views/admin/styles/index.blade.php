@@ -13,7 +13,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Tech Pack / Styles</h4>
             @can('msfl_style.add')
-                <a href="{{ route('msfl.styles.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Style</a>
+                <a href="{{ route('msfl.styles.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Tech Pack</a>
             @endcan
         </div>
         <div class="card-body">

@@ -1,8 +1,45 @@
-{{-- props: style (nullable), buyers, inquiries, seasons, merchandisers, productTypes, washTypes --}}
+{{--
+    props: style (nullable), masterStyles + pickedStyleId (new only), inquiries, seasons,
+           merchandisers, productTypes, washTypes
+    Style No / Name / Buyer come from Master Data → Styles: a new tech pack picks
+    one of those styles; on edit they are shown read-only.
+--}}
+@php $isNew = ! ($style?->exists); @endphp
 <div class="row">
-    @include('merchandising-sfl::admin.partials.input', ['name' => 'style_no', 'label' => 'Style No', 'required' => true, 'value' => $style->style_no ?? null])
-    @include('merchandising-sfl::admin.partials.input', ['name' => 'name', 'label' => 'Style Name', 'required' => true, 'value' => $style->name ?? null])
-    @include('merchandising-sfl::admin.partials.select', ['name' => 'buyer_id', 'label' => 'Buyer', 'required' => true, 'options' => $buyers->pluck('name', 'id'), 'value' => $style->buyer_id ?? null])
+    @if($isNew)
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Style <span class="text-danger">*</span> <small class="text-muted">(Master Data → Styles)</small></label>
+            <select name="style_id" id="techPackStyle" class="form-control form-control-sm msfl-select2" required>
+                <option value="">— Select style —</option>
+                @foreach($masterStyles as $s)
+                    <option value="{{ $s->id }}" data-season="{{ $s->season_id }}" data-product-type="{{ $s->product_type_id }}"
+                        @selected((string) old('style_id', $pickedStyleId ?? '') === (string) $s->id)>{{ $s->style_no }} — {{ $s->name }} ({{ $s->buyer->name ?? '-' }})</option>
+                @endforeach
+            </select>
+            <small class="text-muted">
+                Only styles without a tech pack.
+                @can('msfl_style.add')
+                    New style? Add it in <a href="{{ route('msfl.masters.index', 'styles') }}" target="_blank">Master Data → Styles</a>.
+                @endcan
+            </small>
+        </div>
+    @else
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Style No</label>
+            <input type="text" class="form-control form-control-sm" value="{{ $style->style_no }}" readonly>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Style Name</label>
+            <input type="text" class="form-control form-control-sm" value="{{ $style->name }}" readonly>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Buyer</label>
+            <input type="text" class="form-control form-control-sm" value="{{ $style->buyer->name ?? '-' }}" readonly>
+            @can('msfl_style.edit')
+                <small class="text-muted">Change in <a href="{{ route('msfl.masters.index', ['styles', 'search' => $style->style_no]) }}" target="_blank">Master Data → Styles</a></small>
+            @endcan
+        </div>
+    @endif
     @include('merchandising-sfl::admin.partials.select', ['name' => 'inquiry_id', 'label' => 'Inquiry', 'options' => $inquiries->mapWithKeys(fn ($i) => [$i->id => $i->inquiry_no . ($i->style_ref ? ' — ' . $i->style_ref : '')]), 'value' => $style->inquiry_id ?? null])
 
     @include('merchandising-sfl::admin.partials.select', ['name' => 'season_id', 'label' => 'Season', 'options' => $seasons->pluck('name', 'id'), 'value' => $style->season_id ?? null])

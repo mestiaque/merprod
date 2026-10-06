@@ -20,8 +20,6 @@ return [
 
         // Master Data
         'msfl_buyer' => ['label' => 'Buyers', 'permissions' => $master + ['approve' => 'Approve / Reject']],
-        // Master Data → Styles (quick style list); Tech Pack / Styles has its own msfl_style.
-        'msfl_style_master' => ['label' => 'Styles (Master Data)', 'permissions' => $master],
         'msfl_season' => ['label' => 'Seasons', 'permissions' => $master],
         'msfl_product_type' => ['label' => 'Product Types', 'permissions' => $master],
         'msfl_wash_type' => ['label' => 'Wash Types', 'permissions' => $master],
