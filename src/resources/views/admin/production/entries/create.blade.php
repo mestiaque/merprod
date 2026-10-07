@@ -7,10 +7,13 @@
     $oldDefects = old('defects', []);
     // Reject / rework go through Production → QC / Rework; only Buyer QC (ready-product QC) records them here.
     $isQc = $stage === 'final_qc';
+    // Embroidery / washing: one form sends (input), the other receives back (output).
+    $split = $mode !== null ? ProductionFlow::splitLabels($stage) : null;
+    $heading = $split ? $split[$mode === 'input' ? 0 : 1] : 'New ' . $label . ' Entry';
 @endphp
 
 @section('title')
-    <title>{{ websiteTitle('New ' . $label . ' Entry') }}</title>
+    <title>{{ websiteTitle($heading) }}</title>
 @endsection
 
 @section('contents')
@@ -20,7 +23,7 @@
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">New {{ $label }} Entry</h4>
+            <h4 class="mb-0">{{ $heading }}</h4>
             <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
@@ -29,6 +32,7 @@
             @endif
             <form method="POST" action="{{ route('msfl.production.entries.store', ['stage' => $stage]) }}">
                 @csrf
+                @if($mode)<input type="hidden" name="mode" value="{{ $mode }}">@endif
                 <div class="row">
                     @include('merchandising-sfl::admin.production.partials.po-select', ['selected' => $selectedPo])
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'entry_date', 'label' => 'Date', 'type' => 'date', 'required' => true, 'value' => now(), 'attrs' => 'max="' . now()->format('Y-m-d') . '"'])
@@ -66,8 +70,12 @@
                 <div id="balanceBox" class="alert alert-light border small py-2" style="display:none"></div>
 
                 <div class="row">
-                    @include('merchandising-sfl::admin.partials.input', ['name' => 'input_qty', 'label' => 'Input (pcs in)', 'type' => 'number', 'attrs' => 'data-qty'])
-                    @include('merchandising-sfl::admin.partials.input', ['name' => 'pass_qty', 'label' => $isQc ? 'QC Pass' : 'Output (done)', 'type' => 'number', 'attrs' => 'data-qty'])
+                    @if($mode !== 'output')
+                        @include('merchandising-sfl::admin.partials.input', ['name' => 'input_qty', 'label' => $mode === 'input' ? ($stage === 'embroidery' ? 'Sent from Cutting (pcs)' : 'Sent (pcs)') : 'Input (pcs in)', 'type' => 'number', 'required' => $mode === 'input', 'attrs' => 'data-qty'])
+                    @endif
+                    @if($mode !== 'input')
+                        @include('merchandising-sfl::admin.partials.input', ['name' => 'pass_qty', 'label' => $isQc ? 'QC Pass' : ($mode === 'output' ? ($stage === 'embroidery' ? 'Returned to Cutting (pcs)' : 'Received back (pcs)') : 'Output (done)'), 'type' => 'number', 'required' => $mode === 'output', 'attrs' => 'data-qty'])
+                    @endif
                     @if($isQc)
                         @include('merchandising-sfl::admin.partials.input', ['name' => 'rework_qty', 'label' => 'Rework', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="rework"'])
                         @include('merchandising-sfl::admin.partials.input', ['name' => 'reject_qty', 'label' => 'Reject', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="reject"'])
@@ -143,8 +151,10 @@
         }
         if (! b) { box.style.display = 'none'; return; }
         box.style.display = '';
-        box.innerHTML = 'Size ' + sizeSelect.selectedOptions[0].text + ' — can take in: <strong>' + b.available + '</strong> pcs · In ' + label + ' now (WIP): <strong>' + b.wip + '</strong>'
-            + ' · So far — in ' + b.input + ', pass ' + b.pass + ', rework ' + b.rework + ', reject ' + b.reject;
+        const sendWord = partInput ? 'at cutting, can be sent' : 'can take in';
+        const backWord = partInput ? 'returned to cutting' : 'pass';
+        box.innerHTML = 'Size ' + sizeSelect.selectedOptions[0].text + ' — ' + sendWord + ': <strong>' + b.available + '</strong> pcs · At ' + label + ' now: <strong>' + b.wip + '</strong>'
+            + ' · So far — sent ' + b.input + ', ' + backWord + ' ' + b.pass + ', rework ' + b.rework + ', reject ' + b.reject;
     }
 
     function defectSums() {

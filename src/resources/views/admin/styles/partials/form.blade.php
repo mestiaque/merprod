@@ -72,3 +72,6 @@
         <label class="custom-control-label" for="styleActive">Active</label>
     </div></div>
 </div>
+
+{{-- Inquiry picked → season, merchandiser, product type, description. --}}
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'inquiry_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::inquiries(), 'fields' => ['season_id' => 'season_id', 'merchandiser_id' => 'merchandiser_id', 'product_type_id' => 'product_type_id', 'description' => 'description', 'smv' => 'smv']])

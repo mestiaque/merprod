@@ -102,6 +102,16 @@
         });
         document.getElementById('sizeHint').style.display = po ? 'none' : '';
     }
+    // PO picked → each empty size box gets what is still to cut (order − already cut); change it if the lay is smaller.
+    function fillRemaining() {
+        const po = select.value, ordered = orderQty[po] || {}, cut = cutQty[po] || {};
+        document.querySelectorAll('[data-cut-qty]').forEach(i => {
+            const id = i.name.match(/sizes\[(\d+)\]/)[1];
+            const left = Math.max(0, (ordered[id] || 0) - (cut[id] || 0));
+            if (i.value === '' || i.dataset.autofilled === i.value) { i.value = left || ''; i.dataset.autofilled = i.value; }
+        });
+        total();
+    }
     // Parts per size: only the PO's sizes, row totals, and a new part starts from the cut qty.
     const poColor = @json($pos->mapWithKeys(fn ($po) => [$po->id => $po->color->name ?? '']));
     function partColumns() {
@@ -127,7 +137,7 @@
     });
     document.getElementById('partRowsBody').addEventListener('msfl:rows-changed', () => { partColumns(); partTotals(); });
     document.addEventListener('input', e => { if (e.target.matches('[data-cut-qty]')) total(); if (e.target.matches('[data-part-size]')) partTotals(); });
-    if (typeof $ !== 'undefined') { $(select).on('change', () => { hint(); partColumns(); }); } else { select.addEventListener('change', () => { hint(); partColumns(); }); }
+    if (typeof $ !== 'undefined') { $(select).on('change', () => { hint(); partColumns(); fillRemaining(); }); } else { select.addEventListener('change', () => { hint(); partColumns(); fillRemaining(); }); }
     hint(); total(); partColumns(); partTotals();
 })();
 </script>

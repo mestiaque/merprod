@@ -21,9 +21,19 @@ use ME\MerchandisingSfl\Models\Production\Entry;
  *   WIP         = input − pass − reject   (rework stays in WIP until it passes)
  *
  * QC / Rework screens (entry kind, any stage incl. cutting):
- *   qc     — reject / rework found among pieces the stage already passed:
- *            they leave pass (reject leaves the flow, rework goes back to WIP)
- *   rework — rework fixed: pass / reject out of WIP (like a production entry with no input)
+ *   qc     — pieces the stage already passed are checked: pass (stays passed, just
+ *            counted as checked) / reject (leaves the flow). Older QC entries may
+ *            also carry rework found.
+ *   rework — rework found among passed pieces (rework_qty: leaves pass, back to
+ *            WIP) and / or rework fixed (pass / reject out of WIP).
+ *
+ * Embroidery (part-wise) works out of cutting: cut parts are sent to embroidery
+ * and come back to cutting. Cutting balance = cut − parts still out at
+ * embroidery (sent − returned, rejects never come back) − taken by sewing;
+ * sewing takes from that balance (styles without embroidery: cut − sewing input).
+ *
+ * Sewing records input by date and output / reject / rework by the hour
+ * (hour_slot), per line (SewingController, msfl_prod_sewing_plans).
  */
 class ProductionFlow
 {
@@ -43,6 +53,36 @@ class ProductionFlow
         'qc' => 'QC',
         'rework' => 'Rework',
     ];
+
+    /** Stages whose input (sent) and output (received back) are separate entries on their own dates. */
+    public const SPLIT_STAGES = ['embroidery', 'washing'];
+
+    /** Labels of a split stage's two entries: [input (sent), output (received back)]. */
+    public static function splitLabels(string $stage): array
+    {
+        return $stage === 'embroidery'
+            ? ['Send to Embroidery (from Cutting)', 'Return to Cutting (from Embroidery)']
+            : ['Send to ' . self::label($stage), 'Receive from ' . self::label($stage)];
+    }
+
+    /** Net pieces an entry adds to its stage's pass (QC / rework found take pieces back out). */
+    public const NET_PASS_SQL = "CASE WHEN kind = 'qc' THEN -(reject_qty + rework_qty) WHEN kind = 'rework' THEN pass_qty - rework_qty ELSE pass_qty END";
+
+    /** Sewing hour slots: start hour => label ("8-9 AM"); the break hour has no entry. */
+    public static function hourSlots(): array
+    {
+        $out = [];
+        foreach (config('merchandising-sfl.sewing_hours', range(8, 19)) as $h) {
+            $out[$h] = date('g', mktime($h, 0)) . '-' . date('g A', mktime($h + 1, 0));
+        }
+
+        return $out;
+    }
+
+    public static function breakHour(): ?int
+    {
+        return config('merchandising-sfl.sewing_break_hour', 13);
+    }
 
     public static function label(string $stage): string
     {
@@ -101,17 +141,19 @@ class ProductionFlow
                 ->whereHas('cutting', fn ($q) => $q->where('order_po_id', $po->id))->sum('qty')
             : (int) Cutting::query()->where('order_po_id', $po->id)->sum('total_qty');
 
-        // P = pass of production + rework-fixed entries; qcOut = pieces taken back out of pass by QC entries.
+        // P = pass of production + rework-fixed entries; qo = pieces taken back out of pass
+        // (QC reject / older QC rework, rework found); qrw = of those, back into WIP.
         $sums = Entry::query()->where('order_po_id', $po->id)
             ->when($ignoreEntryId, fn ($q) => $q->whereKeyNot($ignoreEntryId))
             ->when($sizeId, fn ($q) => $q->where('size_id', $sizeId))
             ->selectRaw("stage, CASE WHEN stage IN ('" . implode("','", self::PART_STAGES) . "') THEN COALESCE(part_name, '') ELSE '' END part, SUM(input_qty) i,
                 SUM(CASE WHEN kind = 'qc' THEN 0 ELSE pass_qty END) p,
-                SUM(CASE WHEN kind = 'qc' THEN reject_qty + rework_qty ELSE 0 END) qo,
-                SUM(CASE WHEN kind = 'qc' THEN rework_qty ELSE 0 END) qrw,
+                SUM(CASE WHEN kind = 'qc' THEN reject_qty + rework_qty WHEN kind = 'rework' THEN rework_qty ELSE 0 END) qo,
+                SUM(CASE WHEN kind IN ('qc', 'rework') THEN rework_qty ELSE 0 END) qrw,
                 SUM(CASE WHEN kind = 'qc' THEN 0 ELSE reject_qty END) prj,
                 SUM(rework_qty) rw, SUM(reject_qty) rj")
             ->groupBy('stage', 'part')->get()->groupBy('stage');
+        $sewn = (int) ($sums->get('sewing')?->first()->i ?? 0);
 
         $row = fn ($s, int $input, int $passed, int $supplied) => [
             'input' => $input,
@@ -135,18 +177,28 @@ class ProductionFlow
                 continue;
             }
             if (in_array($stage, self::PART_STAGES, true)) {
-                $parts = $rows->mapWithKeys(fn ($s) => [($s->part ?: '(no part)') => $row($s, (int) $s->i, (int) $s->p, $supplied)])->all();
+                // Parts go out from cutting and come back to it: 'out' = still away (or rejected there).
+                $parts = $rows->mapWithKeys(function ($s) use ($row, $cutPass, $sewn) {
+                    $r = $row($s, (int) $s->i, (int) $s->p, $cutPass);
+                    $r['out'] = max(0, $r['input'] - $r['pass']);
+                    $r['available'] = $this->partAvailable($cutPass, $sewn, $r['input'], $r['out']);
+
+                    return [($s->part ?: '(no part)') => $r];
+                })->all();
                 $p = collect($parts);
+                $maxOut = (int) ($p->max('out') ?? 0);
                 $out[$stage] = [
                     'input' => (int) $p->max('input'),
-                    'pass' => $p->isEmpty() ? 0 : (int) $p->min('pass'),
+                    'pass' => (int) $p->max('pass'),
                     'rework' => (int) $p->sum('rework'),
                     'reject' => (int) $p->sum('reject'),
                     'wip' => (int) $p->sum('wip'),
-                    'available' => max(0, $supplied - (int) ($p->min('input') ?? 0)),
+                    'out' => $maxOut,
+                    'available' => max(0, $cutPass - $sewn - $maxOut),
                     'parts' => $parts,
                 ];
-                $supplied = min($cutPass, $out[$stage]['pass']);
+                // Sewing takes from the cutting balance: what was cut minus what is still at embroidery.
+                $supplied = max(0, $cutPass - $maxOut);
                 continue;
             }
             $s = $rows->first();
@@ -160,17 +212,32 @@ class ProductionFlow
     /** One part of a part-wise stage (zeros when the part hasn't been sent yet). */
     public function partRow(array $summary, string $stage, string $part): array
     {
-        $prev = $summary[$this->previousIn(array_keys($summary), $stage)] ?? null;
+        $cutPass = (int) ($summary['cutting']['pass'] ?? 0);
 
         return $summary[$stage]['parts'][$part]
-            ?? ['input' => 0, 'pass' => 0, 'rework' => 0, 'reject' => 0, 'wip' => 0, 'available' => (int) ($prev['pass'] ?? 0)];
+            ?? ['input' => 0, 'pass' => 0, 'rework' => 0, 'reject' => 0, 'wip' => 0, 'out' => 0,
+                'available' => $this->partAvailable($cutPass, (int) ($summary['sewing']['input'] ?? 0), 0, 0)];
     }
 
-    private function previousIn(array $route, string $stage): ?string
+    /**
+     * Pieces of a part that can still go to embroidery: in the cutting balance
+     * for that part (cut − sewn − still out), and never more than the cut
+     * pieces not yet sent at all.
+     */
+    private function partAvailable(int $cutPass, int $sewn, int $sent, int $out): int
     {
-        $i = array_search($stage, $route, true);
+        return max(0, min($cutPass - $sent, $cutPass - $sewn - $out));
+    }
 
-        return $i ? $route[$i - 1] : null;
+    /** Cutting balance: cut pieces at cutting now (for one part: that part's pieces not away at embroidery). */
+    public function cuttingBalance(array $summary, ?string $part = null): int
+    {
+        $cutPass = (int) ($summary['cutting']['pass'] ?? 0);
+        $sewn = (int) ($summary['sewing']['input'] ?? 0);
+        $out = ! isset($summary['embroidery']) ? 0
+            : ($part !== null ? $this->partRow($summary, 'embroidery', $part)['out'] : (int) $summary['embroidery']['out']);
+
+        return max(0, $cutPass - $sewn - $out);
     }
 
     /**
@@ -202,7 +269,10 @@ class ProductionFlow
         $errors = [];
 
         if ($qty['input_qty'] > $row['available']) {
-            $errors['input_qty'] = "Only {$row['available']} pcs{$of} can come in to {$what} — {$prev} has passed " . ($row['available'] + $row['input']) . ", {$row['input']} already taken in.";
+            // Embroidery and sewing take from the cutting balance (cut − away at embroidery − sewn).
+            $errors['input_qty'] = in_array($stage, self::PART_STAGES, true) || ($stage === 'sewing' && isset($summary['embroidery']))
+                ? "Only {$row['available']} pcs{$of} can come in to {$what} from the cutting balance."
+                : "Only {$row['available']} pcs{$of} can come in to {$what} — {$prev} has passed " . ($row['available'] + $row['input']) . ", {$row['input']} already taken in.";
         }
 
         $inStage = $row['wip'] + min($qty['input_qty'], $row['available']);
@@ -236,10 +306,8 @@ class ProductionFlow
         $next = $this->next($po, $stage);
         $sewn = (int) ($summary['sewing']['input'] ?? 0);
 
-        if ($stage === 'cutting' && isset($summary['embroidery'])) {
-            $sent = $part !== null ? $this->partRow($summary, 'embroidery', $part)['input'] : $summary['embroidery']['input'];
-
-            return max(0, $summary['cutting']['pass'] - max($sewn, $sent));
+        if ($stage === 'cutting') {
+            return $this->cuttingBalance($summary, $part);
         }
         if (in_array($stage, self::PART_STAGES, true) && $part !== null) {
             return max(0, $this->partRow($summary, $stage, $part)['pass'] - $sewn);
@@ -270,21 +338,26 @@ class ProductionFlow
         if ($row['pass'] + $row['reject'] + $row['wip'] > $row['input']) {
             return 'Later ' . self::label($entry->stage) . ' entries (e.g. rework after QC) depend on this one — delete them first.';
         }
+        // Cutting and embroidery share the cutting balance: what left it can't exceed what was cut.
+        if ($entry->stage === 'cutting' || in_array($entry->stage, self::PART_STAGES, true)) {
+            if ($this->takenFromCutting($after) > (int) $after['cutting']['pass']) {
+                return 'Sewing has already taken these pieces from cutting — delete its input first.';
+            }
+
+            return null;
+        }
         $next = $this->next($po, $entry->stage);
-        $nextInput = $entry->stage === 'cutting' ? $this->takenFromCutting($after) : ($next ? $after[$next]['input'] : 0);
-        $passNow = in_array($entry->stage, self::PART_STAGES, true) ? $row['pass'] : $after[$entry->stage]['pass'];
-        $takenNow = in_array($entry->stage, self::PART_STAGES, true) ? (int) ($after['sewing']['input'] ?? 0) : $nextInput;
-        if ($takenNow > $passNow) {
-            return self::label($next ?? $entry->stage) . ' has already taken in these pieces — delete its entries first.';
+        if (($next ? $after[$next]['input'] : 0) > $after[$entry->stage]['pass']) {
+            return self::label($next) . ' has already taken in these pieces — delete its entries first.';
         }
 
         return null;
     }
 
-    /** What has left cutting: sewing's input, or more of a part embroidery took. */
+    /** What has left cutting: sewing's input plus parts still away at embroidery. */
     private function takenFromCutting(array $summary): int
     {
-        return max((int) ($summary['sewing']['input'] ?? 0), (int) ($summary['embroidery']['input'] ?? 0));
+        return (int) ($summary['sewing']['input'] ?? 0) + (int) ($summary['embroidery']['out'] ?? 0);
     }
 
     /**

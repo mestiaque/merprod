@@ -21,3 +21,7 @@
     </div>
     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'type' => 'textarea', 'col' => 12, 'value' => $order->remarks])
 </div>
+
+{{-- Inquiry picked → buyer, season, merchandiser, factory; buyer → its terms. --}}
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'inquiry_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::inquiries(), 'fields' => ['buyer_id' => 'buyer_id', 'season_id' => 'season_id', 'merchandiser_id' => 'merchandiser_id', 'factory_id' => 'factory_id']])
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'buyer_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::buyers(), 'fields' => ['merchandiser_id' => 'merchandiser_id', 'delivery_term' => 'delivery_term', 'payment_term' => 'payment_term']])

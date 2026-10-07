@@ -20,6 +20,11 @@ return [
     // Public holidays come from HR → Holidays.
     'weekly_off_days' => array_map('intval', explode(',', env('MERCHANDISING_SFL_WEEKLY_OFF', '5'))),
 
+    // Sewing hourly output: start hours of the hour slots (8 = 8-9 AM … 19 = 7-8 PM)
+    // and the break hour (no entry; shown as "Break" on the Sewing board).
+    'sewing_hours' => range(8, 19),
+    'sewing_break_hour' => 13,
+
     // Document number prefixes — "<PREFIX>-<YYYY>-<0001>".
     'number_prefixes' => [
         'inquiry'    => 'INQ',

@@ -109,3 +109,12 @@
     })();
 </script>
 @endpush
+
+{{-- Style picked → buyer, inquiry, style ref, description, SMV, qty, target price, sizes, currency; inquiry → the same from the inquiry. --}}
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'style_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::styles(), 'fields' => [
+    'buyer_id' => 'buyer_id', 'inquiry_id' => 'inquiry_id', 'style_ref' => 'style_ref', 'garment_description' => 'garment_description', 'smv' => 'smv',
+    'order_qty' => 'order_qty', 'buyer_target_price' => 'buyer_target_price', 'size_range' => 'size_ref', 'currency_id' => 'currency_id',
+]])
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'inquiry_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::inquiries(), 'fields' => [
+    'buyer_id' => 'buyer_id', 'style_ref' => 'style_ref', 'order_qty' => 'order_qty', 'buyer_target_price' => 'unit_price', 'smv' => 'smv',
+]])

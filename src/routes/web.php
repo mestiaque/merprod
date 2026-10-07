@@ -17,6 +17,7 @@ use ME\MerchandisingSfl\Http\Controllers\Production\CuttingController;
 use ME\MerchandisingSfl\Http\Controllers\Production\EntryController;
 use ME\MerchandisingSfl\Http\Controllers\Production\FabricRequisitionController;
 use ME\MerchandisingSfl\Http\Controllers\Production\QcReworkController;
+use ME\MerchandisingSfl\Http\Controllers\Production\SewingController;
 use ME\MerchandisingSfl\Http\Controllers\Production\StatusController;
 use ME\MerchandisingSfl\Services\ProductionFlow;
 use ME\MerchandisingSfl\Http\Controllers\SampleController;
@@ -117,6 +118,18 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
                     Route::delete('{entry}', [QcReworkController::class, 'destroy'])->defaults('kind', $kind)->whereNumber('entry')->name('destroy');
                 });
             }
+
+            // Sewing, line by line: board (Daily Production), line input, hourly output.
+            // Registered before {stage} so production/sewing opens the board.
+            Route::prefix('sewing')->name('sewing.')->group(function () {
+                Route::get('/', [SewingController::class, 'index'])->name('index');
+                Route::get('print', [SewingController::class, 'print'])->name('print');
+                Route::get('input', [SewingController::class, 'inputForm'])->name('input');
+                Route::post('input', [SewingController::class, 'storeInput'])->name('input.store');
+                Route::get('hourly', [SewingController::class, 'hourlyForm'])->name('hourly');
+                Route::post('hourly', [SewingController::class, 'storeHourly'])->name('hourly.store');
+                Route::get('entries', [EntryController::class, 'index'])->defaults('stage', 'sewing')->name('entries');
+            });
 
             Route::prefix('{stage}')->whereIn('stage', array_keys(ProductionFlow::STAGES))->name('entries.')->group(function () {
                 Route::get('/', [EntryController::class, 'index'])->name('index');

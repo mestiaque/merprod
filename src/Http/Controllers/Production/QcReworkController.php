@@ -19,8 +19,10 @@ use ME\MerchandisingSfl\Support\Lookups;
  * Production → QC and Production → Rework (two sidebar items, one controller; the
  * route's `kind` default says which). The menu opens a card per step; a card opens
  * that step's entry form.
- *   QC (kind qc)          — step-wise QC (Buyer QC is its own stage): reject / rework among pieces the step passed
- *   Rework (kind rework)  — rework pieces fixed: pass / reject
+ *   QC (kind qc)          — step-wise QC (Buyer QC is its own stage): pieces the step passed are
+ *                           checked — pass / reject. No rework here.
+ *   Rework (kind rework)  — rework found among the step's passed pieces (back to WIP), and / or
+ *                           rework fixed: pass / reject
  * Cutting and embroidery are part-wise: the entry names the part.
  * Saved as production entries of that stage, so status, reports and T&A count them.
  */
@@ -134,15 +136,15 @@ class QcReworkController extends Controller
         $qc = $kind === 'qc';
         $part = ProductionFlow::partWise($stage) ? trim($data['part_name']) : null;
         $usesLine = ProductionFlow::usesLine($stage);
-        // QC: reject + rework out of passed pieces. Rework: pass + reject out of the pieces waiting.
+        // QC: passed pieces checked — pass (counted only) / reject. Rework: found (passed → WIP), fixed pass / reject.
         $qty = [
             'input_qty' => 0,
-            'pass_qty' => $qc ? 0 : (int) ($data['pass_qty'] ?? 0),
-            'rework_qty' => $qc ? (int) ($data['rework_qty'] ?? 0) : 0,
+            'pass_qty' => (int) ($data['pass_qty'] ?? 0),
+            'rework_qty' => $qc ? 0 : (int) ($data['rework_qty'] ?? 0),
             'reject_qty' => (int) ($data['reject_qty'] ?? 0),
         ];
         $defects = collect($data['defects'] ?? [])
-            ->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, $qc ? ['reject', 'rework'] : ['reject'], true))->values();
+            ->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, $qc ? ['reject'] : ['reject', 'rework'], true))->values();
 
         $po = OrderPo::with('order')->findOrFail($data['order_po_id']);
 
@@ -178,7 +180,7 @@ class QcReworkController extends Controller
             return $entry;
         });
 
-        $what = $qc ? "QC — reject {$entry->reject_qty}, rework {$entry->rework_qty}" : "rework — pass {$entry->pass_qty}, reject {$entry->reject_qty}";
+        $what = $qc ? "QC — pass {$entry->pass_qty}, reject {$entry->reject_qty}" : "rework — found {$entry->rework_qty}, pass {$entry->pass_qty}, reject {$entry->reject_qty}";
 
         return redirect()->route("msfl.production.{$kind}." . ($request->boolean('add_another') ? 'create' : 'index'),
             $request->boolean('add_another') ? ['order_po_id' => $po->id, 'stage' => $stage] : [])
@@ -232,24 +234,28 @@ class QcReworkController extends Controller
         $total = $this->balance($po, $stage, $this->flow->summary($po), $part);
         $label = ProductionFlow::label($stage) . ($part ? " ({$part})" : '') . ' size ' . (Size::find($sizeId)->name ?? '');
 
+        $ready = min($size['ready'], $total['ready']);
         if ($qc) {
-            $ready = min($size['ready'], $total['ready']);
-            if ($qty['reject_qty'] + $qty['rework_qty'] === 0) {
-                return ['reject_qty' => 'Enter the reject or rework quantity.'];
+            if ($qty['pass_qty'] + $qty['reject_qty'] === 0) {
+                return ['pass_qty' => 'Enter the checked pass and / or reject quantity.'];
             }
-            if ($qty['reject_qty'] + $qty['rework_qty'] > $ready) {
-                return ['reject_qty' => 'Reject + rework is ' . ($qty['reject_qty'] + $qty['rework_qty']) . " pcs but only {$ready} passed pcs are still in {$label} (the rest moved on)."];
+            if ($qty['pass_qty'] + $qty['reject_qty'] > $ready) {
+                return ['pass_qty' => 'Pass + reject is ' . ($qty['pass_qty'] + $qty['reject_qty']) . " pcs but only {$ready} passed pcs are still in {$label} (the rest moved on)."];
             }
 
             return [];
         }
 
-        $wip = min($size['wip'], $total['wip']);
-        if ($qty['pass_qty'] + $qty['reject_qty'] === 0) {
-            return ['pass_qty' => 'Enter how many reworked pcs passed or were rejected.'];
+        if ($qty['rework_qty'] + $qty['pass_qty'] + $qty['reject_qty'] === 0) {
+            return ['rework_qty' => 'Enter the rework found and / or how many reworked pcs passed or were rejected.'];
         }
+        if ($qty['rework_qty'] > $ready) {
+            return ['rework_qty' => "Rework found is {$qty['rework_qty']} pcs but only {$ready} passed pcs are still in {$label} (the rest moved on)."];
+        }
+        // Fixed pieces come from what is waiting, including the rework found in this entry.
+        $wip = min($size['wip'], $total['wip']) + $qty['rework_qty'];
         if ($qty['pass_qty'] + $qty['reject_qty'] > $wip) {
-            return ['pass_qty' => 'Pass + reject is ' . ($qty['pass_qty'] + $qty['reject_qty']) . " pcs but only {$wip} pcs are waiting in {$label}."];
+            return ['pass_qty' => 'Pass + reject is ' . ($qty['pass_qty'] + $qty['reject_qty']) . " pcs but only {$wip} pcs are in rework in {$label}."];
         }
 
         return [];

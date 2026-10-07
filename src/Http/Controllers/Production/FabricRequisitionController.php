@@ -60,8 +60,11 @@ class FabricRequisitionController extends Controller
             return redirect()->route('msfl.production.requisitions.index')->with('error', 'The Inventory package is not installed.');
         }
 
+        $pos = Lookups::productionPos();
+
         return view('merchandising-sfl::admin.production.requisitions.create', [
-            'pos' => Lookups::productionPos(),
+            'pos' => $pos,
+            'received' => $this->receivedByPo($pos),
             'stores' => \ME\SflInventory\Models\InvStore::query()
                 ->whereIn('type', [\ME\SflInventory\Models\InvStore::TYPE_BUYER, \ME\SflInventory\Models\InvStore::TYPE_GENERAL])
                 ->where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']),
@@ -71,6 +74,30 @@ class FabricRequisitionController extends Controller
                 ->orderBy('item_name')->get(['id', 'item_code', 'item_name', 'unit_id']),
             'selectedPo' => $request->integer('order_po_id') ?: null,
         ]);
+    }
+
+    /**
+     * po_id => what the Buyer Store received for the PO's style (posted GRNs) and
+     * what is left after issues: [[item_id, received, issued, balance]] — picking a
+     * PO fills the items with what is left.
+     */
+    private function receivedByPo($pos): array
+    {
+        $styleIds = $pos->pluck('style_id')->unique();
+        $received = \Illuminate\Support\Facades\DB::table('inv_grn_items as gi')->join('inv_grns as g', 'g.id', '=', 'gi.grn_id')
+            ->whereNull('g.deleted_at')->where('g.status', 'posted')->where('g.source_type', 'buyer_supplied')->whereIn('g.msfl_style_id', $styleIds)
+            ->groupBy('g.msfl_style_id', 'gi.item_id')->selectRaw('g.msfl_style_id s, gi.item_id i, SUM(gi.received_qty) q')->get();
+        $issued = \Illuminate\Support\Facades\DB::table('inv_issue_items as ii')->join('inv_issues as x', 'x.id', '=', 'ii.issue_id')
+            ->whereNull('x.deleted_at')->whereIn('x.msfl_style_id', $styleIds)
+            ->groupBy('x.msfl_style_id', 'ii.item_id')->selectRaw('x.msfl_style_id s, ii.item_id i, SUM(ii.issued_qty) q')->get()
+            ->keyBy(fn ($r) => $r->s . '|' . $r->i);
+        $byStyle = $received->groupBy('s')->map(fn ($rows) => $rows->map(function ($r) use ($issued) {
+            $out = (float) ($issued[$r->s . '|' . $r->i]->q ?? 0);
+
+            return ['item_id' => (int) $r->i, 'received' => (float) $r->q, 'issued' => $out, 'balance' => max(0, round((float) $r->q - $out, 4))];
+        })->values()->all());
+
+        return $pos->mapWithKeys(fn ($po) => [$po->id => $byStyle[$po->style_id] ?? []])->all();
     }
 
     public function store(Request $request): RedirectResponse

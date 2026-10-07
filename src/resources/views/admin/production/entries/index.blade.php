@@ -15,7 +15,19 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $label }}</h4>
             @can('msfl_prod_entry.add')
-                <a href="{{ route('msfl.production.entries.create', ['stage' => $stage]) }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New {{ $label }} Entry</a>
+                @if($stage === 'sewing')
+                    {{-- Sewing is entered line by line on the Sewing board. --}}
+                    <a href="{{ route('msfl.production.sewing.input') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-arrow-right-to-bracket"></i> Line Input</a>
+                    <a href="{{ route('msfl.production.sewing.hourly') }}" class="btn btn-success btn-sm"><i class="fa-solid fa-clock"></i> Hourly Output</a>
+                    <a href="{{ route('msfl.production.sewing.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-table"></i> Board</a>
+                @elseif(in_array($stage, \ME\MerchandisingSfl\Services\ProductionFlow::SPLIT_STAGES, true))
+                    {{-- Sent and received back on their own dates. --}}
+                    @php [$sendLabel, $receiveLabel] = \ME\MerchandisingSfl\Services\ProductionFlow::splitLabels($stage); @endphp
+                    <a href="{{ route('msfl.production.entries.create', ['stage' => $stage, 'mode' => 'input']) }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-arrow-right"></i> {{ $sendLabel }}</a>
+                    <a href="{{ route('msfl.production.entries.create', ['stage' => $stage, 'mode' => 'output']) }}" class="btn btn-success btn-sm"><i class="fa-solid fa-arrow-left"></i> {{ $receiveLabel }}</a>
+                @else
+                    <a href="{{ route('msfl.production.entries.create', ['stage' => $stage]) }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New {{ $label }} Entry</a>
+                @endif
             @endcan
         </div>
         <div class="card-body">
@@ -25,7 +37,7 @@
                 <div class="col-md-2 mb-2"><input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}" title="To"></div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
                     <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
-                    <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm">Reset</a>
+                    <a href="{{ $stage === 'sewing' ? route('msfl.production.sewing.entries') : route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm">Reset</a>
                 </div>
             </form>
 

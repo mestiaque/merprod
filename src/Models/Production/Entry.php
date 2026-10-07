@@ -25,7 +25,7 @@ class Entry extends Model
 
     protected $table = 'msfl_prod_entries';
 
-    protected $fillable = ['stage', 'kind', 'entry_date', 'order_po_id', 'size_id', 'part_name', 'line_id', 'input_qty', 'pass_qty', 'rework_qty', 'reject_qty', 'remarks', 'created_by'];
+    protected $fillable = ['stage', 'kind', 'entry_date', 'order_po_id', 'size_id', 'part_name', 'line_id', 'hour_slot', 'input_qty', 'pass_qty', 'rework_qty', 'reject_qty', 'remarks', 'created_by'];
 
     protected $casts = ['entry_date' => 'date'];
 

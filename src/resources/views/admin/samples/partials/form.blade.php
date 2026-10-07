@@ -20,3 +20,6 @@
     @include('merchandising-sfl::admin.partials.input', ['name' => 'color_ref', 'label' => 'Color(s)', 'value' => $sample->color_ref])
     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks / Instructions', 'type' => 'textarea', 'col' => 6, 'value' => $sample->remarks])
 </div>
+
+{{-- Style picked → merchandiser, its order, colors and sizes of its POs. --}}
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'style_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::styles(), 'fields' => ['merchandiser_id' => 'merchandiser_id', 'order_id' => 'order_id', 'color_ref' => 'color_ref', 'size_ref' => 'size_ref']])

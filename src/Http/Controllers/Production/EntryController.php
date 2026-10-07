@@ -55,6 +55,7 @@ class EntryController extends Controller
 
         return view('merchandising-sfl::admin.production.entries.create', [
             'stage' => $stage,
+            'mode' => $this->mode($request, $stage),
             'pos' => $pos,
             'balances' => $balances,
             'sizes' => Size::query()->orderBy('sort_order')->get(['id', 'name']),
@@ -97,6 +98,13 @@ class EntryController extends Controller
         $isQc = $stage === 'final_qc';
         $qty = collect(['input_qty', 'pass_qty', 'rework_qty', 'reject_qty'])
             ->mapWithKeys(fn ($k) => [$k => $isQc || in_array($k, ['input_qty', 'pass_qty'], true) ? (int) ($data[$k] ?? 0) : 0])->all();
+        // Embroidery / washing: sending and receiving back are separate entries.
+        $mode = $this->mode($request, $stage);
+        if ($mode === 'input') {
+            $qty['pass_qty'] = 0;
+        } elseif ($mode === 'output') {
+            $qty['input_qty'] = 0;
+        }
         $defects = $isQc
             ? collect($data['defects'] ?? [])->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, ['reject', 'rework'], true))->values()
             : collect();
@@ -143,8 +151,18 @@ class EntryController extends Controller
 
         $label = ProductionFlow::label($stage);
 
-        return redirect()->route($request->boolean('add_another') ? 'msfl.production.entries.create' : 'msfl.production.entries.index', ['stage' => $stage] + ($request->boolean('add_another') ? ['order_po_id' => $po->id] : []))
+        return redirect()->route($request->boolean('add_another') ? 'msfl.production.entries.create' : 'msfl.production.entries.index', ['stage' => $stage] + ($request->boolean('add_another') ? ['order_po_id' => $po->id, 'mode' => $mode] : []))
             ->with('success', "{$label}" . ($entry->part_name ? " ({$entry->part_name})" : '') . " entry saved: in {$entry->input_qty}, pass {$entry->pass_qty}, rework {$entry->rework_qty}, reject {$entry->reject_qty}.");
+    }
+
+    /** Split stages (embroidery, washing): 'input' (send) or 'output' (receive back); null for the rest. */
+    private function mode(Request $request, string $stage): ?string
+    {
+        if (! in_array($stage, ProductionFlow::SPLIT_STAGES, true)) {
+            return null;
+        }
+
+        return $request->input('mode') === 'output' ? 'output' : 'input';
     }
 
     public function destroy(string $stage, Entry $entry): RedirectResponse

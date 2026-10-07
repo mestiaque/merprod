@@ -26,7 +26,7 @@
                 @endif
                 <td>{{ $entry->size->name ?? 'All' }}</td>
                 <td>{{ $entry->part_name ?? '-' }}</td>
-                <td>{{ $entry->line->name ?? '-' }}</td>
+                <td>{{ $entry->line->name ?? '-' }}@if($entry->hour_slot !== null)<br><small class="text-muted">{{ \ME\MerchandisingSfl\Services\ProductionFlow::hourSlots()[$entry->hour_slot] ?? $entry->hour_slot . ':00' }}</small>@endif</td>
                 <td class="text-right">{{ $entry->input_qty }}</td>
                 <td class="text-right"><strong>{{ $entry->pass_qty }}</strong></td>
                 <td class="text-right">{{ $entry->rework_qty }}</td>

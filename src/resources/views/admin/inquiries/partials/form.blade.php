@@ -43,3 +43,6 @@
     })();
 </script>
 @endpush
+
+{{-- Buyer picked → its merchandiser. --}}
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'buyer_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::buyers(), 'fields' => ['merchandiser_id' => 'merchandiser_id']])

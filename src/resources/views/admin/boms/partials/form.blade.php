@@ -30,7 +30,10 @@
 <div data-bom-items-section>
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h6 class="mb-0">Items <small class="text-muted">(consumption per piece; blank color / size = applies to all)</small></h6>
-        <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="bom"><i class="fa-solid fa-plus"></i> Add Item</button>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-success" id="bomFromCostSheet" style="display:none"><i class="fa-solid fa-file-import"></i> Fill from Cost Sheet <span></span></button>
+            <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="bom"><i class="fa-solid fa-plus"></i> Add Item</button>
+        </div>
     </div>
     <div class="table-responsive">
         <table class="table table-bordered table-sm align-middle">
@@ -69,5 +72,47 @@
             if (option.dataset.rate && ! row.querySelector('[data-bom-rate]').value) row.querySelector('[data-bom-rate]').value = option.dataset.rate;
         });
     })();
+</script>
+@endpush
+
+{{-- Style picked → its order; its cost sheet's fabric / trims lines can fill the items (per dozen ÷ 12 = per piece). --}}
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'style_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::styles(), 'fields' => ['order_id' => 'order_id']])
+@push('js')
+<script>
+(function () {
+    const fromCs = @json(\ME\MerchandisingSfl\Support\Autofill::bomLinesFromCostSheet());
+    const style = document.querySelector('[name="style_id"]');
+    const btn = document.getElementById('bomFromCostSheet');
+    const body = document.getElementById('bomRowsBody');
+
+    function toggle() {
+        const cs = fromCs[style.value];
+        btn.style.display = cs && cs.lines.length ? '' : 'none';
+        if (cs) btn.querySelector('span').textContent = '(' + cs.cost_sheet + ', ' + cs.lines.length + ' items)';
+    }
+    function set(row, field, value) {
+        const el = row.querySelector('[name$="[' + field + ']"]');
+        if (! el || value === null || value === undefined) return;
+        el.value = String(value);
+        if (el.tagName === 'SELECT') $(el).trigger('change.select2');
+    }
+    btn.addEventListener('click', function () {
+        const cs = fromCs[style.value];
+        if (! cs) return;
+        // Drop empty rows, then one row per cost sheet line.
+        body.querySelectorAll('tr').forEach(r => { if (! r.querySelector('[data-bom-item]').value && body.querySelectorAll('tr').length > 1) r.remove(); });
+        cs.lines.forEach(function (line, i) {
+            let row = body.querySelector('tr:last-child');
+            if (i > 0 || row.querySelector('[data-bom-item]').value) {
+                document.querySelector('[data-line-items-add="bom"]').click();
+                row = body.querySelector('tr:last-child');
+            }
+            $(row.querySelector('[data-bom-item]')).val(String(line.item_id)).trigger('change');
+            ['consumption', 'uom_id', 'rate', 'supplier_id'].forEach(f => set(row, f, line[f]));
+        });
+    });
+    $(style).on('change', toggle);
+    toggle();
+})();
 </script>
 @endpush

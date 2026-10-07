@@ -34,7 +34,8 @@
                     @include('merchandising-sfl::admin.partials.select', ['name' => 'requisition_for', 'label' => 'Purpose', 'options' => $purposes->all(), 'value' => $purposes->has('fabrics') ? 'fabrics' : null])
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6])
                 </div>
-                <p class="small text-muted">From the <strong>Buyer Store</strong> the store can only issue fabric received (GRN) for this buyer and style.</p>
+                <p class="small text-muted">From the <strong>Buyer Store</strong> the store can only issue fabric received (GRN) for this buyer and style. Picking the style · color fills the items received for it with what is still in the store.</p>
+                <div id="reqReceived" class="alert alert-light border small py-2" style="display:none"></div>
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="mb-0">Items</h6>
@@ -87,6 +88,30 @@
     function unit(sel) { sel.closest('tr').querySelector('[data-req-unit]').textContent = sel.selectedOptions[0]?.dataset.unit || ''; }
     if (typeof $ !== 'undefined') { $(document).on('change', '[data-req-item]', function () { unit(this); }); }
     document.querySelectorAll('[data-req-item]').forEach(unit);
+
+    // PO picked → rows for the items the Buyer Store received for its style, qty = what is left.
+    const received = @json($received);
+    const names = @json($itemOptions->pluck('text', 'id'));
+    const body = document.getElementById('reqRowsBody');
+    const box = document.getElementById('reqReceived');
+    function fillItems() {
+        const rows = (received[document.getElementById('poSelect').value] || []);
+        box.style.display = rows.length ? '' : 'none';
+        box.innerHTML = rows.length ? 'Received for this style: ' + rows.map(r => (names[r.item_id] || r.item_id) + ' — received ' + r.received + ', issued ' + r.issued + ', <strong>left ' + r.balance + '</strong>').join(' · ') : '';
+        // Only when the rows are still untouched (empty, or filled by an earlier pick).
+        const touched = Array.from(body.querySelectorAll('tr')).some(tr => tr.querySelector('[data-req-item]').value && ! tr.dataset.autofilled);
+        if (touched || ! rows.some(r => r.balance > 0)) return;
+        body.querySelectorAll('tr').forEach((tr, i) => { if (i > 0) tr.remove(); });
+        rows.filter(r => r.balance > 0).forEach(function (r, i) {
+            if (i > 0) document.querySelector('[data-line-items-add="req"]').click();
+            const tr = body.querySelector('tr:last-child');
+            tr.dataset.autofilled = '1';
+            $(tr.querySelector('[data-req-item]')).val(String(r.item_id)).trigger('change');
+            tr.querySelector('[name$="[requested_qty]"]').value = r.balance;
+        });
+    }
+    $('#poSelect').on('change', fillItems);
+    if (! @json((bool) old('items'))) fillItems();
 })();
 </script>
 @endpush

@@ -63,6 +63,8 @@
         @include('merchandising-sfl::admin.orders.partials.po-modal', ['po' => $po])
     @endforeach
     @include('merchandising-sfl::admin.partials.delete-confirm-modal', ['modalId' => 'deletePoModal', 'label' => 'PO line'])
+    {{-- Style picked → the agreed price (cost sheet, else inquiry) and the inquiry's ship date. --}}
+    @include('merchandising-sfl::admin.partials.autofill', ['source' => 'style_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::styles(), 'fields' => ['unit_price' => 'unit_price', 'shipment_date' => 'shipment_date']])
 
     @push('js')
     <script>

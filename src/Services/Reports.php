@@ -56,7 +56,7 @@ class Reports
     private function passByStage($poIds): array
     {
         $out = [];
-        foreach (Entry::query()->whereIn('order_po_id', $poIds)->selectRaw("order_po_id, stage, SUM(CASE WHEN kind = 'qc' THEN -(reject_qty + rework_qty) ELSE pass_qty END) p")->groupBy('order_po_id', 'stage')->get() as $row) {
+        foreach (Entry::query()->whereIn('order_po_id', $poIds)->selectRaw('order_po_id, stage, SUM(' . ProductionFlow::NET_PASS_SQL . ') p')->groupBy('order_po_id', 'stage')->get() as $row) {
             $out[$row->order_po_id][$row->stage] = (int) $row->p;
         }
 

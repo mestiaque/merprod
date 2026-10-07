@@ -23,7 +23,7 @@ use RuntimeException;
  *
  *   H&M      ORD 1: PO D-HM-4501 fully produced, packed & in the Finish Store
  *                   PO D-HM-4502 revised after confirm (400→450), in sewing
- *   Primark  ORD 2: PO D-PR-7701 with embroidery, part embroidered / sewing
+ *   Primark  ORD 2: PO D-PR-7701 with embroidery (Front sent / partly back to cutting), sewing on line 2
  *   Next     ORD 3: PO D-NX-9901 confirmed, fabric requisition waiting, no cutting
  *   H&M      ORD 4: draft order (shorts)
  *   Zara     new buyer waiting for approval
@@ -219,11 +219,15 @@ class MsflDemoSeeder extends Seeder
             'D-1004' => ['Cargo Shorts', 'D-HM', 3, 'D-SS27', 'D-BTM', null, 18.0, 'in_development'],
         ];
         foreach ($styles as $no => [$name, $b, $inq, $s, $p, $w, $smv, $dev]) {
+            // A style is added once in Master Data → Styles; the tech pack then picks it.
+            $this->master('styles', ['buyer_id' => $buyer[$b], 'style_no' => $no, 'name' => $name, 'season_id' => $season[$s], 'product_type_id' => $ptype[$p]]);
             $this->post('msfl.styles.store', [], [
-                'style_no' => $no, 'name' => $name, 'buyer_id' => $buyer[$b], 'inquiry_id' => $inquiryIds[$inq], 'season_id' => $season[$s], 'merchandiser_id' => $this->user->id,
+                'style_id' => M\Style::query()->where('style_no', $no)->value('id'), 'inquiry_id' => $inquiryIds[$inq], 'season_id' => $season[$s], 'merchandiser_id' => $this->user->id,
                 'product_type_id' => $ptype[$p], 'wash_type_id' => $w ? $wash[$w] : null, 'smv' => $smv, 'fabric_sourced_by' => 'self', 'development_status' => $dev, 'is_active' => 1,
             ]);
         }
+        // A fifth style only in Master Data (no tech pack yet) — shows up in Tech Pack → New and in Inventory.
+        $this->master('styles', ['buyer_id' => $buyer['D-NXT'], 'style_no' => 'D-1005', 'name' => 'Ladies Blouse', 'season_id' => $season['D-SS27'], 'product_type_id' => $ptype['D-TOP']]);
         $style = M\Style::query()->whereIn('style_no', array_keys($styles))->get()->keyBy('style_no');
         $usd = M\Currency::query()->where('code', 'USD')->value('id');
 
@@ -385,46 +389,143 @@ class MsflDemoSeeder extends Seeder
         $requisition($p4502, [[$invItems['twill'], 610]], 2);        // waiting for store approval
         $requisition($p9901, [[$invItems['denim'], 960]], 1);        // waiting — no denim received yet
 
+        $flow = app(\ME\MerchandisingSfl\Services\ProductionFlow::class);
+        $boardSvc = app(\ME\MerchandisingSfl\Services\SewingBoard::class);
         $cut = function (M\OrderPo $p, array $qty, int $ago, string $table) use ($sizes) {
+            $bySize = collect($qty)->mapWithKeys(fn ($q, $s) => [$sizes[$s] => $q])->all();
             $this->post('msfl.production.cuttings.store', [], ['order_po_id' => $p->id, 'cutting_date' => $this->d($ago), 'table_no' => $table, 'lay_count' => 60, 'bundle_size' => 25,
-                'fabric_used' => round(array_sum($qty) * 1.3, 2), 'sizes' => collect($qty)->mapWithKeys(fn ($q, $s) => [$sizes[$s] => $q])->all(),
-                'parts' => [['part_name' => 'Front', 'qty' => array_sum($qty) * 2], ['part_name' => 'Back', 'qty' => array_sum($qty) * 2], ['part_name' => 'Waistband / Hood', 'qty' => array_sum($qty)]]]);
+                'fabric_used' => round(array_sum($qty) * 1.3, 2), 'sizes' => $bySize,
+                'parts' => [['part_name' => 'Front', 'sizes' => $bySize], ['part_name' => 'Back', 'sizes' => $bySize], ['part_name' => $p->needs_embroidery ? 'Hood' : 'Waistband', 'sizes' => $bySize]]]);
         };
-        $entry = function (string $stage, M\OrderPo $p, int $ago, array $d) {
-            $this->post('msfl.production.entries.store', ['stage' => $stage], $d + ['order_po_id' => $p->id, 'entry_date' => $this->d($ago)]);
+        // Spread $total over the PO's sizes by their order qty, never more than each size can take ($cap: size_id => pcs).
+        $spread = function (M\OrderPo $p, int $total, array $cap): array {
+            $p->loadMissing('sizes');
+            $weights = $p->sizes->mapWithKeys(fn ($s) => [$s->size_id => (int) $s->qty])->all();
+            $out = array_fill_keys(array_keys($weights), 0);
+            $sum = max(1, array_sum($weights));
+            foreach ($weights as $id => $w) {
+                $out[$id] = min((int) floor($total * $w / $sum), (int) ($cap[$id] ?? 0));
+            }
+            for ($left = $total - array_sum($out); $left > 0; $left -= $add) {
+                $add = 0;
+                foreach ($out as $id => $q) {
+                    if ($left - $add > 0 && $q < (int) ($cap[$id] ?? 0)) { $out[$id]++; $add++; }
+                }
+                if ($add === 0) { break; }
+            }
+
+            return array_filter($out);
         };
-        $rej = fn (M\Line $l, string $part, string $defect, int $q) => ['type' => 'reject', 'part_name' => $part, 'machine_id' => DB::table('inv_machines')->where('line', $l->code)->where('code', 'like', 'D-MC-%')->value('id'), 'defect' => $defect, 'qty' => $q];
+        $sizeFig = fn (M\OrderPo $p, callable $pick) => $p->sizes->mapWithKeys(fn ($s) => [$s->size_id => (int) $pick($flow->summary($p->fresh(), null, $s->size_id))])->all();
+        // A stage entry per size (embroidery / washing: mode input = send, output = receive back).
+        $stage = function (string $stage, M\OrderPo $p, int $ago, string $field, int $total, array $extra = []) use ($flow, $spread, $sizeFig) {
+            $part = $extra['part_name'] ?? null;
+            $row = fn ($sum) => $part ? $flow->partRow($sum, $stage, $part) : $sum[$stage];
+            $cap = $sizeFig($p, fn ($sum) => $field === 'input_qty' ? $row($sum)['available'] : $row($sum)['wip'] + ($extra['_with_input'] ?? 0));
+            unset($extra['_with_input']);
+            foreach ($spread($p, $total, $cap) as $sizeId => $q) {
+                $data = [$field => $q] + $extra + ['order_po_id' => $p->id, 'entry_date' => $this->d($ago), 'size_id' => $sizeId];
+                if ($field === 'input_qty' && isset($extra['pass_all'])) {
+                    $data['pass_qty'] = $q;
+                }
+                unset($data['pass_all']);
+                $this->post('msfl.production.entries.store', ['stage' => $stage], $data);
+            }
+        };
+        // Sewing: line input (from the cutting balance) and hourly output.
+        $sewInput = function (M\OrderPo $p, M\Line $line, int $ago, int $total) use ($spread, $sizeFig) {
+            $cap = $sizeFig($p, fn ($sum) => $sum['sewing']['available']);
+            $this->post('msfl.production.sewing.input.store', [], ['entry_date' => $this->d($ago), 'line_id' => $line->id, 'order_po_id' => $p->id,
+                'sizes' => collect($spread($p, $total, $cap))->map(fn ($q) => ['input_qty' => $q])->all()]);
+        };
+        $hours = function (int $ago) {
+            $slots = array_values(array_diff(array_keys(\ME\MerchandisingSfl\Services\ProductionFlow::hourSlots()), [\ME\MerchandisingSfl\Services\ProductionFlow::breakHour()]));
+            // Today only the hours already gone; earlier days a full 8-hour day.
+            return $ago === 0 ? array_values(array_filter($slots, fn ($h) => $h < (int) now()->format('G'))) : array_slice($slots, 0, 8);
+        };
+        $sewDay = function (M\OrderPo $p, M\Line $line, int $ago, int $output, int $reject, int $rework) use ($spread, $sizeFig, $hours, $boardSvc) {
+            $plan = $boardSvc->defaults($p->fresh(['style']), $line);
+            $slots = $hours($ago);
+            $n = count($slots);
+            foreach ($slots as $i => $h) {
+                // A slow first hour, then steady; rejects / rework spread over the day.
+                $out = (int) floor($output / $n) + ($i < $output % $n ? 1 : 0);
+                $out = $i === 0 ? (int) round($out * 0.7) : ($i === 1 ? $out + ((int) floor($output / $n) - (int) round(floor($output / $n) * 0.7)) : $out);
+                $rej = $i % 3 === 1 ? min($reject, (int) ceil($reject / max(1, intdiv($n, 3)))) : 0;
+                $rw = $i % 2 === 0 ? (int) ceil($rework / max(1, (int) ceil($n / 2))) : 0;
+                $reject -= $rej;
+                $rework -= $rw;
+                $wip = $sizeFig($p, fn ($sum) => $sum['sewing']['wip']);
+                $outs = $spread($p, max(0, $out), $wip);
+                $left = collect($wip)->map(fn ($w, $id) => $w - ($outs[$id] ?? 0))->all();
+                $rejs = $spread($p, max(0, $rej), $left);
+                $rws = $spread($p, max(0, $rw), $wip);
+                $rows = [];
+                foreach (array_keys($wip) as $id) {
+                    $rows[$id] = ['pass_qty' => $outs[$id] ?? 0, 'reject_qty' => $rejs[$id] ?? 0, 'rework_qty' => $rws[$id] ?? 0];
+                }
+                $this->post('msfl.production.sewing.hourly.store', [], ['entry_date' => $this->d($ago), 'line_id' => $line->id, 'order_po_id' => $p->id, 'hour_slot' => $h, 'sizes' => $rows] + $plan);
+            }
+        };
+        // QC (pass / reject) and Rework (found / fixed) on one size of a stage.
+        $qc = function (string $stage, M\OrderPo $p, int $ago, int $pass, int $reject, string $defect, ?string $part = null, ?M\Line $line = null) {
+            $this->post('msfl.production.qc.store', [], ['stage' => $stage, 'order_po_id' => $p->id, 'entry_date' => $this->d($ago), 'size_id' => $p->sizes->sortByDesc('qty')->first()->size_id,
+                'part_name' => $part, 'line_id' => $line?->id, 'pass_qty' => $pass, 'reject_qty' => $reject,
+                'defects' => $reject ? [['type' => 'reject', 'part_name' => $part ?? 'Body', 'defect' => $defect, 'qty' => $reject]] : []]);
+        };
+        $rework = function (string $stage, M\OrderPo $p, int $ago, int $found, int $pass, string $defect, ?string $part = null, ?M\Line $line = null) {
+            $this->post('msfl.production.rework.store', [], ['stage' => $stage, 'order_po_id' => $p->id, 'entry_date' => $this->d($ago), 'size_id' => $p->sizes->sortByDesc('qty')->first()->size_id,
+                'part_name' => $part, 'line_id' => $line?->id, 'rework_qty' => $found, 'pass_qty' => $pass,
+                'defects' => $found ? [['type' => 'rework', 'part_name' => $part ?? 'Body', 'defect' => $defect, 'qty' => $found]] : []]);
+        };
+        $total = fn (M\OrderPo $p, string $st, string $k) => (int) $flow->summary($p->fresh())[$st][$k];
         [$l1, $l2] = [$lines[0], $lines[1 % $lines->count()]];
+        foreach ([$p4501, $p4502, $p7701] as $p) {
+            $p->load('sizes');
+        }
 
-        // PO 4501 — full flow, packed and in the Finish Store.
+        // PO 4501 — the full route, packed and in the Finish Store.
         $cut($p4501, ['S' => 100, 'M' => 200, 'L' => 200, 'XL' => 100], 11, 'T-01');
-        $entry('sewing', $p4501, 9, ['line_id' => $l1->id, 'input_qty' => 300, 'pass_qty' => 270, 'rework_qty' => 12, 'reject_qty' => 3,
-            'defects' => [$rej($l1, 'Waistband', 'Skip stitch', 2), $rej($l1, 'Pocket', 'Puckering', 1), ['type' => 'rework', 'part_name' => 'Side seam', 'defect' => 'Open seam', 'qty' => 12]]]);
-        $entry('sewing', $p4501, 8, ['line_id' => $l1->id, 'input_qty' => 300, 'pass_qty' => 305, 'rework_qty' => 8, 'reject_qty' => 2,
-            'defects' => [$rej($l1, 'Fly', 'Broken stitch', 2), ['type' => 'rework', 'part_name' => 'Hem', 'defect' => 'Uneven hem', 'qty' => 8]]]);
-        $entry('sewing', $p4501, 7, ['line_id' => $l1->id, 'pass_qty' => 20]);   // reworked pieces passed
-        $entry('washing', $p4501, 6, ['input_qty' => 595, 'pass_qty' => 590, 'reject_qty' => 5, 'defects' => [['type' => 'reject', 'part_name' => 'Body', 'defect' => 'Shade variation', 'qty' => 5]]]);
-        $entry('finishing', $p4501, 4, ['input_qty' => 590, 'pass_qty' => 586, 'rework_qty' => 6, 'reject_qty' => 4,
-            'defects' => [['type' => 'reject', 'part_name' => 'Body', 'defect' => 'Iron shine', 'qty' => 4], ['type' => 'rework', 'part_name' => 'Thread', 'defect' => 'Uncut thread', 'qty' => 6]]]);
-        $entry('final_qc', $p4501, 3, ['input_qty' => 586, 'pass_qty' => 582, 'reject_qty' => 4, 'defects' => [['type' => 'reject', 'part_name' => 'Body', 'defect' => 'Stain', 'qty' => 4]]]);
-        $entry('packing', $p4501, 2, ['input_qty' => 582, 'pass_qty' => 582]);
+        $qc('cutting', $p4501, 11, 196, 2, 'Fabric hole', 'Front');
+        $sewInput($p4501, $l1, 10, 300);
+        $sewInput($p4501, $l1, 9, $total($p4501, 'sewing', 'available'));
+        $sewDay($p4501, $l1, 10, 270, 3, 10);
+        $sewDay($p4501, $l1, 9, 290, 2, 8);
+        $sewDay($p4501, $l1, 8, $total($p4501, 'sewing', 'wip'), 0, 0);
+        $qc('sewing', $p4501, 8, 60, 1, 'Broken stitch', 'Waistband', $l1);
+        $rework('sewing', $p4501, 8, 2, 2, 'Open seam', 'Body', $l1);
+        $stage('washing', $p4501, 7, 'input_qty', $total($p4501, 'washing', 'available'), ['mode' => 'input']);
+        $stage('washing', $p4501, 6, 'pass_qty', $total($p4501, 'washing', 'wip'), ['mode' => 'output']);
+        $qc('washing', $p4501, 6, 0, 2, 'Shade variation');
+        $stage('finishing', $p4501, 4, 'input_qty', $total($p4501, 'finishing', 'available'), ['pass_all' => true]);
+        $qc('finishing', $p4501, 4, 100, 2, 'Iron shine');
+        $finalIn = $total($p4501, 'final_qc', 'available');
+        $stage('final_qc', $p4501, 3, 'input_qty', $finalIn, ['pass_all' => true]);
+        $rework('final_qc', $p4501, 3, 3, 3, 'Uncut thread');
+        $stage('packing', $p4501, 2, 'input_qty', $total($p4501, 'packing', 'available'), ['pass_all' => true]);
         $this->post('inventory.fg-receives.store', [], ['receive_date' => $this->d(1), 'store_id' => $finishStore, 'msfl_buyer_id' => $p4501->order->buyer_id,
-            'msfl_style_id' => $p4501->style_id, 'msfl_order_po_id' => $p4501->id, 'items' => [['item_id' => $invItems['fg_chino'], 'quantity' => 582]]]);
+            'msfl_style_id' => $p4501->style_id, 'msfl_order_po_id' => $p4501->id, 'items' => [['item_id' => $invItems['fg_chino'], 'quantity' => $total($p4501, 'packing', 'pass')]]]);
 
-        // PO 4502 — cut, sewing in progress.
+        // PO 4502 — cut, sewing running on line 1 (yesterday and today, hour by hour).
         $cut($p4502, ['S' => 70, 'M' => 155, 'L' => 155, 'XL' => 70], 3, 'T-02');
-        $entry('sewing', $p4502, 1, ['line_id' => $l1->id, 'input_qty' => 250, 'pass_qty' => 210, 'rework_qty' => 9, 'reject_qty' => 2,
-            'defects' => [$rej($l1, 'Waistband', 'Skip stitch', 2), ['type' => 'rework', 'part_name' => 'Pocket', 'defect' => 'Misaligned', 'qty' => 9]]]);
-        $entry('sewing', $p4502, 0, ['line_id' => $l1->id, 'input_qty' => 120, 'pass_qty' => 95]);
+        $sewInput($p4502, $l1, 1, 250);
+        $sewDay($p4502, $l1, 1, 205, 2, 9);
+        $sewInput($p4502, $l1, 0, 150);
+        $sewDay($p4502, $l1, 0, 150, 2, 6);
+        $qc('sewing', $p4502, 0, 40, 1, 'Skip stitch', 'Waistband', $l1);
+        $rework('sewing', $p4502, 0, 4, 0, 'Pocket misaligned', 'Pocket', $l1);
 
-        // PO 7701 — embroidery: sent from cutting, partly back, sewing started.
+        // PO 7701 — embroidery: Front parts sent from cutting, partly back; sewing on line 2.
         $cut($p7701, ['S' => 200, 'M' => 300, 'L' => 200, 'XL' => 100], 6, 'T-03');
-        $entry('embroidery', $p7701, 4, ['input_qty' => 800, 'pass_qty' => 420, 'rework_qty' => 15, 'reject_qty' => 6,
-            'defects' => [['type' => 'reject', 'part_name' => 'Front panel', 'defect' => 'Thread break / misregistration', 'qty' => 6], ['type' => 'rework', 'part_name' => 'Front panel', 'defect' => 'Loose thread', 'qty' => 15]]]);
-        $entry('embroidery', $p7701, 2, ['pass_qty' => 210]);
-        $entry('sewing', $p7701, 1, ['line_id' => $l2->id, 'input_qty' => 400, 'pass_qty' => 180, 'rework_qty' => 7, 'reject_qty' => 2,
-            'defects' => [$rej($l2, 'Hood', 'Puckering', 2), ['type' => 'rework', 'part_name' => 'Cuff', 'defect' => 'Twisted', 'qty' => 7]]]);
-        $entry('sewing', $p7701, 0, ['line_id' => $l2->id, 'pass_qty' => 140]);
+        $stage('embroidery', $p7701, 5, 'input_qty', 600, ['mode' => 'input', 'part_name' => 'Front']);
+        $stage('embroidery', $p7701, 3, 'pass_qty', 420, ['mode' => 'output', 'part_name' => 'Front']);
+        $qc('embroidery', $p7701, 3, 0, 3, 'Misregistration', 'Front');
+        $rework('embroidery', $p7701, 2, 6, 4, 'Loose thread', 'Front');
+        $sewInput($p7701, $l2, 2, 300);
+        $sewDay($p7701, $l2, 2, 210, 2, 6);
+        $stage('embroidery', $p7701, 1, 'pass_qty', 100, ['mode' => 'output', 'part_name' => 'Front']);
+        $sewInput($p7701, $l2, 0, 150);
+        $sewDay($p7701, $l2, 0, 160, 3, 7);
 
         // Fill the T&A dates the system already knows.
         $planner = app(\ME\MerchandisingSfl\Services\TnaPlanner::class);
