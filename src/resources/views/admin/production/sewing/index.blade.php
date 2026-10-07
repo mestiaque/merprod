@@ -18,6 +18,7 @@
                     <button type="button" class="btn btn-success btn-sm" data-sew-modal="hourly"><i class="fa-solid fa-clock"></i> Hourly Output</button>
                 @endcan
                 <a href="{{ route('msfl.production.sewing.entries', ['from' => $date->toDateString(), 'to' => $date->toDateString()]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-list"></i> Entries</a>
+                <a href="{{ route('msfl.production.hourly-report.index', request()->only('date', 'line_id')) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-chart-line"></i> Hourly Report</a>
                 <a href="{{ route('msfl.production.sewing.print', request()->only('date', 'line_id')) }}" target="_blank" class="btn btn-warning btn-sm"><i class="fa-solid fa-print"></i> Print</a>
             </div>
         </div>

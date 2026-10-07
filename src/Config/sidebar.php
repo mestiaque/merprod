@@ -77,6 +77,7 @@ return [
                         ['title' => 'Lines', 'icon' => 'fa-solid fa-diagram-project', 'icon_color' => 'text-primary', 'permission' => 'msfl_line', 'route' => "$base/lines"],
                         ['title' => 'Operations Library', 'icon' => 'fa-solid fa-list-ol', 'icon_color' => 'text-primary', 'permission' => 'msfl_operation', 'route' => "$base/masters/operations"],
                         ['title' => 'T&A Templates', 'icon' => 'fa-solid fa-table-list', 'icon_color' => 'text-primary', 'permission' => 'msfl_tna_template', 'route' => "$base/tna-templates"],
+                        ['title' => 'Daily Targets', 'icon' => 'fa-solid fa-bullseye', 'icon_color' => 'text-primary', 'permission' => 'msfl_daily_target', 'route' => "$base/masters/daily-targets"],
                     ],
                 ],
                 ['title' => 'Bulletin', 'icon' => 'fa-solid fa-clipboard-list', 'icon_color' => 'text-primary', 'permission' => 'msfl_bulletin', 'route' => "$base/bulletins"],
@@ -110,6 +111,8 @@ return [
                     'permission' => '',
                     'children' => [
                         ['title' => 'Daily Production', 'icon' => 'fa-solid fa-industry', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/daily-production"],
+                        ['title' => 'Hourly Production', 'icon' => 'fa-solid fa-chart-line', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/sewing/hourly-report"],
+                        ['title' => 'Line Wise Output (WIP)', 'icon' => 'fa-solid fa-list-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/line-output"],
                         ['title' => 'Defect Analysis', 'icon' => 'fa-solid fa-triangle-exclamation', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/defects"],
                         ['title' => 'Shipment Status', 'icon' => 'fa-solid fa-truck-fast', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/shipment-status"],
                         ['title' => 'Requisition Details', 'icon' => 'fa-solid fa-dolly', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/requisition-details"],

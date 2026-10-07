@@ -31,6 +31,9 @@
                     <div class="col-md-2 mb-2"><input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}" title="From"></div>
                     <div class="col-md-2 mb-2"><input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}" title="To"></div>
                 @endif
+                @if(in_array('date', $filters, true))
+                    <div class="col-md-2 mb-2"><input type="date" name="date" class="form-control form-control-sm" value="{{ request('date', today()->toDateString()) }}" title="Date"></div>
+                @endif
                 @if(in_array('stage', $filters, true))
                     <div class="col-md-2 mb-2"><select name="stage" class="form-control form-control-sm msfl-select2"><option value="">All stages</option>
                         @foreach($stages as $k => $l)<option value="{{ $k }}" @selected(request('stage') === $k)>{{ $l }}</option>@endforeach</select></div>
@@ -44,7 +47,7 @@
                     <a href="{{ route('msfl.reports.show', $key) }}" class="btn btn-light btn-sm">Reset</a>
                 </div>
             </form>
-            <div class="table-responsive">@include('merchandising-sfl::admin.reports.partials.table', ['result' => $result])</div>
+            @include('merchandising-sfl::admin.reports.partials.result', ['result' => $result])
         </div>
     </div>
 </div>

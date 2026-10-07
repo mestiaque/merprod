@@ -20,6 +20,9 @@ use ME\MerchandisingSfl\Support\Lookups;
  *   Work min     = (operators + helpers) × working hours × 60
  *   Produced min = today's output × SMV
  *   Efficiency % = produced min ÷ work min × 100
+ *   Hourly       = the same per hour slot (an hour's work min = manpower × 60)
+ *   Target eff % = target × SMV ÷ work min × 100
+ *   Running day  = days the line has had sewing entries for the PO, up to this day
  *
  * Only line entries of the Sewing screen count (stage sewing, kind production).
  */
@@ -77,6 +80,9 @@ class SewingBoard
         $before = $base()->whereDate('entry_date', '<', $day)
             ->selectRaw('line_id, order_po_id, SUM(input_qty) i, SUM(pass_qty) o')
             ->groupBy('line_id', 'order_po_id')->get()->keyBy(fn ($r) => $r->line_id . '|' . $r->order_po_id);
+        $life = $base()->whereDate('entry_date', '<=', $day)
+            ->selectRaw('line_id, order_po_id, MIN(CASE WHEN input_qty > 0 THEN entry_date END) first_in, COUNT(DISTINCT entry_date) days')
+            ->groupBy('line_id', 'order_po_id')->get()->keyBy(fn ($r) => $r->line_id . '|' . $r->order_po_id);
 
         $keys = $plans->keys()->merge($today->keys())->unique()->values();
         $pos = OrderPo::query()->with(['order:id,order_no,buyer_id,total_qty', 'order.buyer:id,name', 'style:id,style_no,name,smv', 'color:id,name'])
@@ -97,14 +103,14 @@ class SewingBoard
                 if (! $po) {
                     continue;
                 }
-                $rows[] = $this->row($line, $po, $plans->get($key), $hourly->get($key, collect()), $today->get($key), $before->get($key), (int) ($poSewn[$po->id] ?? 0));
+                $rows[] = $this->row($line, $po, $plans->get($key), $hourly->get($key, collect()), $today->get($key), $before->get($key), (int) ($poSewn[$po->id] ?? 0), $life->get($key));
             }
         }
 
         return ['rows' => $rows, 'totals' => $this->totals(collect($rows)->reject(fn ($r) => $r['idle'] ?? false))];
     }
 
-    private function row(Line $line, OrderPo $po, ?SewingPlan $plan, Collection $hourly, $today, $before, int $poSewn): array
+    private function row(Line $line, OrderPo $po, ?SewingPlan $plan, Collection $hourly, $today, $before, int $poSewn, $life = null): array
     {
         $hours = [];
         foreach ($hourly as $h) {
@@ -118,6 +124,13 @@ class SewingBoard
         $manpower = (int) ($plan?->manpower() ?? 0);
         $workMin = (int) round($manpower * (float) ($plan->working_hours ?? 0) * 60);
         $prodMin = round($out * $smv, 2);
+        $hourEff = [];
+        $hourDhu = [];
+        foreach ($hours as $h => $c) {
+            $hourEff[$h] = $manpower > 0 ? round($c['out'] * $smv / ($manpower * 60) * 100, 2) : 0;
+            $checked = $c['out'] + $c['rej'] + $c['rw'];
+            $hourDhu[$h] = $checked > 0 ? round(($c['rej'] + $c['rw']) / $checked * 100, 2) : 0;
+        }
 
         return [
             'line' => $line,
@@ -142,14 +155,29 @@ class SewingBoard
             'work_min' => $workMin,
             'prod_min' => $prodMin,
             'efficiency' => $workMin > 0 ? round($prodMin / $workMin * 100, 2) : 0,
+            'hour_eff' => $hourEff,
+            'hour_dhu' => $hourDhu,
+            'target_eff' => $workMin > 0 ? round((int) ($plan->target ?? 0) * $smv / $workMin * 100, 2) : 0,
+            'input_start' => $life?->first_in ? Carbon::parse($life->first_in) : null,
+            'running_day' => (int) ($life->days ?? 0),
+            'remarks' => $plan->remarks ?? null,
         ];
     }
 
     private function totals(Collection $rows): array
     {
         $hours = [];
+        $hourEff = [];
+        $hourDhu = [];
         foreach (array_keys(ProductionFlow::hourSlots()) as $h) {
             $hours[$h] = (int) $rows->sum(fn ($r) => $r['hours'][$h]['out'] ?? 0);
+            // Lines that worked this hour: their minutes produced ÷ their minutes available.
+            $worked = $rows->filter(fn ($r) => isset($r['hours'][$h]));
+            $hourMin = $worked->sum(fn ($r) => $r['manpower'] * 60);
+            $hourEff[$h] = $hourMin > 0 ? round($worked->sum(fn ($r) => $r['hours'][$h]['out'] * $r['smv']) / $hourMin * 100, 2) : 0;
+            $bad = $worked->sum(fn ($r) => $r['hours'][$h]['rej'] + $r['hours'][$h]['rw']);
+            $checked = $worked->sum(fn ($r) => $r['hours'][$h]['out']) + $bad;
+            $hourDhu[$h] = $checked > 0 ? round($bad / $checked * 100, 2) : 0;
         }
         $sum = fn ($k) => $rows->sum($k);
         $checked = $sum('out') + $sum('rej') + $sum('rw');
@@ -172,6 +200,11 @@ class SewingBoard
             'work_min' => (int) $sum('work_min'),
             'prod_min' => round($sum('prod_min'), 2),
             'efficiency' => $sum('work_min') > 0 ? round($sum('prod_min') / $sum('work_min') * 100, 2) : 0,
+            'hour_eff' => $hourEff,
+            'hour_dhu' => $hourDhu,
+            'target_eff' => $sum('work_min') > 0 ? round($rows->sum(fn ($r) => $r['target'] * $r['smv']) / $sum('work_min') * 100, 2) : 0,
+            'smv' => $sum('out') > 0 ? round($rows->sum(fn ($r) => $r['out'] * $r['smv']) / $sum('out'), 2) : round((float) $rows->avg('smv'), 2),
+            'hourly_target' => (int) $rows->sum(fn ($r) => $r['working_hours'] > 0 ? (int) round($r['target'] / $r['working_hours']) : 0),
         ];
     }
 }

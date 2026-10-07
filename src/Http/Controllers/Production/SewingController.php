@@ -80,6 +80,21 @@ class SewingController extends Controller
         ]);
     }
 
+    /** Daily Hourly Production Report: per line × PO, output / efficiency / DHU hour by hour. */
+    public function hourlyReport(Request $request): View
+    {
+        $this->authorize('msfl_prod_entry.list');
+        $date = $this->date($request);
+
+        return view('merchandising-sfl::admin.production.sewing.' . ($request->routeIs('*.print') ? 'hourly-report-print' : 'hourly-report'), [
+            'date' => $date,
+            'board' => $this->board->rows($date, $request->integer('line_id') ?: null),
+            'lines' => Lookups::lines(),
+            'slots' => ProductionFlow::hourSlots(),
+            'breakHour' => ProductionFlow::breakHour(),
+        ]);
+    }
+
     /** Old links: the forms are modals on the board now. */
     public function inputForm(Request $request): RedirectResponse
     {

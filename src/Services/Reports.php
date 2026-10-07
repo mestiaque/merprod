@@ -5,15 +5,23 @@ namespace ME\MerchandisingSfl\Services;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use ME\MerchandisingSfl\Models\CostSheet;
+use ME\MerchandisingSfl\Models\DailyTarget;
 use ME\MerchandisingSfl\Models\OrderPo;
+use ME\MerchandisingSfl\Models\Production\Cutting;
 use ME\MerchandisingSfl\Models\Production\Entry;
+use ME\MerchandisingSfl\Models\Production\SewingPlan;
 use ME\MerchandisingSfl\Models\Sample;
 use ME\MerchandisingSfl\Models\TnaTask;
+use ME\MerchandisingSfl\Support\Lookups;
 
 /**
  * Merchandising v2 reports. Each returns
- *   ['headers' => [label, ...], 'align' => [i => 'right'], 'rows' => [[...], ...], 'totals' => [i => value] | null].
- * Filters come from the request: buyer_id, style_id, from, to, stage, line_id.
+ *   ['headers' => [label, ...], 'align' => [i => 'right'], 'rows' => [[...], ...], 'totals' => [i => value] | null,
+ *    'row_classes' => [row index => css class] (subtotal rows, not numbered)]
+ * or several such tables as ['sections' => [['title' => …, 'headers' => …, …], …]].
+ * Filters come from the request: buyer_id, style_id, from, to, date, stage, line_id.
  */
 class Reports
 {
@@ -21,6 +29,7 @@ class Reports
     public const LIST = [
         'order-book' => ['Order Book', 'fa-book', ['buyer', 'dates'], 'Every PO line of running orders: qty, value, dates and how much is packed / in the Finish Store.'],
         'daily-production' => ['Daily Production', 'fa-industry', ['buyer', 'dates', 'stage', 'line'], 'Stage entries day by day: input, pass, rework, reject.'],
+        'line-output' => ['Line Wise Output (WIP)', 'fa-list-check', ['date', 'line'], 'One day of the sewing floor: per line and style today\'s input, target, output and what is left in the line (WIP); per line the FOB value and CM of target and output, today and month to date; factory cutting, poly (packing) and shipout against Daily Targets.'],
         'defects' => ['Defect Analysis', 'fa-triangle-exclamation', ['dates', 'stage', 'line'], 'Rejects and rework by stage, part, machine and defect.'],
         'shipment-status' => ['Shipment Status', 'fa-truck-fast', ['buyer', 'dates'], 'POs by shipment date with cut / sewn / packed progress and risk.'],
         'tna-status' => ['T&A Status', 'fa-calendar-check', ['buyer'], 'Open T&A tasks of running plans — overdue and due within 7 days.'],
@@ -36,6 +45,7 @@ class Reports
 
         return match ($key) {
             'order-book' => $this->orderBook($r, $from, $to),
+            'line-output' => $this->lineOutput($r, $r->filled('date') ? Carbon::parse($r->date) : today()),
             'daily-production' => $this->dailyProduction($r, $from ?? today()->subDays(6), $to ?? today()->endOfDay()),
             'defects' => $this->defects($r, $from ?? today()->subDays(29), $to ?? today()->endOfDay()),
             'shipment-status' => $this->shipmentStatus($r, $from ?? today()->subDays(7), $to ?? today()->addDays(60)),
@@ -316,5 +326,193 @@ class Reports
             'totals' => [4 => $rows->sum(4), 5 => $rows->sum(5), 6 => $rows->sum(6), 7 => $rows->sum(7), 8 => $rows->sum(8)],
             'period' => $from || $to ? ($from?->format('d-M-Y') ?? '…') . ' – ' . ($to?->format('d-M-Y') ?? '…') : null,
         ];
+    }
+
+    /**
+     * Daily Line Wise Output (WIP): sewing per line × PO for one day, the line's value
+     * (FOB / CM) today and month to date, and factory cutting / poly / shipout.
+     * Sewing figures are the Sewing board's (production entries); targets from the Sewing Plan.
+     */
+    private function lineOutput(Request $r, Carbon $date): array
+    {
+        $day = $date->toDateString();
+        $monthStart = $date->copy()->startOfMonth()->toDateString();
+        $lines = Lookups::lines()->when($r->filled('line_id'), fn ($c) => $c->where('id', (int) $r->line_id))->values();
+        $key = fn ($x) => $x->line_id . '|' . $x->order_po_id;
+
+        $sewing = Entry::query()->where('stage', 'sewing')->where('kind', 'production')->whereIn('line_id', $lines->pluck('id'))
+            ->where('entry_date', '<=', $day)
+            ->selectRaw('line_id, order_po_id, MIN(CASE WHEN input_qty > 0 THEN entry_date END) first_in,
+                SUM(input_qty) i, SUM(pass_qty) o, SUM(reject_qty) rj,
+                SUM(CASE WHEN entry_date = ? THEN input_qty ELSE 0 END) di, SUM(CASE WHEN entry_date = ? THEN pass_qty ELSE 0 END) do_,
+                SUM(CASE WHEN entry_date >= ? THEN pass_qty ELSE 0 END) mo', [$day, $day, $monthStart])
+            ->groupBy('line_id', 'order_po_id')->get()->keyBy($key);
+        $plans = SewingPlan::query()->whereIn('line_id', $lines->pluck('id'))->whereBetween('plan_date', [$monthStart, $day])
+            ->selectRaw("line_id, order_po_id, SUM(target) mt, SUM(CASE WHEN plan_date = ? THEN target ELSE 0 END) dt,
+                MAX(CASE WHEN plan_date = ? THEN remarks END) remarks", [$day, $day])
+            ->groupBy('line_id', 'order_po_id')->get()->keyBy($key);
+
+        $pos = OrderPo::query()->with(['order.buyer', 'style', 'color'])
+            ->whereIn('id', $sewing->pluck('order_po_id')->merge($plans->pluck('order_po_id'))->unique())->get()->keyBy('id');
+        $cut = Cutting::query()->whereIn('order_po_id', $pos->keys())->where('cutting_date', '<=', $day)
+            ->groupBy('order_po_id')->selectRaw('order_po_id, SUM(total_qty) q')->pluck('q', 'order_po_id');
+        // CM per piece from the style's approved cost sheet (per dozen).
+        $cm = CostSheet::query()->where('status', 'approved')->whereIn('style_id', $pos->pluck('style_id')->unique())->orderBy('id')
+            ->get(['style_id', 'cm_cost'])->keyBy('style_id')->map(fn ($c) => (float) $c->cm_cost / 12);
+        $target = DailyTarget::query()->active()->whereBetween('target_date', [$monthStart, $day])->get();
+        $today = $target->first(fn ($t) => $t->target_date->toDateString() === $day);
+
+        // ── Sewing: line × style ──
+        $sum = fn ($rows, $i) => array_sum(array_column($rows, $i));
+        $top = [];
+        $topClasses = [];
+        $grand = [];
+        $money = [];
+        foreach ($lines as $line) {
+            $rows = [];
+            $value = array_fill_keys(['dt', 'dtv', 'do', 'dov', 'docm', 'mt', 'mtv', 'mo', 'mov', 'mocm'], 0.0);
+            $keys = $sewing->keys()->merge($plans->keys())->unique()->filter(fn ($k) => str_starts_with($k, $line->id . '|'))
+                ->sortBy(fn ($k) => $sewing[$k]->first_in ?? '9999');
+            foreach ($keys as $k) {
+                $s = $sewing->get($k);
+                $p = $plans->get($k);
+                $po = $pos->get((int) explode('|', $k)[1]);
+                if (! $po) {
+                    continue;
+                }
+                $fob = (float) $po->unit_price;
+                $cmPc = $cm[$po->style_id] ?? 0;
+                $dayTarget = (int) ($p->dt ?? 0);
+                $dayOut = (int) ($s->do_ ?? 0);
+                $value['dt'] += $dayTarget;
+                $value['dtv'] += $dayTarget * $fob;
+                $value['do'] += $dayOut;
+                $value['dov'] += $dayOut * $fob;
+                $value['docm'] += $dayOut * $cmPc;
+                $value['mt'] += (int) ($p->mt ?? 0);
+                $value['mtv'] += (int) ($p->mt ?? 0) * $fob;
+                $value['mo'] += (int) ($s->mo ?? 0);
+                $value['mov'] += (int) ($s->mo ?? 0) * $fob;
+                $value['mocm'] += (int) ($s->mo ?? 0) * $cmPc;
+
+                $wip = (int) ($s->i ?? 0) - (int) ($s->o ?? 0) - (int) ($s->rj ?? 0);
+                // Finished in this line and nothing today: leave it out.
+                if ($wip <= 0 && ! $dayTarget && ! $dayOut && ! (int) ($s->di ?? 0)) {
+                    continue;
+                }
+                $rows[] = [
+                    $line->code, $po->order->buyer->name ?? '', $po->style->style_no ?? '', $po->color->name ?? '',
+                    (int) $po->po_qty, (int) ($cut[$po->id] ?? 0), $s?->first_in ? Carbon::parse($s->first_in)->format('d-M-y') : '',
+                    (int) ($s->di ?? 0), (int) ($s->i ?? 0), $dayTarget, $dayOut, $dayOut - $dayTarget,
+                    $dayTarget ? round(($dayOut - $dayTarget) / $dayTarget * 100) . '%' : '', (int) ($s->o ?? 0), $wip, $p->remarks ?? '',
+                ];
+            }
+            if ($value['mt'] || $value['mo'] || $value['dt']) {
+                $money[] = [$line, $value];
+            }
+            if (! $rows) {
+                continue;
+            }
+            array_push($top, ...$rows);
+            $grand = array_merge($grand, $rows);
+            $topClasses[count($top)] = 'table-secondary font-weight-bold';
+            $top[] = $this->lineOutputTotal($line->code . ' Total', $rows, $sum);
+        }
+        if ($grand) {
+            $topClasses[count($top)] = 'table-success font-weight-bold';
+            $top[] = $this->lineOutputTotal('Grand Total', $grand, $sum);
+        }
+
+        // ── Planning output: value per line ──
+        $required = (float) ($today->line_required_value ?? 0);
+        $bottom = [];
+        foreach ($money as [$line, $v]) {
+            $bottom[] = [
+                $line->code, $v['mo'] ? round($v['mocm'] / $v['mo'], 2) : '', $v['mo'] ? round($v['mov'] / $v['mo'], 2) : '',
+                (int) $v['dt'], round($v['dtv'], 2), (int) $v['do'], round($v['dov'], 2), round($v['docm'], 2),
+                $required ? round($required, 2) : '', $required ? round($v['dov'] - $required, 2) : '',
+                (int) $v['mt'], round($v['mtv'], 2), (int) $v['mo'], round($v['mov'], 2), round($v['mocm'], 2), (int) ($v['mo'] - $v['mt']),
+                round($v['mov'] - $v['mtv'], 2),
+            ];
+        }
+        $bottomClasses = [];
+        if ($bottom) {
+            $total = ['Total', '', ''];
+            foreach (range(3, 16) as $i) {
+                $total[$i] = $i === 8 || $i === 9 ? ($required ? round($sum($bottom, $i), 2) : '') : (is_float($bottom[0][$i]) ? round($sum($bottom, $i), 2) : (int) $sum($bottom, $i));
+            }
+            $bottomClasses[count($bottom)] = 'table-success font-weight-bold';
+            $bottom[] = $total;
+        }
+
+        // ── Factory: cutting, poly (packing), shipout ──
+        $cutQty = fn ($from) => (int) Cutting::query()->whereBetween('cutting_date', [$from, $day])->sum('total_qty');
+        $packQty = fn ($from) => (int) Entry::query()->where('stage', 'packing')->whereBetween('entry_date', [$from, $day])
+            ->sum(DB::raw(ProductionFlow::NET_PASS_SQL));
+        $ship = fn ($from) => $this->shipout($from, $day);
+        $factory = [];
+        foreach ([
+            ['Cutting', 'cutting_target', $cutQty($day), $cutQty($monthStart), null, null],
+            ['Poly (Packing)', 'packing_target', $packQty($day), $packQty($monthStart), null, null],
+            ['Shipout', null, ($d = $ship($day))['qty'], ($m = $ship($monthStart))['qty'], $d['value'], $m['value']],
+        ] as [$label, $field, $dayQty, $monthQty, $dayValue, $monthValue]) {
+            $dayTarget = $field ? (int) ($today->{$field} ?? 0) : null;
+            $monthTarget = $field ? (int) $target->sum($field) : null;
+            $factory[] = [
+                $label, $dayTarget ?? '', $dayQty, $field ? $dayQty - $dayTarget : '', $monthTarget ?? '', $monthQty, $field ? $monthQty - $monthTarget : '',
+                $dayValue === null ? '' : round($dayValue, 2), $monthValue === null ? '' : round($monthValue, 2),
+            ];
+        }
+
+        $right = fn (array $cols) => array_fill_keys($cols, 'right');
+
+        return [
+            'period' => $date->format('d-M-Y') . ' (month from ' . Carbon::parse($monthStart)->format('d-M') . ')',
+            'sections' => [
+                [
+                    'title' => 'Sewing — line wise output (pcs)',
+                    'headers' => ['Line', 'Buyer', 'Style', 'Color', 'Order Qty', 'Cut Qty', 'Input Date', 'Day Input', 'Total Input', 'Day Target', 'Day Output', 'Short / Ex', 'Short / Ex %', 'Total Output', 'Line WIP', 'Remarks'],
+                    'align' => $right([4, 5, 7, 8, 9, 10, 11, 12, 13, 14]),
+                    'rows' => $top, 'row_classes' => $topClasses, 'totals' => null,
+                ],
+                [
+                    'title' => 'Planning output — value per line (FOB, CM)',
+                    'headers' => ['Line', 'CM / pc', 'FOB / pc', 'Today Target', 'Today Target Value', 'Today Output', 'Today Output Value', 'Today Output CM',
+                        'Required Value', 'Short / Ex Value (Day)', 'Month Target', 'Month Target Value', 'Month Output', 'Month Output Value', 'Month Output CM',
+                        'Short / Ex (Month)', 'Short / Ex Value (Month)'],
+                    'align' => $right(range(1, 16)),
+                    'rows' => $bottom, 'row_classes' => $bottomClasses, 'totals' => null,
+                ],
+                [
+                    'title' => 'Factory — cutting, poly and shipout (pcs)',
+                    'headers' => ['', 'Day Target', 'Day Achieve', 'Day Short / Ex', 'Month Target', 'Month Achieve', 'Month Short / Ex', 'Day Value', 'Month Value'],
+                    'align' => $right(range(1, 8)),
+                    'rows' => $factory, 'totals' => null,
+                ],
+            ],
+        ];
+    }
+
+    private function lineOutputTotal(string $label, array $rows, \Closure $sum): array
+    {
+        $dayTarget = $sum($rows, 9);
+        $dayOut = $sum($rows, 10);
+
+        return [$label, '', '', '', $sum($rows, 4), $sum($rows, 5), '', $sum($rows, 7), $sum($rows, 8), $dayTarget, $dayOut, $dayOut - $dayTarget,
+            $dayTarget ? round(($dayOut - $dayTarget) / $dayTarget * 100) . '%' : '', $sum($rows, 13), $sum($rows, 14), ''];
+    }
+
+    /** Shipped qty and FOB value (Inventory shipment lines linked to a PO) between two dates. */
+    private function shipout(string $from, string $to): array
+    {
+        if (! Schema::hasColumn('inv_shipment_items', 'msfl_order_po_id')) {
+            return ['qty' => 0, 'value' => 0.0];
+        }
+        $row = DB::table('inv_shipment_items as si')->join('inv_shipments as s', 's.id', '=', 'si.shipment_id')
+            ->join('msfl_order_pos as po', 'po.id', '=', 'si.msfl_order_po_id')
+            ->whereNull('s.deleted_at')->whereBetween('s.shipment_date', [$from, $to])
+            ->selectRaw('SUM(si.quantity) q, SUM(si.quantity * po.unit_price) v')->first();
+
+        return ['qty' => (int) ($row->q ?? 0), 'value' => (float) ($row->v ?? 0)];
     }
 }

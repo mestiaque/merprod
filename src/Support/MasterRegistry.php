@@ -12,7 +12,7 @@ use ME\MerchandisingSfl\Models;
  *
  * Field keys:
  *   name, label, type (text|email|textarea|number|decimal|date|select|boolean),
- *   required (bool), unique (bool), max (int), col (bootstrap col-md-*),
+ *   required (bool), unique (bool, or 'active' to ignore soft-deleted rows), max (int), col (bootstrap col-md-*),
  *   options (array, or callable returning [value => label]) for select.
  * Column keys: label, value (attribute name, or Closure(Model): string).
  * Optional: filters (column => options array or Closure), search (columns,
@@ -208,6 +208,26 @@ class MasterRegistry
                 'columns' => [...$codeName, ['label' => 'M/C', 'value' => fn ($m) => $m->machineType->code ?? '-'], ['label' => 'Attachment', 'value' => 'attachment'], ['label' => 'Default SMV', 'value' => 'default_smv']],
                 'with' => ['machineType'],
             ],
+            'daily-targets' => [
+                'title' => 'Daily Targets', 'singular' => 'Daily Target', 'model' => Models\DailyTarget::class, 'permission' => 'msfl_daily_target',
+                'fields' => [
+                    ['name' => 'target_date', 'label' => 'Date', 'type' => 'date', 'required' => true, 'unique' => 'active'],
+                    ['name' => 'cutting_target', 'label' => 'Cutting Target (pcs)', 'type' => 'number', 'min' => 0],
+                    ['name' => 'packing_target', 'label' => 'Poly / Packing Target (pcs)', 'type' => 'number', 'min' => 0],
+                    ['name' => 'line_required_value', 'label' => 'Required Value / Line (FOB)', 'type' => 'decimal'],
+                    ['name' => 'remarks', 'label' => 'Remarks', 'type' => 'text', 'col' => 8],
+                ],
+                'columns' => [
+                    ['label' => 'Date', 'value' => fn ($m) => $m->target_date->format('d M Y (D)')],
+                    ['label' => 'Cutting Target', 'value' => 'cutting_target'],
+                    ['label' => 'Poly / Packing Target', 'value' => 'packing_target'],
+                    ['label' => 'Required Value / Line', 'value' => 'line_required_value'],
+                    ['label' => 'Remarks', 'value' => 'remarks'],
+                ],
+                'search' => ['remarks'],
+                'order_by' => ['target_date', 'desc'],
+                'note' => fn () => 'Read by the <a href="' . e(route('msfl.reports.show', 'line-output')) . '">Line Wise Output</a> report (day and month-to-date balances). Sewing targets come from each line\'s Sewing Plan, not from here.',
+            ],
         ];
     }
 
@@ -260,7 +280,9 @@ class MasterRegistry
             });
 
             if (! empty($field['unique'])) {
-                $fieldRules[] = Rule::unique($table, $field['name'])->ignore($ignoreId);
+                $unique = Rule::unique($table, $field['name'])->ignore($ignoreId);
+                // 'active': a soft-deleted row doesn't block adding the same value again.
+                $fieldRules[] = $field['unique'] === 'active' ? $unique->whereNull('deleted_at') : $unique;
             }
 
             $rules[$field['name']] = $fieldRules;

@@ -11,7 +11,9 @@
     table.report-table thead th { background: #e9ecef; } .text-right { text-align: right; } .text-center { text-align: center; }
     .table-danger td { background: #fee2e2; } .table-warning td { background: #fef3c7; } .table-success td { background: #dcfce7; }
     tfoot td { font-weight: 700; background: #f3f4f6; }
-    @media print { thead th, .table-danger td, .table-warning td, .table-success td, tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+    .table-secondary td { background: #e5e7eb; font-weight: 700; } .font-weight-bold td { font-weight: 700; }
+    .report-section-title { font-size: 12px; font-weight: 700; margin: 8px 0 3px; }
+    @media print { thead th, .table-danger td, .table-warning td, .table-success td, tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .table-secondary td { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 </style>
 @endpush
 
@@ -24,5 +26,5 @@
         </div>
         <div style="font-weight: bold; text-transform: uppercase;">{{ $title }} @isset($result['period'])({{ $result['period'] }})@endisset <span class="print-time"><i>{{ now()->format('d-m-Y H:i:s') }}</i></span></div>
     </div>
-    @include('merchandising-sfl::admin.reports.partials.table', ['result' => $result])
+    @include('merchandising-sfl::admin.reports.partials.result', ['result' => $result])
 @endsection

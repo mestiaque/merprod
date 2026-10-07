@@ -119,6 +119,10 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
                 });
             }
 
+            // Daily Hourly Production Report (from the sewing board's figures).
+            Route::get('sewing/hourly-report', [SewingController::class, 'hourlyReport'])->name('hourly-report.index');
+            Route::get('sewing/hourly-report/print', [SewingController::class, 'hourlyReport'])->name('hourly-report.print');
+
             // Sewing, line by line: board (Daily Production), line input, hourly output.
             // Registered before {stage} so production/sewing opens the board.
             Route::prefix('sewing')->name('sewing.')->group(function () {

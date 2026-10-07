@@ -57,6 +57,7 @@ return [
         'msfl_line' => ['label' => 'Lines', 'permissions' => $master],
         'msfl_operation' => ['label' => 'Operations Library', 'permissions' => $master],
         'msfl_tna_template' => ['label' => 'T&A Templates', 'permissions' => $master],
+        'msfl_daily_target' => ['label' => 'Daily Targets (cutting / packing / line value)', 'permissions' => $master],
         'msfl_bulletin' => ['label' => 'Bulletin', 'permissions' => $crud + ['approve' => 'Approve']],
         // 'edit' = update step dates / recalculate. Also opens T&A Sheet.
         'msfl_tna' => ['label' => 'T&A (+ T&A Sheet)', 'permissions' => $crud],

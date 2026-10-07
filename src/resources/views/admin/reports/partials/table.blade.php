@@ -1,12 +1,12 @@
-{{-- props: result --}}
-@php $align = $result['align'] ?? []; $statusCol = $result['status_col'] ?? null; @endphp
+{{-- props: result (row_classes: row index => class — subtotal rows, not numbered) --}}
+@php $align = $result['align'] ?? []; $statusCol = $result['status_col'] ?? null; $rowClasses = $result['row_classes'] ?? []; $n = 0; @endphp
 <table class="table table-bordered table-sm align-middle report-table">
     <thead><tr><th>#</th>@foreach($result['headers'] as $i => $h)<th class="{{ ($align[$i] ?? '') === 'right' ? 'text-right' : '' }}">{{ $h }}</th>@endforeach</tr></thead>
     <tbody>
-        @forelse($result['rows'] as $row)
+        @forelse($result['rows'] as $r => $row)
             @php $status = $statusCol !== null ? ($row[$statusCol] ?? '') : null; @endphp
-            <tr class="{{ in_array($status, ['Late', 'Rejected'], true) ? 'table-danger' : (in_array($status, ['At risk'], true) ? 'table-warning' : (in_array($status, ['Packed', 'Approved'], true) ? 'table-success' : '')) }}">
-                <td>{{ $loop->iteration }}</td>
+            <tr class="{{ $rowClasses[$r] ?? (in_array($status, ['Late', 'Rejected'], true) ? 'table-danger' : (in_array($status, ['At risk'], true) ? 'table-warning' : (in_array($status, ['Packed', 'Approved'], true) ? 'table-success' : ''))) }}">
+                <td>{{ isset($rowClasses[$r]) ? '' : ++$n }}</td>
                 @foreach($row as $i => $v)
                     <td class="{{ ($align[$i] ?? '') === 'right' ? 'text-right' : '' }}">{{ is_float($v) ? number_format($v, 2) : (is_int($v) && ($align[$i] ?? '') === 'right' ? number_format($v) : $v) }}</td>
                 @endforeach
