@@ -1,11 +1,14 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'T&A ' . $tna->tna_no }}@else
     <title>{{ websiteTitle('T&A ' . $tna->tna_no) }}</title>
+@endif
 @endsection
 
 @php
-    $editable = $tna->isEditable() && auth()->user()->can('msfl_tna.edit');
+    $editable = ! $printMode && $tna->isEditable() && auth()->user()->can('msfl_tna.edit');
     [$done, $total] = $tna->progress();
     $milestones = [
         'Order Confirmed' => $tna->order->confirmed_at,
@@ -18,9 +21,8 @@
 @endphp
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'T&A — ' . $tna->tna_no, 'printPage' => 'A4 landscape'])
     <style>
         .tna-timeline { display: flex; flex-wrap: wrap; gap: .25rem; }
         .tna-timeline .step { flex: 1 1 120px; border: 1px solid #dee2e6; border-radius: .25rem; padding: .4rem; text-align: center; background: #f8f9fa; }
@@ -33,7 +35,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">T&amp;A — {{ $tna->tna_no }} @include('merchandising-sfl::admin.partials.status-badge', ['model' => $tna])</h4>
             <div>
-                <button type="button" onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Print</button>
+                @include('merchandising-sfl::admin.partials.print-button')
                 @if($editable)
                     <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#recalcModal"><i class="fa-solid fa-rotate"></i> Recalculate</button>
                 @endif

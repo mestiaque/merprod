@@ -31,7 +31,7 @@ class LineController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('is_active', $request->status === 'active'))
             ->orderBy(FloorLine::select('floor_name')->whereColumn('hr_floor_lines.id', 'msfl_lines.hr_floor_line_id'))
             ->orderBy(FloorLine::select('line_name')->whereColumn('hr_floor_lines.id', 'msfl_lines.hr_floor_line_id'))
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         // HR floor-lines: the ones not set up yet can be added; a line's own one stays selectable on edit.

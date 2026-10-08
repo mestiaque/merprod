@@ -29,7 +29,7 @@ class CostSheetController extends Controller
             ->when($request->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $request->buyer_id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('id')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         $buyers = Lookups::buyers();
@@ -41,7 +41,7 @@ class CostSheetController extends Controller
     {
         $this->authorize('msfl_cost_sheet.add');
 
-        $costSheet = new CostSheet(['costing_date' => now(), 'cm_cost' => 0, 'commercial_percent' => 0, 'other_cost' => 0, 'profit_percent' => 0]);
+        $costSheet = new CostSheet(['costing_date' => now(), 'price_type' => 'FOB', 'efficiency_percent' => 100, 'cm_cost' => 0, 'commercial_percent' => 0, 'other_cost' => 0, 'profit_percent' => 0]);
 
         if ($style = Style::find($request->integer('style_id'))) {
             $costSheet->fill([
@@ -61,7 +61,7 @@ class CostSheetController extends Controller
 
     public function store(CostSheetRequest $request, DocumentNumberService $numbers): RedirectResponse
     {
-        $data = $request->validated();
+        $data = $this->withCm($request->validated());
 
         $costSheet = DB::transaction(function () use ($data, $numbers) {
             $costSheet = CostSheet::create(Arr::except($data, 'items') + [
@@ -81,7 +81,7 @@ class CostSheetController extends Controller
     {
         $this->authorize('msfl_cost_sheet.view');
 
-        $costSheet->load(['buyer', 'style', 'inquiry', 'currency', 'approver', 'items.item', 'items.uom']);
+        $costSheet->load(['buyer', 'style.images', 'inquiry', 'currency', 'approver', 'items.item', 'items.uom']);
 
         return view('merchandising-sfl::admin.cost-sheets.show', compact('costSheet'));
     }
@@ -102,7 +102,7 @@ class CostSheetController extends Controller
     public function update(CostSheetRequest $request, CostSheet $costSheet): RedirectResponse
     {
         abort_unless($costSheet->isEditable(), 403, 'An approved cost sheet cannot be edited.');
-        $data = $request->validated();
+        $data = $this->withCm($request->validated());
 
         DB::transaction(function () use ($data, $costSheet) {
             $costSheet->update(Arr::except($data, 'items'));
@@ -137,9 +137,20 @@ class CostSheetController extends Controller
         return back()->with('success', 'Cost sheet approved.');
     }
 
+    /** No CM typed: take it from SMV × cost per minute ÷ efficiency. */
+    private function withCm(array $data): array
+    {
+        if (! (float) ($data['cm_cost'] ?? 0)) {
+            $data['cm_cost'] = (new CostSheet($data))->cmFromMinutes() ?? 0;
+        }
+
+        return $data;
+    }
+
     private function formData(): array
     {
         return [
+            'suppliers' => Lookups::suppliers()->pluck('name', 'id'),
             'buyers' => Lookups::buyers(),
             'styles' => Lookups::styles(),
             'inquiries' => Lookups::inquiries(),

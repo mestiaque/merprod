@@ -31,7 +31,7 @@ class BulletinController extends Controller
                 ->orWhereHas('style', fn ($q) => $q->where('style_no', 'like', '%' . $request->search . '%'))))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('id')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         return view('merchandising-sfl::admin.bulletins.index', compact('bulletins'));

@@ -38,7 +38,7 @@ class TnaPlanController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->orderByRaw("status = 'active' desc")
             ->orderBy('sewing_start_date')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         $lines = Lookups::lines();

@@ -82,7 +82,7 @@ class Lookups
 
     public static function styles(): Collection
     {
-        return Models\Style::query()->active()->orderByDesc('id')->get(['id', 'style_no', 'name', 'buyer_id']);
+        return Models\Style::query()->active()->orderByDesc('id')->get(['id', 'style_no', 'name', 'buyer_id', 'color_id']);
     }
 
     public static function inquiries(): Collection

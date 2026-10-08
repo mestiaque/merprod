@@ -1,13 +1,15 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'Sample ' . $sample->sample_no }}@else
     <title>{{ websiteTitle('Sample ' . $sample->sample_no) }}</title>
+@endif
 @endsection
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'Sample — ' . $sample->sample_no, 'printPage' => 'A4 portrait'])
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -38,6 +40,7 @@
                         </form>
                     @endif
                 @endcan
+                @include('merchandising-sfl::admin.partials.print-button')
                 <a href="{{ route('msfl.samples.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>

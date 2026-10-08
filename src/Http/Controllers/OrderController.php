@@ -15,12 +15,14 @@ use ME\MerchandisingSfl\Models\Size;
 use ME\MerchandisingSfl\Models\TnaPlan;
 use ME\MerchandisingSfl\Services\DocumentNumberService;
 use ME\MerchandisingSfl\Services\FileUploadService;
+use ME\MerchandisingSfl\Services\OrderPoLines;
+use ME\MerchandisingSfl\Support\Autofill;
 use ME\MerchandisingSfl\Support\Lookups;
 
-/** Order + BOM — buyer order header; PO lines live in OrderPoController. */
+/** Order + BOM — buyer order header and its PO lines, entered together on one page. */
 class OrderController extends Controller
 {
-    public function __construct(private readonly FileUploadService $files)
+    public function __construct(private readonly FileUploadService $files, private readonly OrderPoLines $lines)
     {
     }
 
@@ -38,7 +40,7 @@ class OrderController extends Controller
             ->when($request->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $request->buyer_id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('id')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         $buyers = Lookups::buyers();
@@ -55,20 +57,25 @@ class OrderController extends Controller
             $order->fill($inquiry->only(['buyer_id', 'season_id', 'merchandiser_id', 'factory_id']) + ['inquiry_id' => $inquiry->id]);
         }
 
-        return view('merchandising-sfl::admin.orders.create', $this->formData() + compact('order'));
+        return view('merchandising-sfl::admin.orders.create', $this->formData() + $this->poFormData($order) + compact('order'));
     }
 
     public function store(OrderRequest $request, DocumentNumberService $numbers): RedirectResponse
     {
-        $data = Arr::except($request->validated(), 'attachment');
+        $data = Arr::except($request->validated(), ['attachment', 'pos']);
         $data['attachment'] = $this->files->store($request->file('attachment'), 'orders');
 
-        $order = DB::transaction(fn () => Order::create($data + [
-            'order_no' => $numbers->next('order', Order::class, 'order_no'),
-            'created_by' => auth()->id(),
-        ]));
+        $order = DB::transaction(function () use ($data, $numbers, $request) {
+            $order = Order::create($data + [
+                'order_no' => $numbers->next('order', Order::class, 'order_no'),
+                'created_by' => auth()->id(),
+            ]);
+            $this->lines->sync($order, $request->poLines());
 
-        return redirect()->route('msfl.orders.show', $order)->with('success', 'Order ' . $order->order_no . ' created — now add its PO lines.');
+            return $order;
+        });
+
+        return redirect()->route('msfl.orders.show', $order)->with('success', 'Order ' . $order->order_no . ' created with ' . $order->pos()->count() . ' PO line(s).');
     }
 
     public function show(Order $order): View
@@ -81,23 +88,30 @@ class OrderController extends Controller
         return view('merchandising-sfl::admin.orders.show', $this->poLinesData($order) + compact('order', 'tnaPlans'));
     }
 
-    /** What the PO lines table and its add / edit modals need (orders/partials/po-lines). */
+    /** The PO lines block of the order form (orders/partials/po-form): sizes, styles of every buyer, colors, ship modes. */
+    private function poFormData(Order $order): array
+    {
+        $usedSizeIds = $order->exists ? $order->pos()->with('sizes')->get()->flatMap(fn ($po) => $po->sizes->pluck('size_id'))->unique()->values() : collect();
+
+        return [
+            'formSizes' => Size::displaySort(Size::query()->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $usedSizeIds))->get()),
+            // Sizes this order uses (size columns of the PO lines); an edit starts with the ones already used.
+            'selectedSizeIds' => collect(old('size_ids', $usedSizeIds->all()))->map(fn ($id) => (int) $id)->all(),
+            'styles' => Lookups::styles(),
+            'colors' => Lookups::colors(),
+            'shipModes' => Lookups::shipModes(),
+            // Style picked in a row → the agreed price (cost sheet, else inquiry) and the inquiry's ship date.
+            'styleFill' => collect(Autofill::styles())->map(fn ($s) => array_intersect_key($s, array_flip(['unit_price', 'shipment_date']))),
+        ];
+    }
+
+    /** What the read-only PO lines table needs (orders/partials/po-lines). */
     private function poLinesData(Order $order): array
     {
         $order->load(['pos' => fn ($q) => $q->orderBy('po_no')->orderBy('style_id'), 'pos.style', 'pos.color', 'pos.shipMode', 'pos.sizes']);
-
-        // Size columns: every size used by a PO line, plus all active sizes for the PO form.
         $usedSizeIds = $order->pos->flatMap(fn ($po) => $po->sizes->pluck('size_id'))->unique();
-        $allSizes = Size::query()->where(fn ($q) => $q->where('is_active', true)->orWhereIn('id', $usedSizeIds))
-            ->orderBy('sort_order')->orderBy('name')->get();
 
-        return [
-            'sizeColumns' => $allSizes->whereIn('id', $usedSizeIds)->values(),
-            'formSizes' => $allSizes->where('is_active', true)->values(),
-            'styles' => Lookups::styles()->where('buyer_id', $order->buyer_id)->values(),
-            'colors' => Lookups::colors(),
-            'shipModes' => Lookups::shipModes(),
-        ];
+        return ['sizeColumns' => Size::displaySort(Size::query()->whereIn('id', $usedSizeIds)->get())];
     }
 
     public function edit(Order $order): View|RedirectResponse
@@ -108,23 +122,22 @@ class OrderController extends Controller
             return redirect()->route('msfl.orders.show', $order)->with('error', 'A ' . $order->statusLabel() . ' order cannot be edited');
         }
 
-        // PO lines are edited on this page too (same table + modals as the order page).
-        return view('merchandising-sfl::admin.orders.edit', $this->formData() + $this->poLinesData($order) + compact('order'));
+        $order->load(['pos' => fn ($q) => $q->orderBy('id'), 'pos.sizes']);
+
+        return view('merchandising-sfl::admin.orders.edit', $this->formData() + $this->poFormData($order) + compact('order'));
     }
 
     public function update(OrderRequest $request, Order $order): RedirectResponse
     {
         abort_unless($order->isEditable(), 403);
 
-        $data = Arr::except($request->validated(), 'attachment');
-
-        if ((int) $data['buyer_id'] !== $order->buyer_id && $order->pos()->exists()) {
-            return back()->withInput()->with('error', 'The buyer cannot be changed after PO lines are added');
-        }
-
+        $data = Arr::except($request->validated(), ['attachment', 'pos']);
         $data['attachment'] = $this->files->store($request->file('attachment'), 'orders', $order->attachment);
 
-        $order->update($data);
+        DB::transaction(function () use ($order, $data, $request) {
+            $order->update($data);
+            $this->lines->sync($order, $request->poLines());
+        });
 
         return redirect()->route('msfl.orders.show', $order)->with('success', 'Order updated successfully.');
     }

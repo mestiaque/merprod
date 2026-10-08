@@ -1,15 +1,17 @@
-@extends(adminTheme() . 'layouts.app')
+@php($printMode = request()->boolean('print'))
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'Style ' . $style->style_no }}@else
     <title>{{ websiteTitle('Style ' . $style->style_no) }}</title>
+@endif
 @endsection
 
 @php($disk = \Illuminate\Support\Facades\Storage::disk(config('merchandising-sfl.upload_disk')))
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'Tech Pack — ' . $style->style_no, 'printPage' => 'A4 portrait'])
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -27,6 +29,7 @@
                 @can('msfl_style.edit')
                     <a href="{{ route('msfl.styles.edit', $style) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
                 @endcan
+                @include('merchandising-sfl::admin.partials.print-button')
                 <a href="{{ route('msfl.styles.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>

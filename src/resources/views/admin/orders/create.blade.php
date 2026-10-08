@@ -18,6 +18,7 @@
             <form method="POST" action="{{ route('msfl.orders.store') }}" enctype="multipart/form-data">
                 @csrf
                 @include('merchandising-sfl::admin.orders.partials.form')
+                @include('merchandising-sfl::admin.orders.partials.po-form')
                 <button type="submit" class="btn btn-primary mt-3 btn-sm">Save Order</button>
                 <a href="{{ route('msfl.orders.index') }}" class="btn btn-light mt-3 btn-sm">Cancel</a>
             </form>

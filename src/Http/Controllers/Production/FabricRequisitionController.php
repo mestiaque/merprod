@@ -30,7 +30,7 @@ class FabricRequisitionController extends Controller
         $requisitions = FabricRequisition::query()
             ->with(['orderPo.order.buyer', 'orderPo.style', 'orderPo.color', 'requisition.store', 'requisition.items.item', 'creator'])
             ->when($request->filled('order_po_id'), fn ($q) => $q->where('order_po_id', $request->order_po_id))
-            ->latest('id')->paginate(20)->withQueryString();
+            ->latest('id')->paginate($this->perPage(20))->withQueryString();
 
         return view('merchandising-sfl::admin.production.requisitions.index', [
             'requisitions' => $requisitions,

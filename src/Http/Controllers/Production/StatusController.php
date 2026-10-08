@@ -31,7 +31,7 @@ class StatusController extends Controller
                 ->where('po_no', 'like', '%' . $request->search . '%')
                 ->orWhereHas('style', fn ($q) => $q->where('style_no', 'like', '%' . $request->search . '%'))
                 ->orWhereHas('order', fn ($q) => $q->where('order_no', 'like', '%' . $request->search . '%'))))
-            ->latest('id')->paginate(20)->withQueryString();
+            ->latest('id')->paginate($this->perPage(20))->withQueryString();
 
         return view('merchandising-sfl::admin.production.status.index', [
             'pos' => $pos,

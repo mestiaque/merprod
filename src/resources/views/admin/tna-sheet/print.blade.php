@@ -12,7 +12,6 @@
 
 @push('css')
 <style>
-    @page { size: A3 landscape; margin: 7mm; }
     .container { max-width: none; }
     .band-block { margin-bottom: 10px; }
     table.tp { width: 100%; border-collapse: collapse; }
@@ -32,14 +31,7 @@
 @endpush
 
 @section('contents')
-    <div class="print-header">
-        <div class="company-info">
-            @if(general() && general()->logo())<img src="{{ asset(general()->logo()) }}" alt="Logo" class="company-logo">@endif
-            <div class="company-name">{{ general()->title ?? config('merchandising-sfl.company.name', '') }}</div>
-            <div style="text-align: end; width: 42mm;"><div class="company-address">{{ general()->address_one ?? '' }}</div></div>
-        </div>
-        <div style="font-weight: bold; text-transform: uppercase;">{{ $title }} <span class="print-time"><i>{{ now()->format('d-m-Y H:i:s') }}</i></span></div>
-    </div>
+    @include('merchandising-sfl::admin.partials.print-header', ['title' => $title, 'subtitle' => null, 'page' => 'A3 landscape'])
     <div class="legend">@include('merchandising-sfl::admin.tna-sheet.partials.legend')</div>
 
     @foreach($bands as $band)

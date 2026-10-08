@@ -32,7 +32,7 @@ class CuttingController extends Controller
                 ->where('cutting_no', 'like', '%' . $request->search . '%')
                 ->orWhereHas('orderPo', fn ($q) => $q->where('po_no', 'like', '%' . $request->search . '%'))))
             ->when($request->filled('order_po_id'), fn ($q) => $q->where('order_po_id', $request->order_po_id))
-            ->latest('id')->paginate(20)->withQueryString();
+            ->latest('id')->paginate($this->perPage(20))->withQueryString();
 
         return view('merchandising-sfl::admin.production.cuttings.index', ['cuttings' => $cuttings, 'pos' => Lookups::productionPos()]);
     }

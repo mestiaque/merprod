@@ -47,7 +47,7 @@ class QcReworkController extends Controller
             ->when($request->filled('order_po_id'), fn ($q) => $q->where('order_po_id', $request->order_po_id))
             ->when($request->filled('from'), fn ($q) => $q->whereDate('entry_date', '>=', $request->from))
             ->when($request->filled('to'), fn ($q) => $q->whereDate('entry_date', '<=', $request->to))
-            ->latest('entry_date')->latest('id')->paginate(25)->withQueryString();
+            ->latest('entry_date')->latest('id')->paginate($this->perPage(25))->withQueryString();
 
         return view('merchandising-sfl::admin.production.qc-rework.index', [
             'kind' => $kind,

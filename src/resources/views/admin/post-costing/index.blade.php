@@ -1,13 +1,15 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'Post Cost Sheet' }}@else
     <title>{{ websiteTitle('Post Cost Sheet') }}</title>
+@endif
 @endsection
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'Post Cost Sheet', 'printPage' => 'A4 landscape'])
     <div class="card">
         <div class="card-header"><h4 class="mb-0">Post Cost Sheet <small class="text-muted">— budget vs actual per PO</small></h4></div>
         <div class="card-body">
@@ -18,6 +20,7 @@
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
                     <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
                     <a href="{{ route('msfl.post-costing.index') }}" class="btn btn-light btn-sm">Reset</a>
+                    @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
             <div class="table-responsive">

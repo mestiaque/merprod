@@ -24,7 +24,7 @@ class PostCostingController extends Controller
                 ->when($request->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $request->buyer_id)))
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('po_no', 'like', '%' . $request->search . '%')
                 ->orWhereHas('style', fn ($q) => $q->where('style_no', 'like', '%' . $request->search . '%'))))
-            ->latest('id')->paginate(20)->withQueryString();
+            ->latest('id')->paginate($this->perPage(20))->withQueryString();
 
         $rows = collect($pos->items())->map(fn ($po) => $this->costing->build($po));
 

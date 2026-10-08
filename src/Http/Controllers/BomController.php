@@ -33,7 +33,7 @@ class BomController extends Controller
             ->when($request->filled('order_id'), fn ($q) => $q->where('order_id', $request->order_id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('id')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         $orders = Lookups::orders();

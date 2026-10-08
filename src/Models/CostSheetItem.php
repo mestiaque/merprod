@@ -9,7 +9,7 @@ class CostSheetItem extends Model
 {
     protected $table = 'msfl_cost_sheet_items';
 
-    protected $fillable = ['cost_sheet_id', 'group', 'item_id', 'description', 'uom_id', 'consumption', 'rate', 'amount', 'remarks'];
+    protected $fillable = ['cost_sheet_id', 'group', 'item_id', 'description', 'supplier_name', 'uom_id', 'consumption', 'rate', 'amount', 'remarks'];
 
     protected $casts = [
         'consumption' => 'decimal:4',
@@ -32,6 +32,12 @@ class CostSheetItem extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    /** What the line is: its description, else the library item's name. */
+    public function label(): string
+    {
+        return (string) ($this->description ?: ($this->item->name ?? ''));
     }
 
     public function uom(): BelongsTo

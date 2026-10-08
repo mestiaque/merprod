@@ -37,7 +37,10 @@ class CostSheetRequest extends FormRequest
             'costing_date' => ['required', 'date'],
             'order_qty' => ['nullable', 'integer', 'min:0'],
             'smv' => ['nullable', 'numeric', 'min:0'],
-            'cm_cost' => ['required', 'numeric', 'min:0'],
+            'price_type' => ['nullable', Rule::in(array_keys(CostSheet::PRICE_TYPES))],
+            'cm_minute_rate' => ['nullable', 'numeric', 'min:0'],
+            'efficiency_percent' => ['nullable', 'numeric', 'min:1', 'max:200'],
+            'cm_cost' => ['nullable', 'numeric', 'min:0'], // empty: SMV × CPM ÷ efficiency (controller)
             'commercial_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'other_cost' => ['required', 'numeric', 'min:0'],
             'profit_percent' => ['required', 'numeric', 'min:0', 'max:100'],
@@ -49,6 +52,7 @@ class CostSheetRequest extends FormRequest
             'items.*.group' => ['required', Rule::in(array_keys(CostSheet::GROUPS))],
             'items.*.item_id' => ['nullable', Rule::exists('msfl_items', 'id')],
             'items.*.description' => ['nullable', 'string', 'max:255'],
+            'items.*.supplier_name' => ['nullable', 'string', 'max:150'],
             'items.*.uom_id' => ['nullable', Rule::exists('inv_units', 'id')->whereNull('deleted_at')],
             'items.*.consumption' => ['required', 'numeric', 'min:0'],
             'items.*.rate' => ['required', 'numeric', 'min:0'],
@@ -58,6 +62,6 @@ class CostSheetRequest extends FormRequest
 
     public function messages(): array
     {
-        return ['items.required' => 'Add at least one fabric / trims / process line.'];
+        return ['items.required' => 'Add at least one cost line (fabric, accessories, wash …).'];
     }
 }

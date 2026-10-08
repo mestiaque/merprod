@@ -1,4 +1,5 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @php
     $perm = $definition['permission'];
@@ -7,13 +8,14 @@
 @endphp
 
 @section('title')
+@if($printMode){{ $definition['title'] }}@else
     <title>{{ websiteTitle($definition['title']) }}</title>
+@endif
 @endsection
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => $definition['title'], 'printPage' => 'A4 landscape'])
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -52,6 +54,7 @@
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
                     <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
                     <a href="{{ route('msfl.masters.index', $slug) }}" class="btn btn-light btn-sm">Reset</a>
+                    @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
 

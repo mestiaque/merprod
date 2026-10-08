@@ -38,7 +38,7 @@ class SampleController extends Controller
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->boolean('overdue'), fn ($q) => $q->whereIn('status', ['requested', 'in_progress'])->whereDate('required_date', '<', today()))
             ->latest('id')
-            ->paginate(20)
+            ->paginate($this->perPage(20))
             ->withQueryString();
 
         $buyers = Lookups::buyers();

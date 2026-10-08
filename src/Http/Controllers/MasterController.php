@@ -37,7 +37,7 @@ class MasterController extends Controller
             $query->when($request->filled($filter), fn ($q) => $q->where($filter, $request->input($filter)));
         }
 
-        $records = $query->orderBy($orderColumn, $orderDirection)->paginate(20)->withQueryString();
+        $records = $query->orderBy($orderColumn, $orderDirection)->paginate($this->perPage(20))->withQueryString();
 
         foreach ($definition['filters'] ?? [] as $filter => $options) {
             $definition['filters'][$filter] = $options instanceof \Closure ? $options() : $options;

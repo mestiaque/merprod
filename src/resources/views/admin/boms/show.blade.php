@@ -1,19 +1,21 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'BOM ' . $bom->bom_no }}@else
     <title>{{ websiteTitle('BOM ' . $bom->bom_no) }}</title>
+@endif
 @endsection
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'BOM — ' . $bom->bom_no, 'printPage' => 'A4 landscape'])
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">BOM — {{ $bom->bom_no }} <small class="text-muted">v{{ $bom->version }}</small></h4>
             <div>
-                <button type="button" onclick="window.print()" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Print</button>
+                @include('merchandising-sfl::admin.partials.print-button')
                 @if($bom->isEditable())
                     @can('msfl_bom.edit')
                         <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>

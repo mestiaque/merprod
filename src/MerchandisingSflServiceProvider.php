@@ -13,6 +13,10 @@ class MerchandisingSflServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__ . '/resources/views', 'merchandising-sfl');
         $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
 
+        if ($this->app->runningInConsole()) {
+            $this->commands([Console\Commands\Overview::class]);
+        }
+
         $this->mergeSidebar();
         $this->mergePermissions();
         $this->registerApprovalModules();

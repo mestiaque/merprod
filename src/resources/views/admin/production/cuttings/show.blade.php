@@ -1,19 +1,22 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'Cutting ' . $cutting->cutting_no }}@else
     <title>{{ websiteTitle('Cutting ' . $cutting->cutting_no) }}</title>
+@endif
 @endsection
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'Cutting — ' . $cutting->cutting_no, 'printPage' => 'A4 portrait'])
 
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Cutting {{ $cutting->cutting_no }}</h4>
             <div class="d-flex gap-1">
                 <a href="{{ route('msfl.production.status.show', $cutting->order_po_id) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-chart-column"></i> PO Status</a>
+                @include('merchandising-sfl::admin.partials.print-button')
                 <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>

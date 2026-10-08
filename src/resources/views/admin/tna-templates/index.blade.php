@@ -1,20 +1,25 @@
-@extends(adminTheme() . 'layouts.app')
+@php $printMode = request()->boolean('print'); @endphp
+@extends($printMode ? 'printMaster2' : adminTheme() . 'layouts.app')
 
 @section('title')
+@if($printMode){{ 'T&A Templates' }}@else
     <title>{{ websiteTitle('T&A Templates') }}</title>
+@endif
 @endsection
 
 @section('contents')
-<div class="flex-grow-1 msfl-module">
-    @include('merchandising-sfl::admin.partials.alerts')
-    @include('merchandising-sfl::admin.partials.ui-kit')
+<div class="flex-grow-1 msfl-module {{ $printMode ? 'msfl-print' : '' }}">
+    @include('merchandising-sfl::admin.partials.page-top', ['printTitle' => 'T&A Templates', 'printPage' => 'A4 landscape'])
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">T&amp;A Templates</h4>
-            @can('msfl_tna_template.add')
-                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createTemplateModal"><i class="fa-solid fa-plus"></i> New Template</button>
-            @endcan
+            <div>
+                @include('merchandising-sfl::admin.partials.print-button')
+                @can('msfl_tna_template.add')
+                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createTemplateModal"><i class="fa-solid fa-plus"></i> New Template</button>
+                @endcan
+            </div>
         </div>
         <div class="card-body">
             <p class="text-muted small mb-3">

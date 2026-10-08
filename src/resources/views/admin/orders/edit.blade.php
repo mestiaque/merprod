@@ -15,18 +15,16 @@
             <a href="{{ route('msfl.orders.show', $order) }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
+            @if($order->status === 'confirmed')
+                <div class="alert alert-info py-2 small">This order is confirmed — a change of a PO's qty, PCD or shipment date is saved as a buyer revision (T&amp;A Sheet). A PO that already has production or store work cannot be removed.</div>
+            @endif
             <form method="POST" action="{{ route('msfl.orders.update', $order) }}" enctype="multipart/form-data">
                 @csrf @method('PUT')
                 @include('merchandising-sfl::admin.orders.partials.form')
+                @include('merchandising-sfl::admin.orders.partials.po-form')
                 <button type="submit" class="btn btn-primary mt-3 btn-sm">Update Order</button>
                 <a href="{{ route('msfl.orders.show', $order) }}" class="btn btn-light mt-3 btn-sm">Cancel</a>
             </form>
-        </div>
-    </div>
-
-    <div class="card mt-3">
-        <div class="card-body">
-            @include('merchandising-sfl::admin.orders.partials.po-lines')
         </div>
     </div>
 </div>

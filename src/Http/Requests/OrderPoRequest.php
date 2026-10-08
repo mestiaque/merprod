@@ -15,6 +15,14 @@ class OrderPoRequest extends FormRequest
         return (bool) $this->user()?->can('msfl_order.edit');
     }
 
+    /** A style with a color gives it to the line (one color per style). */
+    protected function prepareForValidation(): void
+    {
+        if ($color = Style::whereKey($this->input('style_id'))->value('color_id')) {
+            $this->merge(['color_id' => $color]);
+        }
+    }
+
     public function rules(): array
     {
         return [
