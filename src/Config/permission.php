@@ -69,4 +69,15 @@ return [
         'msfl_prod_cutting' => ['label' => 'Cutting', 'permissions' => ['list' => 'List', 'add' => 'Create', 'view' => 'View', 'delete' => 'Delete', 'all' => 'All']],
         'msfl_prod_entry' => ['label' => 'Stage Entries (Embroidery … Packing, QC, Rework, Buyer QC)', 'permissions' => ['list' => 'List', 'add' => 'Create', 'delete' => 'Delete', 'all' => 'All']],
     ],
+
+    'COMMERCIAL' => [
+        'msfl_com_dashboard' => ['label' => 'Commercial Dashboard', 'permissions' => ['view' => 'View', 'all' => 'All']],
+        // Setup
+        'msfl_com_bank' => ['label' => 'Banks', 'permissions' => $master],
+        'msfl_com_payment_term' => ['label' => 'Payment Terms', 'permissions' => $master],
+        // 'approve' = Activate / Close / Re-open an LC.
+        'msfl_export_lc' => ['label' => 'Export LC / Sales Contract', 'permissions' => $crud + ['approve' => 'Activate / Close']],
+        'msfl_com_invoice' => ['label' => 'Commercial Invoice (+ Packing List)', 'permissions' => $crud],
+        'msfl_com_report' => ['label' => 'Commercial Reports (LC Status, Export Register)', 'permissions' => ['view' => 'View', 'all' => 'All']],
+    ],
 ];

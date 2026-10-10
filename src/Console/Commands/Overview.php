@@ -15,18 +15,18 @@ use ME\MerchandisingSfl\Services\TnaPlanner;
  * PO and the Inventory links. Meant for answering "where does this order stand?"
  * without opening every page.
  *   php artisan msfl:overview            (everything)
- *   php artisan msfl:overview orders     (masters | orders | dev | planning | production | inventory)
+ *   php artisan msfl:overview orders     (masters | orders | dev | planning | production | inventory | commercial)
  */
 class Overview extends Command
 {
-    protected $signature = 'msfl:overview {section? : masters | orders | dev | planning | production | inventory}';
+    protected $signature = 'msfl:overview {section? : masters | orders | dev | planning | production | inventory | commercial}';
 
     protected $description = 'Merchandising v2: read-only snapshot of masters, orders, planning, production and Inventory links';
 
     public function handle(ProductionFlow $flow, TnaPlanner $planner): int
     {
         $only = $this->argument('section');
-        $sections = ['masters', 'orders', 'dev', 'planning', 'production', 'inventory'];
+        $sections = ['masters', 'orders', 'dev', 'planning', 'production', 'inventory', 'commercial'];
         if ($only && ! in_array($only, $sections, true)) {
             $this->error('Section must be one of: ' . implode(', ', $sections));
 
@@ -163,5 +163,30 @@ class Overview extends Command
             . ' · Shipment lines with a PO: ' . (Schema::hasColumn('inv_shipment_items', 'msfl_order_po_id') ? DB::table('inv_shipment_items')->whereNotNull('msfl_order_po_id')->count() : 'n/a'));
         $pending = DB::table('approvals')->where('status', 'pending')->where('approvable_type', 'like', 'ME\\\\MerchandisingSfl%')->count();
         $this->line('Pending v2 approvals (buyers / samples): ' . $pending);
+    }
+
+    private function commercial(): void
+    {
+        $this->head('Commercial: Export LC / SC, commercial invoices');
+        if (! Schema::hasTable('msfl_com_export_lcs')) {
+            $this->line('(not migrated)');
+
+            return;
+        }
+        $status = app(\ME\MerchandisingSfl\Services\Commercial\LcStatus::class);
+        $lcs = M\Commercial\ExportLc::with(['buyer', 'currency', 'pos'])->orderBy('id')->get();
+        if ($lcs->isEmpty()) {
+            $this->line('(no LC)');
+        }
+        foreach ($lcs as $lc) {
+            $f = $status->figures($lc);
+            $this->line("{$lc->lc_no} [{$lc->status}] " . strtoupper($lc->type) . " {$lc->buyer_lc_no} · {$lc->buyer?->name} · " . ($lc->currency->code ?? '') . ' ' . number_format((float) $lc->lc_value, 2)
+                . " · POs {$lc->pos->count()} (value " . number_format($f['po_value'], 2) . ') · shipped ' . number_format($f['shipped'], 2) . ' · balance ' . number_format($f['balance'], 2)
+                . " · last ship {$lc->last_shipment_date?->format('d-M-y')} · expiry {$lc->expiry_date?->format('d-M-y')}" . ($f['expiry_days'] !== null ? " ({$f['expiry_days']} d)" : ''));
+        }
+        foreach (M\Commercial\Invoice::with(['exportLc', 'lines.orderPo'])->orderBy('id')->get() as $i) {
+            $this->line("   {$i->invoice_no} {$i->invoice_date?->format('d-M-y')} · {$i->exportLc?->lc_no} · " . $i->lines->map(fn ($l) => ($l->orderPo->po_no ?? '') . ' ' . $l->qty)->implode(', ')
+                . " · qty {$i->total_qty} · value " . number_format((float) $i->total_value, 2) . ' · B/L ' . ($i->bl_no ?: '-'));
+        }
     }
 }

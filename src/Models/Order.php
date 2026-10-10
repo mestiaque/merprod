@@ -35,7 +35,7 @@ class Order extends Model
 
     protected $fillable = [
         'order_no', 'buyer_id', 'season_id', 'merchandiser_id', 'factory_id', 'inquiry_id', 'buyer_order_ref',
-        'order_date', 'currency_id', 'delivery_term', 'payment_term', 'attachment', 'remarks', 'created_by',
+        'order_date', 'currency_id', 'delivery_term', 'payment_term_id', 'attachment', 'remarks', 'created_by',
     ];
 
     protected $casts = [
@@ -43,6 +43,11 @@ class Order extends Model
         'confirmed_at' => 'datetime',
         'total_value' => 'decimal:4',
     ];
+
+    public function paymentTerm(): BelongsTo
+    {
+        return $this->belongsTo(Commercial\PaymentTerm::class);
+    }
 
     public function buyer(): BelongsTo
     {

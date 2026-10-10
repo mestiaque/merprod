@@ -14,9 +14,9 @@ class Autofill
 {
     public static function buyers(): array
     {
-        return Models\Buyer::query()->get(['id', 'merchandiser_id', 'delivery_term', 'payment_term'])
+        return Models\Buyer::query()->get(['id', 'merchandiser_id', 'delivery_term', 'payment_term_id'])
             ->mapWithKeys(fn ($b) => [$b->id => self::clean([
-                'merchandiser_id' => $b->merchandiser_id, 'delivery_term' => $b->delivery_term, 'payment_term' => $b->payment_term,
+                'merchandiser_id' => $b->merchandiser_id, 'delivery_term' => $b->delivery_term, 'payment_term_id' => $b->payment_term_id,
             ])])->all();
     }
 

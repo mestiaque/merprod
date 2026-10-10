@@ -54,7 +54,7 @@
                 <div class="col-md-3 mb-2"><strong>Inquiry:</strong>
                     @if($order->inquiry)<a href="{{ route('msfl.inquiries.show', $order->inquiry) }}">{{ $order->inquiry->inquiry_no }}</a>@else - @endif
                 </div>
-                <div class="col-md-3 mb-2"><strong>Delivery / Payment:</strong> {{ $order->delivery_term ?? '-' }} / {{ $order->payment_term ?? '-' }}</div>
+                <div class="col-md-3 mb-2"><strong>Delivery / Payment:</strong> {{ $order->delivery_term ?? '-' }} / {{ $order->paymentTerm->name ?? '-' }}</div>
                 <div class="col-md-3 mb-2"><strong>Total Qty:</strong> {{ number_format($order->total_qty) }} pcs</div>
                 <div class="col-md-3 mb-2"><strong>Total Value:</strong> {{ $order->currency->code ?? '' }} {{ number_format($order->total_value, 2) }}</div>
                 <div class="col-md-3 mb-2"><strong>Attachment:</strong>

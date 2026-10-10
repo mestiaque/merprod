@@ -2,7 +2,7 @@
 
 $base = '/admin/merchandising-sfl';
 
-// Three top-level menus (one group, shown in this order): Merchandising → Planning → Production.
+// Four top-level menus (one group, shown in this order): Merchandising → Planning → Production → Commercial.
 return [
     [
         'group_title' => '',
@@ -117,6 +117,38 @@ return [
                         ['title' => 'Shipment Status', 'icon' => 'fa-solid fa-truck-fast', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/shipment-status"],
                         ['title' => 'Requisition Details', 'icon' => 'fa-solid fa-dolly', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/requisition-details"],
                         ['title' => 'Requisition Summary', 'icon' => 'fa-solid fa-boxes-stacked', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/requisition-summary"],
+                    ],
+                ],
+            ],
+        ],
+        [
+            'title' => 'Commercial',
+            'icon' => 'fa-solid fa-ship',
+            'icon_color' => 'text-primary',
+            'permission' => '',
+            'order' => 13.3,
+            'children' => [
+                ['title' => 'Dashboard', 'icon' => 'fa-solid fa-gauge', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_dashboard', 'route' => "$base/commercial/dashboard"],
+                [
+                    'title' => 'Setup',
+                    'icon' => 'fa-solid fa-sliders',
+                    'icon_color' => 'text-primary',
+                    'permission' => '',
+                    'children' => [
+                        ['title' => 'Banks', 'icon' => 'fa-solid fa-building-columns', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_bank', 'route' => "$base/masters/banks"],
+                        ['title' => 'Payment Terms', 'icon' => 'fa-solid fa-hourglass-half', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_payment_term', 'route' => "$base/masters/payment-terms"],
+                    ],
+                ],
+                ['title' => 'Export LC / Sales Contract', 'icon' => 'fa-solid fa-file-contract', 'icon_color' => 'text-primary', 'permission' => 'msfl_export_lc', 'route' => "$base/commercial/export-lcs"],
+                ['title' => 'Commercial Invoice', 'icon' => 'fa-solid fa-file-invoice-dollar', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_invoice', 'route' => "$base/commercial/invoices"],
+                [
+                    'title' => 'Reports',
+                    'icon' => 'fa-solid fa-chart-pie',
+                    'icon_color' => 'text-primary',
+                    'permission' => '',
+                    'children' => [
+                        ['title' => 'LC Status', 'icon' => 'fa-solid fa-file-contract', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_report', 'route' => "$base/reports/lc-status"],
+                        ['title' => 'Export Register', 'icon' => 'fa-solid fa-ship', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_report', 'route' => "$base/reports/export-register"],
                     ],
                 ],
             ],

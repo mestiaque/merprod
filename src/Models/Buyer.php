@@ -25,7 +25,7 @@ class Buyer extends Model
 
     protected $table = 'msfl_buyers';
 
-    protected $fillable = ['code', 'name', 'short_name', 'merchandiser_id', 'country', 'agent_name', 'contact_person', 'phone', 'email', 'address', 'payment_term', 'delivery_term', 'is_active', 'created_by'];
+    protected $fillable = ['code', 'name', 'short_name', 'merchandiser_id', 'country', 'agent_name', 'contact_person', 'phone', 'email', 'address', 'payment_term_id', 'delivery_term', 'is_active', 'created_by'];
 
     protected $casts = ['is_active' => 'boolean', 'approved_at' => 'datetime'];
 
@@ -33,6 +33,11 @@ class Buyer extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where($this->qualifyColumn('is_active'), true)->approved();
+    }
+
+    public function paymentTerm(): BelongsTo
+    {
+        return $this->belongsTo(Commercial\PaymentTerm::class);
     }
 
     public function merchandiser(): BelongsTo

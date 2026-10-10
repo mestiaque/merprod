@@ -118,7 +118,7 @@ class MsflDemoSeeder extends Seeder
 
         // ── Master data that Merchandising owns ─────────────────────────────
         foreach ([['D-HM', 'H&M', 'Sweden'], ['D-PRI', 'Primark', 'Ireland'], ['D-NXT', 'Next', 'United Kingdom'], ['D-ZRA', 'Zara', 'Spain']] as [$code, $name, $country]) {
-            $this->master('buyers', ['code' => $code, 'name' => $name, 'country' => $country, 'merchandiser_id' => $this->user->id, 'delivery_term' => 'FOB', 'payment_term' => 'LC at sight']);
+            $this->master('buyers', ['code' => $code, 'name' => $name, 'country' => $country, 'merchandiser_id' => $this->user->id, 'delivery_term' => 'FOB', 'payment_term_id' => \ME\MerchandisingSfl\Models\Commercial\PaymentTerm::query()->where('code', 'LC-SIGHT')->value('id')]);
         }
         $buyer = M\Buyer::withoutGlobalScopes()->whereIn('code', ['D-HM', 'D-PRI', 'D-NXT', 'D-ZRA'])->pluck('id', 'code');
         foreach (['D-HM', 'D-PRI', 'D-NXT'] as $code) {
@@ -294,7 +294,7 @@ class MsflDemoSeeder extends Seeder
         };
         $order = function (string $b, int $inq, int $ago) use ($buyer, $inquiryIds, $season, $factory, $usd) {
             $this->post('msfl.orders.store', [], ['buyer_id' => $buyer[$b], 'inquiry_id' => $inquiryIds[$inq], 'season_id' => $season['D-SS27'], 'merchandiser_id' => $this->user->id,
-                'factory_id' => $factory, 'buyer_order_ref' => 'BPO-' . random_int(10000, 99999), 'order_date' => $this->d($ago), 'currency_id' => $usd, 'delivery_term' => 'FOB', 'payment_term' => 'LC at sight']);
+                'factory_id' => $factory, 'buyer_order_ref' => 'BPO-' . random_int(10000, 99999), 'order_date' => $this->d($ago), 'currency_id' => $usd, 'delivery_term' => 'FOB', 'payment_term_id' => \ME\MerchandisingSfl\Models\Commercial\PaymentTerm::query()->where('code', 'LC-SIGHT')->value('id')]);
 
             return M\Order::query()->latest('id')->first();
         };

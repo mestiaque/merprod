@@ -58,7 +58,7 @@ class OrderRequest extends FormRequest
             'order_date' => ['required', 'date'],
             'currency_id' => ['nullable', Rule::exists('msfl_currencies', 'id')],
             'delivery_term' => ['nullable', Rule::in(array_keys(Order::DELIVERY_TERMS))],
-            'payment_term' => ['nullable', 'string', 'max:255'],
+            'payment_term_id' => ['nullable', Rule::exists('msfl_com_payment_terms', 'id')->whereNull('deleted_at')],
             'remarks' => ['nullable', 'string', 'max:5000'],
             'attachment' => ['nullable', ...FileUploadService::RULES],
 

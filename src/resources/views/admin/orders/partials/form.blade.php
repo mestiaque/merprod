@@ -11,7 +11,7 @@
     @include('merchandising-sfl::admin.partials.select', ['name' => 'currency_id', 'label' => 'Currency', 'options' => $currencies->pluck('code', 'id'), 'value' => $order->currency_id])
 
     @include('merchandising-sfl::admin.partials.select', ['name' => 'delivery_term', 'label' => 'Delivery Term', 'options' => \ME\MerchandisingSfl\Models\Order::DELIVERY_TERMS, 'value' => $order->delivery_term])
-    @include('merchandising-sfl::admin.partials.input', ['name' => 'payment_term', 'label' => 'Payment Term', 'value' => $order->payment_term])
+    @include('merchandising-sfl::admin.partials.select', ['name' => 'payment_term_id', 'label' => 'Payment Term', 'options' => \ME\MerchandisingSfl\Models\Commercial\PaymentTerm::query()->active()->orderBy('days')->orderBy('name')->pluck('name', 'id'), 'value' => $order->payment_term_id])
     <div class="col-md-3 mb-3">
         <label class="form-label">Attachment (contract / PO sheet)</label>
         <input type="file" name="attachment" class="form-control form-control-sm">
@@ -24,4 +24,4 @@
 
 {{-- Inquiry picked → buyer, season, merchandiser, factory; buyer → its terms. --}}
 @include('merchandising-sfl::admin.partials.autofill', ['source' => 'inquiry_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::inquiries(), 'fields' => ['buyer_id' => 'buyer_id', 'season_id' => 'season_id', 'merchandiser_id' => 'merchandiser_id', 'factory_id' => 'factory_id']])
-@include('merchandising-sfl::admin.partials.autofill', ['source' => 'buyer_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::buyers(), 'fields' => ['merchandiser_id' => 'merchandiser_id', 'delivery_term' => 'delivery_term', 'payment_term' => 'payment_term']])
+@include('merchandising-sfl::admin.partials.autofill', ['source' => 'buyer_id', 'map' => \ME\MerchandisingSfl\Support\Autofill::buyers(), 'fields' => ['merchandiser_id' => 'merchandiser_id', 'delivery_term' => 'delivery_term', 'payment_term_id' => 'payment_term_id']])

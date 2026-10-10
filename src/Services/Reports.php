@@ -25,7 +25,7 @@ use ME\MerchandisingSfl\Support\Lookups;
  */
 class Reports
 {
-    /** key => [title, icon, filters used, description] */
+    /** key => [title, icon, filters used, description, permission (default msfl_report)] */
     public const LIST = [
         'order-book' => ['Order Book', 'fa-book', ['buyer', 'dates'], 'Every PO line of running orders: qty, value, dates and how much is packed / in the Finish Store.'],
         'daily-production' => ['Daily Production', 'fa-industry', ['buyer', 'dates', 'stage', 'line'], 'Stage entries day by day: input, pass, rework, reject.'],
@@ -36,6 +36,8 @@ class Reports
         'sample-turnaround' => ['Sample Turnaround', 'fa-vial', ['buyer', 'dates'], 'Each sample: requested → submitted → decided, with days taken.'],
         'requisition-details' => ['Requisition Details', 'fa-dolly', ['buyer', 'style', 'dates'], 'Every fabric requisition item by buyer / style / PO: requested, approved, issued — and on which dates the store issued how much.'],
         'requisition-summary' => ['Requisition Summary', 'fa-boxes-stacked', ['buyer', 'style', 'dates'], 'Totals per buyer → style → item: requested, approved, issued, still to issue, first / last issue date.'],
+        'lc-status' => ['LC Status', 'fa-file-contract', ['buyer'], 'Every Export LC / Sales Contract: value, PO value, shipped (commercial invoices), balance, last shipment and expiry with days left.', 'msfl_com_report'],
+        'export-register' => ['Export Register', 'fa-ship', ['buyer', 'dates'], 'Commercial invoices by date: buyer, LC, POs, qty, value, EXP and B/L.', 'msfl_com_report'],
     ];
 
     public function run(string $key, Request $r): array
@@ -45,6 +47,8 @@ class Reports
 
         return match ($key) {
             'order-book' => $this->orderBook($r, $from, $to),
+            'lc-status' => $this->lcStatus($r),
+            'export-register' => $this->exportRegister($r, $from, $to),
             'line-output' => $this->lineOutput($r, $r->filled('date') ? Carbon::parse($r->date) : today()),
             'daily-production' => $this->dailyProduction($r, $from ?? today()->subDays(6), $to ?? today()->endOfDay()),
             'defects' => $this->defects($r, $from ?? today()->subDays(29), $to ?? today()->endOfDay()),
@@ -514,5 +518,60 @@ class Reports
             ->selectRaw('SUM(si.quantity) q, SUM(si.quantity * po.unit_price) v')->first();
 
         return ['qty' => (int) ($row->q ?? 0), 'value' => (float) ($row->v ?? 0)];
+    }
+
+    /** Export LCs with their shipped value and days to last shipment / expiry. */
+    private function lcStatus(Request $r): array
+    {
+        $status = app(\ME\MerchandisingSfl\Services\Commercial\LcStatus::class);
+        $lcs = \ME\MerchandisingSfl\Models\Commercial\ExportLc::query()->with(['buyer', 'currency', 'pos'])
+            ->when($r->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $r->buyer_id))
+            ->orderByRaw("FIELD(status, 'active', 'draft', 'closed')")->orderBy('expiry_date')->get();
+
+        $rows = $lcs->map(function ($lc) use ($status) {
+            $f = $status->figures($lc);
+            $state = $lc->status !== 'active' ? ucfirst($lc->status)
+                : ($f['expiry_days'] !== null && $f['expiry_days'] < 0 ? 'Late' : ($f['expiry_days'] !== null && $f['expiry_days'] <= 30 ? 'At risk' : 'Active'));
+
+            return [
+                $lc->lc_no, strtoupper($lc->type) . ' ' . $lc->buyer_lc_no, $lc->buyer->name ?? '', $lc->currency->code ?? '',
+                (float) $lc->lc_value, $f['po_value'], $f['shipped'], $f['balance'], $lc->pos->count(), $f['invoices'],
+                $lc->last_shipment_date?->format('d-M-y') ?? '', $lc->expiry_date?->format('d-M-y') ?? '',
+                $f['expiry_days'] === null ? '' : ($f['expiry_days'] < 0 ? abs($f['expiry_days']) . ' d expired' : $f['expiry_days'] . ' d'), $state,
+            ];
+        });
+
+        return [
+            'headers' => ['LC No', 'Buyer LC / SC', 'Buyer', 'Cur', 'LC Value', 'PO Value', 'Shipped', 'Balance', 'POs', 'Invoices', 'Last Ship', 'Expiry', 'Expiry in', 'Status'],
+            'align' => [4 => 'right', 5 => 'right', 6 => 'right', 7 => 'right', 8 => 'right', 9 => 'right'],
+            'rows' => $rows->all(),
+            'totals' => [4 => round($rows->sum(4), 2), 5 => round($rows->sum(5), 2), 6 => round($rows->sum(6), 2), 7 => round($rows->sum(7), 2)],
+            'status_col' => 13,
+        ];
+    }
+
+    /** Commercial invoices by date. */
+    private function exportRegister(Request $r, $from, $to): array
+    {
+        $invoices = \ME\MerchandisingSfl\Models\Commercial\Invoice::query()->with(['buyer', 'exportLc.currency', 'shipMode', 'lines.orderPo.style'])
+            ->when($r->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $r->buyer_id))
+            ->when($from, fn ($q) => $q->whereDate('invoice_date', '>=', $from))->when($to, fn ($q) => $q->whereDate('invoice_date', '<=', $to))
+            ->orderBy('invoice_date')->orderBy('id')->get();
+
+        $rows = $invoices->map(fn ($i) => [
+            $i->invoice_date->format('d-M-y'), $i->invoice_no, $i->buyer->name ?? '', ($i->exportLc->lc_no ?? '') . ' · ' . ($i->exportLc->buyer_lc_no ?? ''),
+            $i->lines->map(fn ($l) => ($l->orderPo->po_no ?? '') . ' / ' . ($l->orderPo->style->style_no ?? ''))->unique()->implode(', '),
+            (int) $i->total_qty, (int) $i->total_cartons, $i->exportLc->currency->code ?? '', (float) $i->total_value,
+            trim(($i->exp_no ?? '') . ($i->exp_date ? ' ' . $i->exp_date->format('d-M-y') : '')), trim(($i->bl_no ?? '') . ($i->bl_date ? ' ' . $i->bl_date->format('d-M-y') : '')),
+            $i->shipMode->name ?? '',
+        ]);
+
+        return [
+            'headers' => ['Date', 'Invoice', 'Buyer', 'LC / SC', 'PO / Style', 'Qty', 'Cartons', 'Cur', 'Value', 'EXP', 'B/L / AWB', 'Ship Mode'],
+            'align' => [5 => 'right', 6 => 'right', 8 => 'right'],
+            'rows' => $rows->all(),
+            'totals' => [5 => $rows->sum(5), 6 => $rows->sum(6), 8 => round($rows->sum(8), 2)],
+            'period' => $from || $to ? ($from?->format('d-M-Y') ?? '…') . ' – ' . ($to?->format('d-M-Y') ?? '…') : null,
+        ];
     }
 }

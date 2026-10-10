@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use ME\MerchandisingSfl\Http\Controllers\BomController;
 use ME\MerchandisingSfl\Http\Controllers\BulletinController;
+use ME\MerchandisingSfl\Http\Controllers\Commercial;
 use ME\MerchandisingSfl\Http\Controllers\CostSheetController;
 use ME\MerchandisingSfl\Http\Controllers\DashboardController;
 use ME\MerchandisingSfl\Http\Controllers\InquiryController;
@@ -100,6 +101,15 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('reports/{report}', [ReportController::class, 'show'])->whereIn('report', array_keys(Reports::LIST))->name('reports.show');
         Route::get('reports/{report}/print', [ReportController::class, 'print'])->whereIn('report', array_keys(Reports::LIST))->name('reports.print');
+
+        // Commercial — Export LC / SC → Commercial Invoice (+ packing list)
+        Route::prefix('commercial')->name('commercial.')->group(function () {
+            Route::get('dashboard', [Commercial\DashboardController::class, 'index'])->name('dashboard');
+            Route::resource('export-lcs', Commercial\ExportLcController::class);
+            Route::post('export-lcs/{export_lc}/status', [Commercial\ExportLcController::class, 'changeStatus'])->name('export-lcs.status');
+            Route::resource('invoices', Commercial\InvoiceController::class);
+            Route::get('invoices/{invoice}/print/{doc}', [Commercial\InvoiceController::class, 'print'])->whereIn('doc', ['invoice', 'packing'])->name('invoices.print');
+        });
 
         // Production — fabric requisition → cutting → stage entries (pcs + QC)
         Route::prefix('production')->name('production.')->group(function () {

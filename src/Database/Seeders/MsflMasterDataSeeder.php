@@ -88,7 +88,7 @@ class MsflMasterDataSeeder extends Seeder
         foreach ($invBuyers as $b) {
             $this->master('buyers', [
                 'code' => $b->code, 'name' => $b->name, 'country' => 'Bangladesh', 'merchandiser_id' => $merchandiser,
-                'phone' => $b->contact, 'address' => $b->address, 'delivery_term' => 'FOB', 'payment_term' => 'LC at sight',
+                'phone' => $b->contact, 'address' => $b->address, 'delivery_term' => 'FOB', 'payment_term_id' => \ME\MerchandisingSfl\Models\Commercial\PaymentTerm::query()->where('code', 'LC-SIGHT')->value('id'),
             ]);
         }
         $pending = Approval::query()->pending()->where('approvable_type', M\Buyer::class)

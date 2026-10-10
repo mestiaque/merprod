@@ -33,6 +33,15 @@ class MsflDefaultMasterSeeder extends Seeder
             Currency::firstOrCreate(['code' => $code], ['name' => $name, 'symbol' => $symbol, 'exchange_rate' => $rate]);
         }
 
+        // Commercial payment terms [code, name, type, days].
+        foreach ([
+            ['LC-SIGHT', 'LC at Sight', 'sight', 0], ['LC-U30', 'LC Usance 30 days', 'usance', 30], ['LC-U60', 'LC Usance 60 days', 'usance', 60],
+            ['LC-U90', 'LC Usance 90 days', 'usance', 90], ['LC-U120', 'LC Usance 120 days', 'usance', 120], ['TT-ADV', 'TT in Advance', 'tt_advance', 0],
+            ['TT-30', 'TT 30 days after shipment', 'tt', 30], ['DP', 'DP at Sight', 'dp', 0], ['DA-60', 'DA 60 days', 'da', 60],
+        ] as [$code, $name, $type, $days]) {
+            \ME\MerchandisingSfl\Models\Commercial\PaymentTerm::firstOrCreate(['code' => $code], ['name' => $name, 'term_type' => $type, 'days' => $days]);
+        }
+
         $this->call(MsflGarmentPartSeeder::class);
         $this->call(MsflPlanningSeeder::class);
     }

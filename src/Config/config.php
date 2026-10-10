@@ -35,5 +35,7 @@ return [
         'bulletin'   => 'BLT',
         'tna'        => 'TNA',
         'cutting'    => 'CUT',
+        'export_lc'  => 'ELC',
+        'com_invoice' => 'CI',
     ],
 ];
