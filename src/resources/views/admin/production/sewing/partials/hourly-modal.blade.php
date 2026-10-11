@@ -4,7 +4,7 @@
 --}}
 @php $mine = old('_modal') === 'hourly'; @endphp
 <div class="modal fade" id="sewHourlyModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ route('msfl.production.sewing.hourly.store') }}" id="sewHourlyForm">
                 @csrf

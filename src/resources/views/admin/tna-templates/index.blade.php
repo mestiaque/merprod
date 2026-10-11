@@ -60,7 +60,7 @@
 
 @can('msfl_tna_template.add')
     <div class="modal fade" id="createTemplateModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <form method="POST" action="{{ route('msfl.tna-templates.store') }}">
                     @csrf

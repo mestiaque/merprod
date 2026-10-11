@@ -28,7 +28,7 @@
     <div class="col-md-3 mb-3">
         <label class="form-label">Attachment (LC copy)</label>
         <input type="file" name="attachment" class="form-control form-control-sm">
-        @if($lc->attachment)<small><a href="{{ \Illuminate\Support\Facades\Storage::disk(config('merchandising-sfl.upload_disk'))->url($lc->attachment) }}" target="_blank">Current file</a> — upload to replace</small>@endif
+        @if($lc->attachment)<small><a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($lc->attachment) }}" target="_blank">Current file</a> — upload to replace</small>@endif
     </div>
     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6, 'value' => $lc->remarks])
     @if($lc->status === 'active')

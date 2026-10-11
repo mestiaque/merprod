@@ -58,7 +58,7 @@
             <label class="form-label">{{ $fileLabel }} File</label>
             <input type="file" name="{{ $file }}" class="form-control form-control-sm">
             @if($style?->{$file})
-                <small><a href="{{ \Illuminate\Support\Facades\Storage::disk(config('merchandising-sfl.upload_disk'))->url($style->{$file}) }}" target="_blank">Current file</a> — upload to replace</small>
+                <small><a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($style->{$file}) }}" target="_blank">Current file</a> — upload to replace</small>
             @endif
         </div>
     @endforeach

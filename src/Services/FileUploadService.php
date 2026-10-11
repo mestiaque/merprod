@@ -45,6 +45,12 @@ class FileUploadService
 
     public function url(?string $path): ?string
     {
-        return $path ? Storage::disk(config('merchandising-sfl.upload_disk'))->url($path) : null;
+        return self::link($path);
+    }
+
+    /** Link that opens an uploaded file through the package (FileController) — works without the storage symlink / APP_URL. */
+    public static function link(?string $path): ?string
+    {
+        return $path ? route('msfl.files.show', ['path' => $path]) : null;
     }
 }

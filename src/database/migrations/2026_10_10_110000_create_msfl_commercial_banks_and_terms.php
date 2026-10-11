@@ -47,6 +47,15 @@ return new class extends Migration
             $table->softDeletes();
         });
 
+        // The standard terms, so buyers' / orders' typed terms can be matched by the next migration.
+        foreach ([
+            ['LC-SIGHT', 'LC at Sight', 'sight', 0], ['LC-U30', 'LC Usance 30 days', 'usance', 30], ['LC-U60', 'LC Usance 60 days', 'usance', 60],
+            ['LC-U90', 'LC Usance 90 days', 'usance', 90], ['LC-U120', 'LC Usance 120 days', 'usance', 120], ['TT-ADV', 'TT in Advance', 'tt_advance', 0],
+            ['TT-30', 'TT 30 days after shipment', 'tt', 30], ['DP', 'DP at Sight', 'dp', 0], ['DA-60', 'DA 60 days', 'da', 60],
+        ] as [$code, $name, $type, $days]) {
+            DB::table('msfl_com_payment_terms')->insertOrIgnore(['code' => $code, 'name' => $name, 'term_type' => $type, 'days' => $days, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
         if (DB::table('msfl_com_export_lcs')->exists()) {
             throw new RuntimeException('Export LCs exist — move their bank / term text to the new masters by hand before this migration.');
         }

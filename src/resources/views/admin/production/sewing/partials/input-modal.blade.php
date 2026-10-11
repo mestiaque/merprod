@@ -1,7 +1,7 @@
 {{-- Line Input modal: pieces given to a line from the cutting balance, size-wise. props: date, pos, lines, sizeRows, sizeNames --}}
 @php $mine = old('_modal') === 'input'; @endphp
 <div class="modal fade" id="sewInputModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="{{ route('msfl.production.sewing.input.store') }}" id="sewInputForm">
                 @csrf

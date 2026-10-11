@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 use ME\MerchandisingSfl\Models\Concerns\HasStatus;
 
 class Bom extends Model
@@ -59,7 +58,7 @@ class Bom extends Model
 
     public function fileUrl(): ?string
     {
-        return $this->bom_file ? Storage::disk(config('merchandising-sfl.upload_disk'))->url($this->bom_file) : null;
+        return $this->bom_file ? \ME\MerchandisingSfl\Services\FileUploadService::link($this->bom_file) : null;
     }
 
     /** Order qty the line is booked against: the order's qty of this style, narrowed by the line's color / size. */

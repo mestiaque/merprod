@@ -15,7 +15,7 @@
             <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
-            {{-- 1. Pick the LC (and optionally an Inventory shipment) — the page reloads with its POs. --}}
+            {{-- 1. Pick the LC — the page reloads with its POs and what can still be shipped per size. --}}
             <form method="GET" class="row align-items-end mb-2">
                 <div class="col-md-5 mb-2">
                     <label class="form-label">Export LC / Sales Contract <span class="text-danger">*</span> <small class="text-muted">(active)</small></label>
@@ -24,15 +24,6 @@
                         @foreach($lcs as $l)<option value="{{ $l->id }}" @selected($lc?->id === $l->id)>{{ $l->label() }}</option>@endforeach
                     </select>
                 </div>
-                @if($lc && $shipments->isNotEmpty())
-                    <div class="col-md-5 mb-2">
-                        <label class="form-label">Fill qty from Inventory Shipment <small class="text-muted">(optional)</small></label>
-                        <select name="inv_shipment_id" class="form-control form-control-sm msfl-select2" onchange="this.form.submit()">
-                            <option value="">— None —</option>
-                            @foreach($shipments as $s)<option value="{{ $s['id'] }}" @selected($shipmentId == $s['id'])>{{ $s['label'] }}</option>@endforeach
-                        </select>
-                    </div>
-                @endif
             </form>
 
             @if($lc)
@@ -44,7 +35,7 @@
                     <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light mt-3 btn-sm">Cancel</a>
                 </form>
             @else
-                <p class="text-muted small mb-0">Pick an active Export LC — its POs with the qty still to invoice show up. No LC? Make one in Commercial → Export LC and activate it.</p>
+                <p class="text-muted small mb-0">Pick an active Export LC — its POs with the pcs per size still to ship show up; then enter the carton packing list. No LC? Make one in Commercial → Export LC and activate it.</p>
             @endif
         </div>
     </div>

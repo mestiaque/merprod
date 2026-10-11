@@ -16,7 +16,7 @@
             <h4 class="mb-0">Commercial Invoice — {{ $invoice->invoice_no }}</h4>
             <div>
                 <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'invoice']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Commercial Invoice</a>
-                <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'packing']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-box"></i> Packing List</a>
+                <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'packing']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-box"></i> Carton Packing List</a>
                 @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $invoice) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>@endcan
                 <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
@@ -26,7 +26,6 @@
                 <div class="col-md-3 mb-2"><strong>Date:</strong> {{ $invoice->invoice_date->format('d M Y') }}</div>
                 <div class="col-md-3 mb-2"><strong>Buyer:</strong> {{ $invoice->buyer->name ?? '-' }}</div>
                 <div class="col-md-3 mb-2"><strong>LC / SC:</strong> <a href="{{ route('msfl.commercial.export-lcs.show', $invoice->exportLc) }}">{{ $invoice->exportLc->lc_no }}</a> <small class="text-muted">{{ $invoice->exportLc->buyer_lc_no }}</small></div>
-                <div class="col-md-3 mb-2"><strong>Inventory Shipment:</strong> {{ $shipmentNo ?? '-' }}</div>
                 <div class="col-md-3 mb-2"><strong>EXP:</strong> {{ $invoice->exp_no ?? '-' }} {{ $invoice->exp_date ? '(' . $invoice->exp_date->format('d M Y') . ')' : '' }}</div>
                 <div class="col-md-3 mb-2"><strong>B/L / AWB:</strong> {{ $invoice->bl_no ?? '-' }} {{ $invoice->bl_date ? '(' . $invoice->bl_date->format('d M Y') . ')' : '' }}</div>
                 <div class="col-md-3 mb-2"><strong>Ship Mode:</strong> {{ $invoice->shipMode->name ?? '-' }} · {{ $invoice->vessel ?? '' }}</div>
@@ -56,6 +55,8 @@
                 </table>
             </div>
             <p class="small mb-0"><strong>In words:</strong> {{ $invoice->amountInWords() }}</p>
+            <h6 class="mt-3">Carton Packing List</h6>
+            <div class="table-responsive">@include('merchandising-sfl::admin.commercial.invoices.partials.carton-list')</div>
         </div>
     </div>
 </div>

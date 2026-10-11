@@ -37,5 +37,6 @@ return [
         'cutting'    => 'CUT',
         'export_lc'  => 'ELC',
         'com_invoice' => 'CI',
+        'final_packing_list' => 'FPL',
     ],
 ];

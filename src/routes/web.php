@@ -47,6 +47,9 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
 
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+        // Uploaded files (tech packs, BOM files, attachments, images) — served from the upload disk.
+        Route::get('files/{path}', [\ME\MerchandisingSfl\Http\Controllers\FileController::class, 'show'])->where('path', '.*')->name('files.show');
+
         // Dev (R&D)
         Route::resource('inquiries', InquiryController::class);
 
@@ -118,6 +121,11 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
 
             Route::resource('requisitions', FabricRequisitionController::class)->only(['index', 'create', 'store', 'show']);
             Route::resource('cuttings', CuttingController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+
+            // Final Packing List (buyer PO, after floor packing → buyer approval)
+            Route::resource('final-packing-lists', \ME\MerchandisingSfl\Http\Controllers\Production\FinalPackingListController::class);
+            Route::post('final-packing-lists/{final_packing_list}/approve', [\ME\MerchandisingSfl\Http\Controllers\Production\FinalPackingListController::class, 'approve'])->name('final-packing-lists.approve');
+            Route::post('final-packing-lists/{final_packing_list}/reopen', [\ME\MerchandisingSfl\Http\Controllers\Production\FinalPackingListController::class, 'reopen'])->name('final-packing-lists.reopen');
 
             // QC (step-wise, not Buyer QC) and Rework — a card per step, then that step's form.
             foreach (['qc', 'rework'] as $kind) {

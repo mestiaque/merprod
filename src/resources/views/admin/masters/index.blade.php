@@ -94,7 +94,7 @@
 
                             @can($perm . '.edit')
                                 <div class="modal fade" id="edit{{ $modalKey }}Modal{{ $record->id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
+                                    <div class="modal-dialog">
                                         <div class="modal-content">
                                             <form method="POST" action="{{ route('msfl.masters.update', [$slug, $record->id]) }}">
                                                 @csrf @method('PUT')
@@ -128,7 +128,7 @@
 
 @can($perm . '.add')
     <div class="modal fade" id="create{{ $modalKey }}Modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <form method="POST" action="{{ route('msfl.masters.store', $slug) }}">
                     @csrf

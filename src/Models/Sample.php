@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 use ME\MerchandisingSfl\Models\Concerns\HasStatus;
 
 /**
@@ -103,6 +102,6 @@ class Sample extends Model
 
     public function attachmentUrl(): ?string
     {
-        return $this->attachment ? Storage::disk(config('merchandising-sfl.upload_disk'))->url($this->attachment) : null;
+        return $this->attachment ? \ME\MerchandisingSfl\Services\FileUploadService::link($this->attachment) : null;
     }
 }

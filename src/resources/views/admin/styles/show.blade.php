@@ -51,7 +51,7 @@
                 <div class="col-md-3 mb-2"><strong>Files:</strong>
                     @foreach(['tech_pack_file' => 'Tech Pack', 'artwork_file' => 'Artwork', 'size_chart_file' => 'Size Chart'] as $file => $fileLabel)
                         @if($style->{$file})
-                            <a href="{{ $disk->url($style->{$file}) }}" target="_blank" class="badge badge-light">{{ $fileLabel }}</a>
+                            <a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($style->{$file}) }}" target="_blank" class="badge badge-light">{{ $fileLabel }}</a>
                         @endif
                     @endforeach
                 </div>

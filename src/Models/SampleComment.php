@@ -5,7 +5,6 @@ namespace ME\MerchandisingSfl\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class SampleComment extends Model
 {
@@ -30,6 +29,6 @@ class SampleComment extends Model
 
     public function attachmentUrl(): ?string
     {
-        return $this->attachment ? Storage::disk(config('merchandising-sfl.upload_disk'))->url($this->attachment) : null;
+        return $this->attachment ? \ME\MerchandisingSfl\Services\FileUploadService::link($this->attachment) : null;
     }
 }

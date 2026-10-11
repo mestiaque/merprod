@@ -26,8 +26,8 @@
                     @include('merchandising-sfl::admin.production.partials.po-select', ['selected' => $selectedPo])
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'requisition_date', 'label' => 'Date', 'type' => 'date', 'required' => true, 'value' => now()])
                     @include('merchandising-sfl::admin.partials.select', ['name' => 'store_id', 'label' => 'Store', 'required' => true,
-                        'options' => $stores->mapWithKeys(fn ($s) => [$s->id => $s->name . ' (' . (\ME\SflInventory\Models\InvStore::TYPE_LABELS[$s->type] ?? $s->type) . ')'])->all(),
-                        'value' => $stores->firstWhere('type', \ME\SflInventory\Models\InvStore::TYPE_BUYER)->id ?? null])
+                        'options' => $stores->mapWithKeys(fn ($s) => [$s->id => $s->name . ' (' . ($storeTypeLabels[$s->type] ?? $s->type) . ')'])->all(),
+                        'value' => $stores->firstWhere('type', $buyerStoreType)->id ?? null])
                     @include('merchandising-sfl::admin.partials.select', ['name' => 'department_id', 'label' => 'Requesting Department', 'required' => true,
                         'options' => $departments->pluck('name', 'id')->all(),
                         'value' => $departments->first(fn ($d) => str_contains(strtolower($d->name), 'cutting'))->id ?? null])

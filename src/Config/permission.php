@@ -68,6 +68,8 @@ return [
         'msfl_prod_requisition' => ['label' => 'Fabric Requisition', 'permissions' => ['list' => 'List', 'add' => 'Create', 'all' => 'All']],
         'msfl_prod_cutting' => ['label' => 'Cutting', 'permissions' => ['list' => 'List', 'add' => 'Create', 'view' => 'View', 'delete' => 'Delete', 'all' => 'All']],
         'msfl_prod_entry' => ['label' => 'Stage Entries (Embroidery … Packing, QC, Rework, Buyer QC)', 'permissions' => ['list' => 'List', 'add' => 'Create', 'delete' => 'Delete', 'all' => 'All']],
+        // 'approve' = record the buyer's approval (freezes the figures) / re-open.
+        'msfl_final_packing_list' => ['label' => 'Final Packing List', 'permissions' => $crud + ['approve' => 'Buyer Approved / Re-open']],
     ],
 
     'COMMERCIAL' => [

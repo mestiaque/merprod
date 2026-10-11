@@ -16,7 +16,7 @@
         <label class="form-label">Attachment (contract / PO sheet)</label>
         <input type="file" name="attachment" class="form-control form-control-sm">
         @if($order->attachment)
-            <small><a href="{{ \Illuminate\Support\Facades\Storage::disk(config('merchandising-sfl.upload_disk'))->url($order->attachment) }}" target="_blank">Current file</a> — upload to replace</small>
+            <small><a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($order->attachment) }}" target="_blank">Current file</a> — upload to replace</small>
         @endif
     </div>
     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'type' => 'textarea', 'col' => 12, 'value' => $order->remarks])

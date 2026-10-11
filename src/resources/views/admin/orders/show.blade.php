@@ -58,7 +58,7 @@
                 <div class="col-md-3 mb-2"><strong>Total Qty:</strong> {{ number_format($order->total_qty) }} pcs</div>
                 <div class="col-md-3 mb-2"><strong>Total Value:</strong> {{ $order->currency->code ?? '' }} {{ number_format($order->total_value, 2) }}</div>
                 <div class="col-md-3 mb-2"><strong>Attachment:</strong>
-                    @if($order->attachment)<a href="{{ \Illuminate\Support\Facades\Storage::disk(config('merchandising-sfl.upload_disk'))->url($order->attachment) }}" target="_blank">View</a>@else - @endif
+                    @if($order->attachment)<a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($order->attachment) }}" target="_blank">View</a>@else - @endif
                 </div>
                 @if($order->remarks)
                     <div class="col-12 mb-2"><strong>Remarks:</strong> {!! nl2br(e($order->remarks)) !!}</div>

@@ -98,7 +98,7 @@
 @endphp
 @foreach($modals as $modalLine)
     <div class="modal fade" id="lineModal{{ $modalLine->id ?? 'new' }}" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <form method="POST" action="{{ $modalLine ? route('msfl.lines.update', $modalLine) : route('msfl.lines.store') }}">
                     @csrf

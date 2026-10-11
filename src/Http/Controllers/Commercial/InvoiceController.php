@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use ME\MerchandisingSfl\Http\Controllers\Controller;
 use ME\MerchandisingSfl\Http\Requests\Commercial\InvoiceRequest;
@@ -15,12 +14,14 @@ use ME\MerchandisingSfl\Models\Commercial\ExportLc;
 use ME\MerchandisingSfl\Models\Commercial\Invoice;
 use ME\MerchandisingSfl\Services\Commercial\LcStatus;
 use ME\MerchandisingSfl\Services\DocumentNumberService;
+use ME\MerchandisingSfl\Services\PackingFigures;
 use ME\MerchandisingSfl\Support\Lookups;
 
 /**
- * Commercial → Commercial Invoice: what was shipped against an active Export LC
- * (qty per PO × the PO's FOB, capped by packed − already invoiced) + the shipping /
- * packing figures. Prints the Commercial Invoice and the Packing List.
+ * Commercial → Commercial Invoice: what was shipped against an active Export LC, entered as
+ * a carton packing list (carton ranges × pcs per size, capped by packed − already invoiced
+ * per size); qty / cartons / weights / CBM and the PO lines (× FOB) follow from it.
+ * Prints the Commercial Invoice and the Carton Packing List.
  */
 class InvoiceController extends Controller
 {
@@ -51,17 +52,17 @@ class InvoiceController extends Controller
         $this->authorize('msfl_com_invoice.add');
         $lc = ExportLc::query()->where('status', 'active')->find($request->integer('export_lc_id'));
 
-        return view('merchandising-sfl::admin.commercial.invoices.create', $this->formData(new Invoice(['invoice_date' => now()]), $lc, $request->integer('inv_shipment_id') ?: null));
+        return view('merchandising-sfl::admin.commercial.invoices.create', $this->formData(new Invoice(['invoice_date' => now(), 'port_of_loading' => 'Chattogram, Bangladesh']), $lc));
     }
 
     public function store(InvoiceRequest $request, DocumentNumberService $numbers): RedirectResponse
     {
         $lc = ExportLc::findOrFail($request->export_lc_id);
         $invoice = DB::transaction(function () use ($request, $numbers, $lc) {
-            $invoice = Invoice::create(Arr::except($request->validated(), ['lines']) + [
+            $invoice = Invoice::create(Arr::except($request->validated(), ['cartons']) + [
                 'invoice_no' => $numbers->next('com_invoice', Invoice::class, 'invoice_no'), 'buyer_id' => $lc->buyer_id, 'created_by' => auth()->id(),
             ]);
-            $this->saveLines($invoice, $request->validated('lines'));
+            $this->saveCartons($invoice, $request->validated('cartons'));
 
             return $invoice;
         });
@@ -72,34 +73,33 @@ class InvoiceController extends Controller
     public function show(Invoice $invoice): View
     {
         $this->authorize('msfl_com_invoice.view');
-        $invoice->load(['buyer', 'exportLc.currency', 'shipMode', 'creator', 'lines.orderPo.style', 'lines.orderPo.color', 'lines.orderPo.order']);
+        $invoice->load(['buyer', 'exportLc.currency', 'shipMode', 'creator', 'lines.orderPo.style', 'lines.orderPo.color', 'lines.orderPo.order', 'cartons.sizes', 'cartons.orderPo.style', 'cartons.orderPo.color']);
 
-        return view('merchandising-sfl::admin.commercial.invoices.show', ['invoice' => $invoice, 'shipmentNo' => $this->shipmentNo($invoice->inv_shipment_id)]);
+        return view('merchandising-sfl::admin.commercial.invoices.show', ['invoice' => $invoice, 'sizes' => $this->cartonSizes($invoice)]);
     }
 
     /** Commercial Invoice or Packing List on printMaster2. */
     public function print(Invoice $invoice, string $doc): View
     {
         $this->authorize('msfl_com_invoice.view');
-        $invoice->load(['buyer', 'exportLc.currency', 'exportLc.paymentTerm', 'exportLc.issuingBank', 'exportLc.lienBank', 'shipMode', 'lines.orderPo.style', 'lines.orderPo.color', 'lines.orderPo.order', 'lines.orderPo.sizes.size']);
+        $invoice->load(['buyer', 'exportLc.currency', 'exportLc.paymentTerm', 'exportLc.issuingBank', 'exportLc.lienBank', 'shipMode', 'lines.orderPo.style', 'lines.orderPo.color', 'lines.orderPo.order', 'cartons.sizes', 'cartons.orderPo.style', 'cartons.orderPo.color']);
 
-        return view('merchandising-sfl::admin.commercial.invoices.print', ['invoice' => $invoice, 'doc' => $doc]);
+        return view('merchandising-sfl::admin.commercial.invoices.print', ['invoice' => $invoice, 'doc' => $doc, 'sizes' => $this->cartonSizes($invoice)]);
     }
 
     public function edit(Invoice $invoice): View
     {
         $this->authorize('msfl_com_invoice.edit');
 
-        return view('merchandising-sfl::admin.commercial.invoices.edit', $this->formData($invoice->load('lines'), $invoice->exportLc, null));
+        return view('merchandising-sfl::admin.commercial.invoices.edit', $this->formData($invoice->load('cartons.sizes'), $invoice->exportLc));
     }
 
     public function update(InvoiceRequest $request, Invoice $invoice): RedirectResponse
     {
         $lc = ExportLc::findOrFail($request->export_lc_id);
         DB::transaction(function () use ($request, $invoice, $lc) {
-            $invoice->update(Arr::except($request->validated(), ['lines']) + ['buyer_id' => $lc->buyer_id]);
-            $invoice->lines()->delete();
-            $this->saveLines($invoice, $request->validated('lines'));
+            $invoice->update(Arr::except($request->validated(), ['cartons']) + ['buyer_id' => $lc->buyer_id]);
+            $this->saveCartons($invoice, $request->validated('cartons'));
         });
 
         return redirect()->route('msfl.commercial.invoices.show', $invoice)->with('success', 'Commercial invoice updated.' . $this->overLimit($lc));
@@ -113,13 +113,43 @@ class InvoiceController extends Controller
         return redirect()->route('msfl.commercial.invoices.index')->with('success', "Commercial invoice {$invoice->invoice_no} deleted.");
     }
 
-    private function saveLines(Invoice $invoice, array $lines): void
+    /**
+     * Carton packing list → the invoice: carton rows with their size pcs, one invoice line per PO
+     * (qty = Σ pcs × cartons, cartons = Σ cartons, price = PO FOB), and the weights / CBM totals.
+     */
+    private function saveCartons(Invoice $invoice, array $rows): void
     {
-        $prices = \ME\MerchandisingSfl\Models\OrderPo::whereIn('id', array_column($lines, 'order_po_id'))->pluck('unit_price', 'id');
-        foreach ($lines as $line) {
-            $invoice->lines()->create(['order_po_id' => $line['order_po_id'], 'qty' => $line['qty'], 'cartons' => (int) ($line['cartons'] ?? 0), 'unit_price' => $prices[$line['order_po_id']] ?? 0]);
+        $invoice->cartons()->delete();
+        $invoice->lines()->delete();
+        $perPo = [];
+        $net = $gross = $cbm = 0.0;
+        foreach (array_values($rows) as $i => $row) {
+            $carton = $invoice->cartons()->create(collect($row)->only(['order_po_id', 'carton_from', 'carton_to', 'net_weight', 'gross_weight', 'length', 'width', 'height'])->all() + ['sort' => $i]);
+            foreach ($row['sizes'] as $sizeId => $qty) {
+                $carton->sizes()->create(['size_id' => (int) $sizeId, 'qty' => (int) $qty]);
+            }
+            $carton->load('sizes');
+            $count = $carton->cartonCount();
+            $perPo[$carton->order_po_id]['qty'] = ($perPo[$carton->order_po_id]['qty'] ?? 0) + $carton->totalPcs();
+            $perPo[$carton->order_po_id]['cartons'] = ($perPo[$carton->order_po_id]['cartons'] ?? 0) + $count;
+            $net += (float) $carton->net_weight * $count;
+            $gross += (float) $carton->gross_weight * $count;
+            $cbm += $carton->cbm();
         }
+
+        $prices = \ME\MerchandisingSfl\Models\OrderPo::whereIn('id', array_keys($perPo))->pluck('unit_price', 'id');
+        foreach ($perPo as $poId => $p) {
+            $invoice->lines()->create(['order_po_id' => $poId, 'qty' => $p['qty'], 'cartons' => $p['cartons'], 'unit_price' => $prices[$poId] ?? 0]);
+        }
+        $invoice->forceFill(['net_weight' => $net ?: null, 'gross_weight' => $gross ?: null, 'cbm' => $cbm ?: null]);
         $invoice->refreshTotals();
+    }
+
+    /** Size columns of the invoice's carton list (sizes of its POs, XS → 3XL). */
+    private function cartonSizes(Invoice $invoice): Collection
+    {
+        return \ME\MerchandisingSfl\Models\Size::displaySort(\ME\MerchandisingSfl\Models\Size::query()
+            ->whereIn('id', DB::table('msfl_order_po_sizes')->whereIn('order_po_id', $invoice->cartons->pluck('order_po_id'))->pluck('size_id'))->get());
     }
 
     /** Warning appended to the success message when the LC's shipped value passes LC value + tolerance. */
@@ -132,49 +162,32 @@ class InvoiceController extends Controller
             : '';
     }
 
-    private function formData(Invoice $invoice, ?ExportLc $lc, ?int $shipmentId): array
+    private function formData(Invoice $invoice, ?ExportLc $lc): array
     {
-        $rows = $lc ? $this->status->poRows($lc, $invoice->exists ? $invoice->id : null) : collect();
-        $shipments = $lc ? $this->shipments($rows->pluck('po.id')) : collect();
-        $shipmentQty = $shipmentId ? ($shipments->firstWhere('id', $shipmentId)['qty'] ?? []) : [];
-        $current = $invoice->exists ? $invoice->lines->keyBy('order_po_id') : collect();
+        $figures = app(PackingFigures::class);
+        $pos = $lc ? $lc->pos()->with(['style', 'color', 'sizes.size'])->get()->sortBy(fn ($p) => $p->po_no . '|' . ($p->style->style_no ?? ''))->values() : collect();
+        // Per PO and size: packed, already invoiced (other invoices), still free to ship.
+        $avail = $pos->mapWithKeys(function ($po) use ($figures, $invoice) {
+            $f = $figures->forPo($po, $invoice->exists ? $invoice->id : null);
+
+            return [$po->id => ['po' => $po, 'sizes' => $f['sizes'], 'packed' => $f['packed'], 'invoiced' => $f['invoiced'],
+                'free' => $f['sizes']->mapWithKeys(fn ($s) => [$s->id => max(0, ($f['packed'][$s->id] ?? 0) - ($f['invoiced'][$s->id] ?? 0))])->all()]];
+        });
+        $sizes = \ME\MerchandisingSfl\Models\Size::displaySort($pos->flatMap(fn ($p) => $p->sizes->pluck('size'))->filter()->unique('id'));
+
+        $rows = old('cartons', $invoice->exists
+            ? $invoice->cartons->map(fn ($c) => $c->only(['order_po_id', 'carton_from', 'carton_to', 'net_weight', 'gross_weight', 'length', 'width', 'height'])
+                + ['sizes' => $c->sizes->pluck('qty', 'size_id')->all()])->all()
+            : []);
 
         return [
             'invoice' => $invoice,
             'lc' => $lc,
             'lcs' => ExportLc::query()->with('buyer')->where('status', 'active')->orderByDesc('id')->get(),
-            'rows' => $rows,
-            'shipments' => $shipments,
-            'shipmentId' => $shipmentId ?? $invoice->inv_shipment_id,
-            // po_id => [qty, cartons] the form starts with: the invoice's own lines, else the picked shipment.
-            'start' => $rows->mapWithKeys(fn ($r) => [$r['po']->id => [
-                'qty' => old('lines') ? null : ($current[$r['po']->id]->qty ?? ($shipmentQty[$r['po']->id] ?? null)),
-                'cartons' => $current[$r['po']->id]->cartons ?? null,
-            ]]),
+            'avail' => $avail,
+            'sizes' => $sizes,
+            'cartonRows' => $rows ?: [[]],
             'shipModes' => Lookups::shipModes(),
         ];
-    }
-
-    /** Inventory shipments with lines for these POs: [id, label, qty => [po_id => qty]]. */
-    private function shipments(Collection $poIds): Collection
-    {
-        if (! Schema::hasColumn('inv_shipment_items', 'msfl_order_po_id')) {
-            return collect();
-        }
-
-        return DB::table('inv_shipment_items as si')->join('inv_shipments as s', 's.id', '=', 'si.shipment_id')
-            ->whereNull('s.deleted_at')->whereIn('si.msfl_order_po_id', $poIds)
-            ->select('s.id', 's.shipment_no', 's.shipment_date', 's.invoice_no', 'si.msfl_order_po_id', DB::raw('SUM(si.quantity) q'))
-            ->groupBy('s.id', 's.shipment_no', 's.shipment_date', 's.invoice_no', 'si.msfl_order_po_id')->orderByDesc('s.shipment_date')->get()
-            ->groupBy('id')->map(fn ($g) => [
-                'id' => $g->first()->id,
-                'label' => $g->first()->shipment_no . ' · ' . $g->first()->shipment_date . ($g->first()->invoice_no ? ' · inv ' . $g->first()->invoice_no : '') . ' · ' . (int) $g->sum('q') . ' pcs',
-                'qty' => $g->mapWithKeys(fn ($r) => [$r->msfl_order_po_id => (int) $r->q])->all(),
-            ])->values();
-    }
-
-    private function shipmentNo(?int $id): ?string
-    {
-        return $id && Schema::hasTable('inv_shipments') ? DB::table('inv_shipments')->where('id', $id)->value('shipment_no') : null;
     }
 }

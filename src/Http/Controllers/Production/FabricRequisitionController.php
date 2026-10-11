@@ -23,6 +23,19 @@ use ME\MerchandisingSfl\Support\Lookups;
  */
 class FabricRequisitionController extends Controller
 {
+    /** Inventory store types, for an Inventory package older than its InvStore::TYPE_* constants (added 2026-09-28). */
+    private const STORE_TYPES_FALLBACK = ['TYPE_BUYER' => 'raw_material', 'TYPE_GENERAL' => 'accessories', 'TYPE_FINISH' => 'finished_goods'];
+
+    private const STORE_TYPES_FALLBACK_LABELS = ['raw_material' => 'Buyer Store', 'accessories' => 'General Store', 'finished_goods' => 'Finish Store'];
+
+    /** InvStore::TYPE_BUYER etc. — the Inventory constant when it exists, else its known value. */
+    private static function storeType(string $name): string
+    {
+        $constant = \ME\SflInventory\Models\InvStore::class . '::' . $name;
+
+        return defined($constant) ? constant($constant) : self::STORE_TYPES_FALLBACK[$name];
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('msfl_prod_requisition.list');
@@ -66,13 +79,15 @@ class FabricRequisitionController extends Controller
             'pos' => $pos,
             'received' => $this->receivedByPo($pos),
             'stores' => \ME\SflInventory\Models\InvStore::query()
-                ->whereIn('type', [\ME\SflInventory\Models\InvStore::TYPE_BUYER, \ME\SflInventory\Models\InvStore::TYPE_GENERAL])
+                ->whereIn('type', [self::storeType('TYPE_BUYER'), self::storeType('TYPE_GENERAL')])
                 ->where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']),
             'purposes' => \ME\SflInventory\Models\InvRequisitionPurpose::active()->orderBy('name')->pluck('name', 'code'),
             'departments' => \ME\SflInventory\Models\InvDepartment::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'items' => \ME\SflInventory\Models\InvItem::query()->active()->with('unit:id,short_name,name')
                 ->orderBy('item_name')->get(['id', 'item_code', 'item_name', 'unit_id']),
             'selectedPo' => $request->integer('order_po_id') ?: null,
+            'buyerStoreType' => self::storeType('TYPE_BUYER'),
+            'storeTypeLabels' => defined(\ME\SflInventory\Models\InvStore::class . '::TYPE_LABELS') ? \ME\SflInventory\Models\InvStore::TYPE_LABELS : self::STORE_TYPES_FALLBACK_LABELS,
         ]);
     }
 
@@ -127,7 +142,7 @@ class FabricRequisitionController extends Controller
             throw ValidationException::withMessages(['order_po_id' => 'Only a confirmed order can go into production.']);
         }
         $store = \ME\SflInventory\Models\InvStore::findOrFail($data['store_id']);
-        $buyerStore = $store->type === \ME\SflInventory\Models\InvStore::TYPE_BUYER;
+        $buyerStore = $store->type === self::storeType('TYPE_BUYER');
 
         $requisition = DB::transaction(function () use ($data, $lines, $po, $buyerStore) {
             $requisition = \ME\SflInventory\Models\InvRequisition::create([

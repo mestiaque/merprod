@@ -22,6 +22,12 @@
     /* Row-action cells stay on one line. */
     .msfl-module .table td.text-right:last-child { white-space: nowrap; }
     .msfl-module .table td:last-child > form { display: inline-block; }
+    /* Popups: medium (Bootstrap md, 500px) everywhere so they fit small monitors, above the host sidebar;
+       two fields per row inside, full-width fields stay full, wide tables scroll sideways. */
+    .modal { z-index: 1100; } .modal-backdrop { z-index: 1090; }
+    .modal .modal-body { overflow-x: auto; }
+    .modal .modal-body .row > [class*="col-"] { flex: 0 0 50% !important; max-width: 50% !important; }
+    .modal .modal-body .row > .col-12, .modal .modal-body .row > .col-md-12, .modal .modal-body .row > .col-lg-12 { flex: 0 0 100% !important; max-width: 100% !important; }
 </style>
 
 @include('merchandising-sfl::admin.partials.page-help')

@@ -1,7 +1,7 @@
-{{-- Commercial Invoice ($doc = invoice) or Packing List ($doc = packing) on printMaster2. --}}
+{{-- Commercial Invoice ($doc = invoice) or Carton Packing List ($doc = packing) on printMaster2. --}}
 @extends('printMaster2')
 
-@section('title', ($doc === 'packing' ? 'Packing List — ' : 'Commercial Invoice — ') . $invoice->invoice_no)
+@section('title', ($doc === 'packing' ? 'Carton Packing List — ' : 'Commercial Invoice — ') . $invoice->invoice_no)
 
 @php
     $lc = $invoice->exportLc;
@@ -14,7 +14,7 @@
     .ci-box td { vertical-align: top; font-size: 11px; padding: 4px 6px; }
     .ci-box .k { font-weight: 700; white-space: nowrap; background: #f3f4f6; width: 120px; }
     .ci-lines th, .ci-lines td { font-size: 11px; padding: 4px 6px; }
-    .ci-lines .r { text-align: right; }
+    .ci-lines .r { text-align: right; } .ci-lines .c { text-align: center; }
     .ci-total td { font-weight: 700; background: #f3f4f6; }
     .ci-words { font-size: 11px; margin: 4px 0 10px; }
     .ci-sign { display: flex; justify-content: space-between; margin-top: 50px; font-size: 11px; }
@@ -23,7 +23,7 @@
 @endpush
 
 @section('contents')
-    @include('merchandising-sfl::admin.partials.print-header', ['title' => $doc === 'packing' ? 'Packing List' : 'Commercial Invoice', 'subtitle' => $invoice->invoice_no, 'page' => 'A4 portrait'])
+    @include('merchandising-sfl::admin.partials.print-header', ['title' => $doc === 'packing' ? 'Carton Packing List' : 'Commercial Invoice', 'subtitle' => $invoice->invoice_no, 'page' => $doc === 'packing' ? 'A4 landscape' : 'A4 portrait'])
 
     <table class="ci-box">
         <tr>
@@ -54,23 +54,8 @@
     </table>
 
     @if($doc === 'packing')
-        @php $sizeNames = \ME\MerchandisingSfl\Models\Size::displaySort($invoice->lines->flatMap(fn ($l) => $l->orderPo->sizes->pluck('size'))->filter()->unique('id')); @endphp
-        <table class="ci-lines">
-            <thead><tr><th>PO No</th><th>Style</th><th>Description</th><th>Color</th><th>Size breakdown (PO)</th><th class="r">Qty (pcs)</th><th class="r">Cartons</th><th class="r">Pcs / Ctn</th></tr></thead>
-            <tbody>
-                @foreach($invoice->lines as $line)
-                    @php $po = $line->orderPo; @endphp
-                    <tr>
-                        <td>{{ $po->po_no }}</td><td>{{ $po->style->style_no ?? '' }}</td><td>{{ $po->style->name ?? '' }}</td><td>{{ $po->color->name ?? '' }}</td>
-                        <td>{{ $sizeNames->map(fn ($s) => ($q = $po->sizes->firstWhere('size_id', $s->id)?->qty) ? $s->name . ' ' . $q : null)->filter()->implode(', ') }}</td>
-                        <td class="r">{{ number_format($line->qty) }}</td><td class="r">{{ number_format($line->cartons) }}</td>
-                        <td class="r">{{ $line->cartons ? round($line->qty / $line->cartons, 1) : '-' }}</td>
-                    </tr>
-                @endforeach
-                <tr class="ci-total"><td colspan="5" class="r">Total</td><td class="r">{{ number_format($invoice->total_qty) }}</td><td class="r">{{ number_format($invoice->total_cartons) }}</td><td></td></tr>
-            </tbody>
-        </table>
-        <p class="ci-words">Total {{ number_format($invoice->total_cartons) }} cartons, {{ number_format($invoice->total_qty) }} pcs · Net weight {{ $invoice->net_weight ?? '-' }} kg · Gross weight {{ $invoice->gross_weight ?? '-' }} kg · {{ $invoice->cbm ?? '-' }} CBM</p>
+        @include('merchandising-sfl::admin.commercial.invoices.partials.carton-list', ['print' => true])
+        <p class="ci-words">Total {{ number_format($invoice->total_cartons) }} cartons · {{ number_format($invoice->total_qty) }} pcs · Net weight {{ $invoice->net_weight ?? '-' }} kg · Gross weight {{ $invoice->gross_weight ?? '-' }} kg · {{ $invoice->cbm ?? '-' }} CBM</p>
     @else
         <table class="ci-lines">
             <thead><tr><th>PO No</th><th>Style</th><th>Description</th><th>Color</th><th class="r">Qty (pcs)</th><th class="r">Unit Price ({{ $cur }})</th><th class="r">Amount ({{ $cur }})</th></tr></thead>

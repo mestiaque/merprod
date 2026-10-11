@@ -102,6 +102,7 @@ return [
                 ['title' => 'Finishing', 'icon' => 'fa-solid fa-wand-magic-sparkles', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/finishing"],
                 ['title' => 'Buyer QC', 'icon' => 'fa-solid fa-clipboard-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/final_qc"],
                 ['title' => 'Packing', 'icon' => 'fa-solid fa-box', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/packing"],
+                    ['title' => 'Final Packing List', 'icon' => 'fa-solid fa-clipboard-list', 'icon_color' => 'text-primary', 'permission' => 'msfl_final_packing_list', 'route' => "$base/production/final-packing-lists"],
                 ['title' => 'QC', 'icon' => 'fa-solid fa-magnifying-glass', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/qc"],
                 ['title' => 'Rework', 'icon' => 'fa-solid fa-rotate-left', 'icon_color' => 'text-primary', 'permission' => 'msfl_prod_entry', 'route' => "$base/production/rework"],
                 [

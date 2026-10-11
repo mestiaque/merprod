@@ -4,7 +4,6 @@ namespace ME\MerchandisingSfl\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class StyleImage extends Model
 {
@@ -21,6 +20,6 @@ class StyleImage extends Model
 
     public function url(): string
     {
-        return Storage::disk(config('merchandising-sfl.upload_disk'))->url($this->path);
+        return \ME\MerchandisingSfl\Services\FileUploadService::link($this->path);
     }
 }

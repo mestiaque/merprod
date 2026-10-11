@@ -9,7 +9,7 @@
     $cur = $costSheet->currency->symbol ?? ($costSheet->currency->code ?? '$');
     $disk = \Illuminate\Support\Facades\Storage::disk(config('merchandising-sfl.upload_disk'));
     $images = $costSheet->style?->images ?? collect();
-    $imageUrl = fn ($image) => $image ? $disk->url($image->path) : null;
+    $imageUrl = fn ($image) => $image ? \ME\MerchandisingSfl\Services\FileUploadService::link($image->path) : null;
     $front = $imageUrl($images->firstWhere('type', 'front') ?? $images->get(0));
     $back = $imageUrl($images->firstWhere('type', 'back') ?? $images->get(1));
     $sketch = $imageUrl($images->firstWhere('type', 'artwork') ?? $images->firstWhere('type', 'detail'));
