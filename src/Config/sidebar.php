@@ -76,6 +76,7 @@ return [
                         ['title' => 'Machine Types', 'icon' => 'fa-solid fa-gears', 'icon_color' => 'text-primary', 'permission' => 'msfl_machine_type', 'route' => "$base/masters/machine-types"],
                         ['title' => 'Lines', 'icon' => 'fa-solid fa-diagram-project', 'icon_color' => 'text-primary', 'permission' => 'msfl_line', 'route' => "$base/lines"],
                         ['title' => 'Operations Library', 'icon' => 'fa-solid fa-list-ol', 'icon_color' => 'text-primary', 'permission' => 'msfl_operation', 'route' => "$base/masters/operations"],
+                        ['title' => 'Attachments', 'icon' => 'fa-solid fa-paperclip', 'icon_color' => 'text-primary', 'permission' => 'msfl_attachment', 'route' => "$base/masters/attachments"],
                         ['title' => 'T&A Templates', 'icon' => 'fa-solid fa-table-list', 'icon_color' => 'text-primary', 'permission' => 'msfl_tna_template', 'route' => "$base/tna-templates"],
                         ['title' => 'Daily Targets', 'icon' => 'fa-solid fa-bullseye', 'icon_color' => 'text-primary', 'permission' => 'msfl_daily_target', 'route' => "$base/masters/daily-targets"],
                     ],

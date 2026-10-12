@@ -198,13 +198,20 @@ class MasterRegistry
                     : null,
                 'order_by' => ['code', 'asc'],
             ],
+            'attachments' => [
+                'title' => 'Attachments', 'singular' => 'Attachment', 'model' => Models\Attachment::class, 'permission' => 'msfl_attachment',
+                'fields' => [$code, $name],
+                'columns' => $codeName,
+                'note' => fn () => 'Work aids (Guide, Pattern, Cutter, Table …) pickable on an Operation Library entry and on a bulletin\'s operation rows.',
+                'order_by' => ['name', 'asc'],
+            ],
             'operations' => [
                 'title' => 'Operations Library', 'singular' => 'Operation', 'model' => Models\Operation::class, 'permission' => 'msfl_operation',
                 'before_index' => fn () => \ME\MerchandisingSfl\Services\InventoryMachines::syncTypes(),
                 'fields' => [
                     $code, $name,
                     ['name' => 'machine_type_id', 'label' => 'Machine Type (M/C)', 'type' => 'select', 'options' => fn () => Models\MachineType::query()->active()->orderBy('code')->get()->mapWithKeys(fn ($t) => [$t->id => $t->code . ' — ' . $t->name])->all(), 'exists' => 'msfl_machine_types'],
-                    ['name' => 'attachment', 'label' => 'Attachment', 'type' => 'select', 'options' => self::attachments()],
+                    ['name' => 'attachment', 'label' => 'Attachment', 'type' => 'select', 'options' => fn () => self::attachments()],
                     ['name' => 'default_smv', 'label' => 'Default SMV', 'type' => 'decimal'],
                 ],
                 'columns' => [...$codeName, ['label' => 'M/C', 'value' => fn ($m) => $m->machineType->code ?? '-'], ['label' => 'Attachment', 'value' => 'attachment'], ['label' => 'Default SMV', 'value' => 'default_smv']],
@@ -286,10 +293,10 @@ class MasterRegistry
         return ['fabric' => 'Fabric', 'trims' => 'Trims', 'accessories' => 'Accessories', 'packing' => 'Packing'];
     }
 
-    /** Work aids on a bulletin operation. */
+    /** Work aids on a bulletin operation — the "attachments" master data, not a fixed list. */
     public static function attachments(): array
     {
-        return ['Guide' => 'Guide', 'Pattern' => 'Pattern', 'Cutter' => 'Cutter', 'Table' => 'Table', 'Folder' => 'Folder', 'Binder' => 'Binder', 'Template' => 'Template', 'Jig' => 'Jig'];
+        return Models\Attachment::query()->active()->orderBy('name')->pluck('name', 'name')->all();
     }
 
     /** Select options as [value => label], resolving lazy (callable) option lists. */
