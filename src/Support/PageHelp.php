@@ -397,6 +397,36 @@ class PageHelp
                     ],
                 ],
             ],
+            'learning-curve' => [
+                'title' => 'Learning Curve (Day-wise Ramp-up)',
+                'what' => 'নতুন একটা style লাইনে বসানোর পর প্রথম দিনগুলোতে worker-রা পুরো speed-এ কাজ করতে পারে না — output ধাপে ধাপে বাড়ে, আর কখনোই ১০০% efficiency-তে পৌঁছায় না। এই পেজে SMV অনুযায়ী Day 1→10-এ কত % efficiency ধরা হবে তার টেবিল আছে (দুই সেট — Production সবাই দেখে, Shipment শুধু Planning Manager-এর নিজের rough হিসাবের জন্য), আর একটা Calculator যেটা দিয়ে একটা স্টাইলের বাস্তবসম্মত day-wise production estimate বের করা যায়। <strong>এখনো এটা শুধু রেফারেন্স/ক্যালকুলেটর — T&amp;A বা Sewing Board কোনো auto-হিসাবে এটা এখনো যুক্ত হয়নি।</strong>',
+                'steps' => [
+                    'নিচের টেবিলে প্রতিটা SMV band-এর Day 1–10 % চাইলে বদলে Save করুন (এটাই মাস্টার ডেটা, সবার Calculator-এ এটাই ব্যবহার হবে)।',
+                    '<strong>Calculator</strong>-এ যান — Style বাছুন (SMV auto আসবে) বা নিজে SMV দিন, Manpower আর Working Hours/Day দিন।',
+                    'চাইলে Order Qty দিন — কোন দিনে cumulative output টার্গেটে পৌঁছাবে তা দেখাবে।',
+                    'Shipment curve হলে Washing/Finishing বেছে দিলে sewing শেষের পর Ready Date আনুমানিক দেখাবে।',
+                ],
+                'example' => 'SMV 14, Manpower 45, Hours 8 হলে Day 1-এ (৪০%) ≈ 617 পিস, Day 10-এ (৯০%) ≈ 1389 পিস — কখনো তত্ত্বীয় সর্বোচ্চ ১৫৪৩ পিস/দিনে পৌঁছায় না।',
+                'before' => 'Bulletin (SMV)',
+                'after' => 'T&A Plan / Sewing Board (ভবিষ্যতে, এখনো auto-link হয়নি)',
+                'actions' => [
+                    'calculate' => 'এই পেজের হিসাব কোথাও সেভ হয় না — প্রতিবার খুললে নতুন করে হিসাব করতে হবে। Target Qty আর Start Date দিলে কোন দিনে/কবে সেলাই শেষ হবে তার estimate আরও স্পষ্ট হবে।',
+                ],
+                'fields' => [
+                    'Master টেবিল' => [
+                        'SMV Range / Ref. SMV' => 'কোন SMV-এর স্টাইল এই band-এ পড়বে (<code>smv_from</code>–<code>smv_to</code>) — শুধু দেখার জন্য, Ref. SMV হলো উদাহরণের মান।',
+                        'Day 1–10' => 'সেই day-তে প্রত্যাশিত efficiency % (<code>day_percents</code>, JSON array) — Save করলেই Calculator-এ সাথে সাথে প্রভাব পড়বে।',
+                    ],
+                    'Calculator' => [
+                        'SMV' => 'Style বাছলে auto আসে (<code>msfl_styles.smv</code>), নাহলে হাতে দিন — এই SMV দিয়েই কোন band ব্যবহার হবে তা ঠিক হয়।',
+                        'Manpower × Working Hours/Day' => '= তাত্ত্বিক ১০০% ক্ষমতা হিসাবের ভিত্তি: <code>Manpower × Hours × 60 ÷ SMV</code> — এটাকেই প্রতিদিনের % দিয়ে গুণ করা হয়।',
+                        'Day Qty' => '= round(তাত্ত্বিক ক্ষমতা × সেই day-এর %) — ঠিক যেভাবে মূল শীটের সংখ্যাগুলো বের হয়েছে।',
+                        'Cumulative Qty' => '= আগের সব দিনের Day Qty-র যোগফল।',
+                        'Order Qty মিললে' => 'যে দিনে Cumulative প্রথম Order Qty ছুঁয়ে ফেলে সেই row সবুজ হয়ে যাবে — সেটাই আনুমানিক sewing-শেষের দিন।',
+                        'Ready Date (শুধু Shipment)' => '= Start Date + যতদিনে Order Qty মিলল + Washing days + Finishing days।',
+                    ],
+                ],
+            ],
             'tna' => [
                 'title' => 'T&A Plan (Time & Action)',
                 'what' => 'একটা confirmed order-এর জন্য কাজের সময়সূচি: shipment date থেকে পিছনে working day গুনে প্রতিটা task-এর plan তারিখ, আর line capacity দিয়ে কত দিন sewing লাগবে। Actual তারিখ অনেকগুলো নিজে থেকেই বসে (order confirm, BOM approve, sample, cutting শুরু …)।',

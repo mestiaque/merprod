@@ -7,6 +7,7 @@ use ME\MerchandisingSfl\Http\Controllers\Commercial;
 use ME\MerchandisingSfl\Http\Controllers\CostSheetController;
 use ME\MerchandisingSfl\Http\Controllers\DashboardController;
 use ME\MerchandisingSfl\Http\Controllers\InquiryController;
+use ME\MerchandisingSfl\Http\Controllers\LearningCurveController;
 use ME\MerchandisingSfl\Http\Controllers\LineController;
 use ME\MerchandisingSfl\Http\Controllers\MasterController;
 use ME\MerchandisingSfl\Http\Controllers\OrderController;
@@ -91,6 +92,12 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
         Route::get('bulletins/{bulletin}/print', [BulletinController::class, 'print'])->name('bulletins.print');
         Route::post('bulletins/{bulletin}/approve', [BulletinController::class, 'approve'])->name('bulletins.approve');
         Route::post('bulletins/{bulletin}/revise', [BulletinController::class, 'revise'])->name('bulletins.revise');
+
+        // Planning — Learning Curve
+        Route::get('learning-curve', [LearningCurveController::class, 'index'])->name('learning-curve.index');
+        Route::put('learning-curve/{learning_curve_band}', [LearningCurveController::class, 'update'])->name('learning-curve.update');
+        Route::put('learning-curve/lead-times/{lead_time}', [LearningCurveController::class, 'leadTimeUpdate'])->name('learning-curve.lead-times.update');
+        Route::get('learning-curve/calculate', [LearningCurveController::class, 'calculate'])->name('learning-curve.calculate');
 
         // Planning — T&A
         Route::resource('tna', TnaPlanController::class)->only(['index', 'create', 'store', 'show', 'destroy']);

@@ -82,6 +82,8 @@ return [
                     ],
                 ],
                 ['title' => 'Bulletin', 'icon' => 'fa-solid fa-clipboard-list', 'icon_color' => 'text-primary', 'permission' => 'msfl_bulletin', 'route' => "$base/bulletins"],
+                ['title' => 'Learning Curve', 'icon' => 'fa-solid fa-chart-line', 'icon_color' => 'text-primary', 'permission' => 'msfl_learning_curve', 'route' => "$base/learning-curve"],
+                ['title' => 'Learning Curve Calculator', 'icon' => 'fa-solid fa-calculator', 'icon_color' => 'text-primary', 'permission' => 'msfl_learning_curve', 'route' => "$base/learning-curve/calculate"],
                 ['title' => 'T&A', 'icon' => 'fa-solid fa-calendar-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_tna', 'route' => "$base/tna"],
                 ['title' => 'T&A Sheet', 'icon' => 'fa-solid fa-table-cells', 'icon_color' => 'text-primary', 'permission' => 'msfl_tna', 'route' => "$base/tna-sheet"],
                 ['title' => 'T&A Status', 'icon' => 'fa-solid fa-calendar-xmark', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/tna-status"],

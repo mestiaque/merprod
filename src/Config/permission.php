@@ -62,6 +62,10 @@ return [
         'msfl_bulletin' => ['label' => 'Bulletin', 'permissions' => $crud + ['approve' => 'Approve']],
         // 'edit' = update step dates / recalculate. Also opens T&A Sheet.
         'msfl_tna' => ['label' => 'T&A (+ T&A Sheet)', 'permissions' => $crud],
+        'msfl_learning_curve' => ['label' => 'Learning Curve (Production)', 'permissions' => $master + ['calculate' => 'Use Calculator']],
+        // Deliberately separate from the Production curve — this is Planning Manager's own,
+        // more conservative internal estimate, not meant for general floor visibility.
+        'msfl_learning_curve_shipment' => ['label' => 'Learning Curve (Shipment — Planning Manager)', 'permissions' => $master + ['calculate' => 'Use Calculator']],
     ],
 
     'PRODUCTION' => [
