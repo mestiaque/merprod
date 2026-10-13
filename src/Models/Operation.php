@@ -17,12 +17,17 @@ class Operation extends Model
 
     protected $table = 'msfl_operations';
 
-    protected $fillable = ['code', 'name', 'machine_type_id', 'attachment', 'default_smv', 'is_active', 'created_by'];
+    protected $fillable = ['code', 'name', 'machine_type_id', 'garment_part_id', 'attachment', 'default_smv', 'is_active', 'created_by'];
 
     protected $casts = ['is_active' => 'boolean', 'default_smv' => 'decimal:3'];
 
     public function machineType(): BelongsTo
     {
         return $this->belongsTo(MachineType::class);
+    }
+
+    public function garmentPart(): BelongsTo
+    {
+        return $this->belongsTo(GarmentPart::class);
     }
 }

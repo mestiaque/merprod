@@ -19,6 +19,13 @@
             <small><a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($order->attachment) }}" target="_blank">Current file</a> — upload to replace</small>
         @endif
     </div>
+    <div class="col-md-3 mb-3 d-flex align-items-end">
+        <div class="custom-control custom-switch">
+            <input type="hidden" name="is_quick_entry" value="0">
+            <input type="checkbox" name="is_quick_entry" value="1" class="custom-control-input" id="orderQuickEntry" @checked(old('is_quick_entry', $order->is_quick_entry))>
+            <label class="custom-control-label" for="orderQuickEntry">Quick Entry <small class="text-muted d-block">(পুরনো/legacy order — Bulletin/T&amp;A/BOM ছাড়াই সরাসরি Production-এ)</small></label>
+        </div>
+    </div>
     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'type' => 'textarea', 'col' => 12, 'value' => $order->remarks])
 </div>
 

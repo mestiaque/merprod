@@ -118,7 +118,8 @@ class Lookups
 
     public static function operations(): Collection
     {
-        return Models\Operation::query()->active()->orderBy('name')->get(['id', 'code', 'name', 'machine_type_id', 'attachment', 'default_smv']);
+        return Models\Operation::query()->active()->with('garmentPart:id,name')->orderBy('name')
+            ->get(['id', 'code', 'name', 'machine_type_id', 'garment_part_id', 'attachment', 'default_smv']);
     }
 
     /** POs of confirmed orders — what production can work on. */

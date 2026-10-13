@@ -18,7 +18,7 @@
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">Order — {{ $order->order_no }}</h4>
+            <h4 class="mb-0">Order — {{ $order->order_no }} @if($order->is_quick_entry)<span class="badge badge-warning" title="পুরনো/legacy order — Bulletin/T&amp;A/BOM ছাড়া সরাসরি Production-এ ঢোকানো হয়েছে">Quick Entry</span>@endif</h4>
             <div>
                 @foreach($statusActions as $status => [$label, $color, $icon, $permission])
                     @if($order->canMoveTo($status))

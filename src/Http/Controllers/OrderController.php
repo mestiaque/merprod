@@ -39,6 +39,7 @@ class OrderController extends Controller
                 ->orWhereHas('pos', fn ($q) => $q->where('po_no', 'like', '%' . $request->search . '%'))))
             ->when($request->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $request->buyer_id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($request->filled('is_quick_entry'), fn ($q) => $q->where('is_quick_entry', $request->boolean('is_quick_entry')))
             ->latest('id')
             ->paginate($this->perPage(20))
             ->withQueryString();

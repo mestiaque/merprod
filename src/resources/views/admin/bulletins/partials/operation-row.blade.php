@@ -10,7 +10,7 @@
         <select name="operations[{{ $index }}][operation_id]" class="form-control form-control-sm msfl-select2" data-op-library>
             <option value="">— Library —</option>
             @foreach($operationOptions as $libraryOp)
-                <option value="{{ $libraryOp->id }}" data-name="{{ $libraryOp->name }}" data-machine="{{ $libraryOp->machine_type_id }}" data-attachment="{{ $libraryOp->attachment }}" data-smv="{{ $libraryOp->default_smv }}"
+                <option value="{{ $libraryOp->id }}" data-name="{{ $libraryOp->name }}" data-machine="{{ $libraryOp->machine_type_id }}" data-section="{{ $libraryOp->garmentPart->name ?? '' }}" data-attachment="{{ $libraryOp->attachment }}" data-smv="{{ $libraryOp->default_smv }}"
                     @selected((string) ($op['operation_id'] ?? '') === (string) $libraryOp->id)>{{ $libraryOp->name }}</option>
             @endforeach
         </select>

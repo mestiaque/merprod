@@ -7,6 +7,7 @@ use ME\MerchandisingSfl\Http\Controllers\Commercial;
 use ME\MerchandisingSfl\Http\Controllers\CostSheetController;
 use ME\MerchandisingSfl\Http\Controllers\DashboardController;
 use ME\MerchandisingSfl\Http\Controllers\InquiryController;
+use ME\MerchandisingSfl\Http\Controllers\InventorySyncController;
 use ME\MerchandisingSfl\Http\Controllers\LearningCurveController;
 use ME\MerchandisingSfl\Http\Controllers\LineController;
 use ME\MerchandisingSfl\Http\Controllers\MasterController;
@@ -47,6 +48,10 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
             });
 
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Pull existing Inventory Buyers / Styles into Merchandising's own masters.
+        Route::get('inventory-sync', [InventorySyncController::class, 'index'])->name('inventory-sync.index');
+        Route::post('inventory-sync', [InventorySyncController::class, 'sync'])->name('inventory-sync.sync');
 
         // Uploaded files (tech packs, BOM files, attachments, images) — served from the upload disk.
         Route::get('files/{path}', [\ME\MerchandisingSfl\Http\Controllers\FileController::class, 'show'])->where('path', '.*')->name('files.show');

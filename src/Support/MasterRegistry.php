@@ -62,7 +62,8 @@ class MasterRegistry
                 'title' => 'Styles', 'singular' => 'Style', 'model' => Models\Style::class, 'permission' => 'msfl_style',
                 'fields' => [
                     ['name' => 'buyer_id', 'label' => 'Buyer', 'type' => 'select', 'required' => true, 'options' => $active(Models\Buyer::class), 'exists' => 'msfl_buyers'],
-                    ['name' => 'style_no', 'label' => 'Style No', 'type' => 'text', 'required' => true, 'unique' => true, 'max' => 100],
+                    // Unique per buyer, not globally — two different buyers legitimately reuse the same style number.
+                    ['name' => 'style_no', 'label' => 'Style No', 'type' => 'text', 'required' => true, 'unique' => true, 'unique_scope' => 'buyer_id', 'max' => 100],
                     ['name' => 'name', 'label' => 'Style Name', 'type' => 'text', 'required' => true, 'max' => 255],
                     ['name' => 'season_id', 'label' => 'Season', 'type' => 'select', 'options' => $active(Models\Season::class), 'exists' => 'msfl_seasons'],
                     ['name' => 'product_type_id', 'label' => 'Product Type', 'type' => 'select', 'options' => $active(Models\ProductType::class), 'exists' => 'msfl_product_types'],
@@ -211,11 +212,14 @@ class MasterRegistry
                 'fields' => [
                     $code, $name,
                     ['name' => 'machine_type_id', 'label' => 'Machine Type (M/C)', 'type' => 'select', 'options' => fn () => Models\MachineType::query()->active()->orderBy('code')->get()->mapWithKeys(fn ($t) => [$t->id => $t->code . ' — ' . $t->name])->all(), 'exists' => 'msfl_machine_types'],
+                    // Reuses the Garment Parts master (not a new one) so sections
+                    // stay dynamic/admin-addable — see Master Data → Garment Parts.
+                    ['name' => 'garment_part_id', 'label' => 'Section', 'type' => 'select', 'options' => fn () => Models\GarmentPart::query()->active()->orderBy('name')->pluck('name', 'id')->all(), 'exists' => 'msfl_garment_parts'],
                     ['name' => 'attachment', 'label' => 'Attachment', 'type' => 'select', 'options' => fn () => self::attachments()],
                     ['name' => 'default_smv', 'label' => 'Default SMV', 'type' => 'decimal'],
                 ],
-                'columns' => [...$codeName, ['label' => 'M/C', 'value' => fn ($m) => $m->machineType->code ?? '-'], ['label' => 'Attachment', 'value' => 'attachment'], ['label' => 'Default SMV', 'value' => 'default_smv']],
-                'with' => ['machineType'],
+                'columns' => [...$codeName, ['label' => 'Section', 'value' => fn ($m) => $m->garmentPart->name ?? '-'], ['label' => 'M/C', 'value' => fn ($m) => $m->machineType->code ?? '-'], ['label' => 'Attachment', 'value' => 'attachment'], ['label' => 'Default SMV', 'value' => 'default_smv']],
+                'with' => ['machineType', 'garmentPart'],
             ],
             // Commercial → Setup
             'banks' => [
@@ -330,6 +334,10 @@ class MasterRegistry
 
             if (! empty($field['unique'])) {
                 $unique = Rule::unique($table, $field['name'])->ignore($ignoreId);
+                // e.g. style_no unique per buyer_id, not globally — scope to that other field's submitted value.
+                if (! empty($field['unique_scope'])) {
+                    $unique = $unique->where($field['unique_scope'], request()->input($field['unique_scope']));
+                }
                 // 'active': a soft-deleted row doesn't block adding the same value again.
                 $fieldRules[] = $field['unique'] === 'active' ? $unique->whereNull('deleted_at') : $unique;
             }

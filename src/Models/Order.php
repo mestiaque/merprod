@@ -35,13 +35,14 @@ class Order extends Model
 
     protected $fillable = [
         'order_no', 'buyer_id', 'season_id', 'merchandiser_id', 'factory_id', 'inquiry_id', 'buyer_order_ref',
-        'order_date', 'currency_id', 'delivery_term', 'payment_term_id', 'attachment', 'remarks', 'created_by',
+        'order_date', 'currency_id', 'delivery_term', 'payment_term_id', 'attachment', 'remarks', 'is_quick_entry', 'created_by',
     ];
 
     protected $casts = [
         'order_date' => 'date',
         'confirmed_at' => 'datetime',
         'total_value' => 'decimal:4',
+        'is_quick_entry' => 'boolean',
     ];
 
     public function paymentTerm(): BelongsTo

@@ -39,6 +39,13 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="col-md-3 mb-2">
+                    <select name="is_quick_entry" class="form-control form-control-sm">
+                        <option value="">All Orders</option>
+                        <option value="1" @selected(request('is_quick_entry') === '1')>Quick Entry only</option>
+                        <option value="0" @selected(request('is_quick_entry') === '0')>Full workflow only</option>
+                    </select>
+                </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
                     <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
                     <a href="{{ route('msfl.orders.index') }}" class="btn btn-light btn-sm">Reset</a>
@@ -55,7 +62,7 @@
                         @forelse($orders as $order)
                             <tr>
                                 <td>{{ $loop->iteration + $orders->firstItem() - 1 }}</td>
-                                <td>{{ $order->order_no }}</td>
+                                <td>{{ $order->order_no }} @if($order->is_quick_entry)<span class="badge badge-warning" title="পুরনো/legacy order — Bulletin/T&amp;A/BOM ছাড়া সরাসরি Production-এ ঢোকানো হয়েছে">Quick Entry</span>@endif</td>
                                 <td>{{ $order->order_date->format('d M Y') }}</td>
                                 <td>{{ $order->buyer->name ?? '-' }}</td>
                                 <td>{{ $order->buyer_order_ref ?? '-' }}</td>

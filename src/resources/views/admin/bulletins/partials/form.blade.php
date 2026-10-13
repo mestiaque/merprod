@@ -115,11 +115,12 @@
             out('btl', maxBtl + '%');
         }
 
-        // Library pick fills name, machine, attachment and SMV.
+        // Library pick fills section, name, machine, attachment and SMV.
         $(document).on('change', '[data-op-library]', function () {
             const option = this.selectedOptions[0];
             const row = this.closest('tr');
             if (option && option.value) {
+                row.querySelector('[data-op-section]').value = option.dataset.section || '';
                 row.querySelector('[data-op-name]').value = option.dataset.name;
                 row.querySelector('[data-op-machine]').value = option.dataset.machine || '';
                 row.querySelector('[data-op-attachment]').value = option.dataset.attachment || '';

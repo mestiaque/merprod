@@ -14,6 +14,7 @@ return [
             'order' => 13,
             'children' => [
                 ['title' => 'Dashboard', 'icon' => 'fa-solid fa-gauge', 'icon_color' => 'text-primary', 'permission' => 'msfl_dashboard', 'route' => "$base/dashboard"],
+                ['title' => 'Sync from Inventory', 'icon' => 'fa-solid fa-rotate', 'icon_color' => 'text-primary', 'permission' => 'msfl_inventory_sync', 'route' => "$base/inventory-sync"],
                 [
                     'title' => 'Master Data',
                     'icon' => 'fa-solid fa-database',
