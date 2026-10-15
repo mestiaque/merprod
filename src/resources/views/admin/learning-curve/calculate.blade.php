@@ -108,8 +108,8 @@
 @push('js')
 <script>
 (function () {
-    const productionBands = @json($productionBands->map(fn ($b) => ['smv_from' => $b->smv_from, 'smv_to' => $b->smv_to, 'label' => $b->label, 'day_percents' => $b->day_percents]));
-    const shipmentBands = @json($shipmentBands->map(fn ($b) => ['smv_from' => $b->smv_from, 'smv_to' => $b->smv_to, 'label' => $b->label, 'day_percents' => $b->day_percents]));
+    const productionBands = {!! $productionBands->map(fn ($b) => ['smv_from' => $b->smv_from, 'smv_to' => $b->smv_to, 'label' => $b->label, 'day_percents' => $b->day_percents])->toJson() !!};
+    const shipmentBands = {!! $shipmentBands->map(fn ($b) => ['smv_from' => $b->smv_from, 'smv_to' => $b->smv_to, 'label' => $b->label, 'day_percents' => $b->day_percents])->toJson() !!};
 
     function findBand(bands, smv) {
         return bands.find(function (b) {

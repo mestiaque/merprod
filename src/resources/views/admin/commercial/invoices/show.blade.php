@@ -17,6 +17,14 @@
             <div>
                 <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'invoice']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Commercial Invoice</a>
                 <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'packing']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-box"></i> Carton Packing List</a>
+                @if($shipments->isEmpty() && \Illuminate\Support\Facades\Route::has('inventory.shipments.create'))
+                    @can('inv_shipment.add')<a href="{{ route('inventory.shipments.create', ['msfl_invoice_id' => $invoice->id]) }}" class="btn btn-success btn-sm" title="Inventory Shipment from the Finish Store, filled from this invoice"><i class="fa-solid fa-truck"></i> Create Shipment</a>@endcan
+                @endif
+                @if(\Illuminate\Support\Facades\Route::has('inventory.gate-passes.print'))
+                    @foreach($challans as $gp)
+                        <a href="{{ route('inventory.gate-passes.print', $gp->id) }}" target="_blank" class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-print"></i> Delivery Challan {{ $gp->gate_pass_no }}</a>
+                    @endforeach
+                @endif
                 @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $invoice) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>@endcan
                 <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
@@ -31,6 +39,7 @@
                 <div class="col-md-3 mb-2"><strong>Ship Mode:</strong> {{ $invoice->shipMode->name ?? '-' }} · {{ $invoice->vessel ?? '' }}</div>
                 <div class="col-md-3 mb-2"><strong>Container:</strong> {{ $invoice->container_no ?? '-' }}</div>
                 <div class="col-md-3 mb-2"><strong>From → To:</strong> {{ $invoice->port_of_loading ?? '-' }} → {{ $invoice->port_of_discharge ?? '-' }} {{ $invoice->final_destination ? '(' . $invoice->final_destination . ')' : '' }}</div>
+                <div class="col-md-3 mb-2"><strong>Shipment (Inventory):</strong> {!! $shipments->isEmpty() ? '<span class="text-muted">not yet</span>' : $shipments->map(fn ($s) => e($s->shipment_no) . ' (' . e($s->status) . ')')->implode(', ') !!}</div>
                 <div class="col-md-3 mb-2"><strong>Weight:</strong> N {{ $invoice->net_weight ?? '-' }} / G {{ $invoice->gross_weight ?? '-' }} kg · CBM {{ $invoice->cbm ?? '-' }}</div>
                 @if($invoice->remarks)<div class="col-12 mb-2"><strong>Remarks:</strong> {!! nl2br(e($invoice->remarks)) !!}</div>@endif
             </div>

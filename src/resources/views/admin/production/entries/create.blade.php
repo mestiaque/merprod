@@ -36,14 +36,6 @@
                 <div class="row">
                     @include('merchandising-sfl::admin.production.partials.po-select', ['selected' => $selectedPo])
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'entry_date', 'label' => 'Date', 'type' => 'date', 'required' => true, 'value' => now(), 'attrs' => 'max="' . now()->format('Y-m-d') . '"'])
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Size <span class="text-danger">*</span> <small class="text-muted">(of the PO)</small></label>
-                        <select name="size_id" id="sizeSelect" class="form-control form-control-sm" required>
-                            <option value="">— Select size —</option>
-                            @foreach($sizes as $size)<option value="{{ $size->id }}" @selected(old('size_id') == $size->id)>{{ $size->name }}</option>@endforeach
-                        </select>
-                        @error('size_id')<span class="form-text text-danger">{{ $message }}</span>@enderror
-                    </div>
                     @if($partWise)
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Part <span class="text-danger">*</span> <small class="text-muted">(sent from cutting)</small></label>
@@ -67,19 +59,28 @@
                     @endif
                 </div>
 
-                <div id="balanceBox" class="alert alert-light border small py-2" style="display:none"></div>
-
+                @php
+                    $cols = $isQc ? ['input_qty' => 'Input', 'pass_qty' => 'QC Pass', 'rework_qty' => 'Rework', 'reject_qty' => 'Reject']
+                        : ($mode === 'input' ? ['input_qty' => ($stage === 'embroidery' ? 'Send (pcs)' : ($split[0] ?? 'Input') . ' (pcs)')]
+                        : ($mode === 'output' ? ['pass_qty' => ($stage === 'embroidery' ? 'Returned (pcs)' : ($split[1] ?? 'Output') . ' (pcs)')]
+                        : ['input_qty' => 'Input', 'pass_qty' => 'Output']));
+                @endphp
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+                    <h6 class="mb-0">Sizes <small class="text-muted" id="sizeHint">— pick a style · color above; every size of the PO shows here</small></h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="fillAll" title="Put the most each size can take"><i class="fa-solid fa-wand-magic-sparkles"></i> Fill all</button>
+                </div>
+                @if($errors->has('sizes') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'sizes.')))
+                    <div class="alert alert-danger py-2 small mb-2">{!! collect($errors->getMessages())->filter(fn ($m, $k) => $k === 'sizes' || str_starts_with($k, 'sizes.'))->flatten()->map(fn ($m) => e($m))->implode('<br>') !!}</div>
+                @endif
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle mb-2">
+                        <thead><tr><th style="width:70px">Size</th><th class="text-right">Order</th><th class="text-right" id="availHead">Can take in</th><th class="text-right">In {{ strtolower($label) }} now</th><th class="text-right">So far (in / out)</th>
+                            @foreach($cols as $f => $l)<th style="width:120px">{{ $l }}</th>@endforeach</tr></thead>
+                        <tbody id="sizeRowsBody"><tr><td colspan="{{ 5 + count($cols) }}" class="text-center text-muted">Pick a style · color.</td></tr></tbody>
+                        <tfoot><tr class="font-weight-bold"><td colspan="5" class="text-right">Total</td>@foreach($cols as $f => $l)<td data-col-total="{{ $f }}">0</td>@endforeach</tr></tfoot>
+                    </table>
+                </div>
                 <div class="row">
-                    @if($mode !== 'output')
-                        @include('merchandising-sfl::admin.partials.input', ['name' => 'input_qty', 'label' => $mode === 'input' ? ($stage === 'embroidery' ? 'Sent from Cutting (pcs)' : 'Sent (pcs)') : 'Input (pcs in)', 'type' => 'number', 'required' => $mode === 'input', 'attrs' => 'data-qty'])
-                    @endif
-                    @if($mode !== 'input')
-                        @include('merchandising-sfl::admin.partials.input', ['name' => 'pass_qty', 'label' => $isQc ? 'QC Pass' : ($mode === 'output' ? ($stage === 'embroidery' ? 'Returned to Cutting (pcs)' : 'Received back (pcs)') : 'Output (done)'), 'type' => 'number', 'required' => $mode === 'output', 'attrs' => 'data-qty'])
-                    @endif
-                    @if($isQc)
-                        @include('merchandising-sfl::admin.partials.input', ['name' => 'rework_qty', 'label' => 'Rework', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="rework"'])
-                        @include('merchandising-sfl::admin.partials.input', ['name' => 'reject_qty', 'label' => 'Reject', 'type' => 'number', 'attrs' => 'data-qty data-defect-total="reject"'])
-                    @endif
                     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6])
                 </div>
                 @unless($isQc)
@@ -89,21 +90,21 @@
                 <p class="small text-muted mt-n2">Rework pieces stay in {{ strtolower($label) }} until they pass; rejects leave the flow. Break every reject / rework down below — part and machine are optional (pick the machine to see machine-wise rejection).</p>
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h6 class="mb-0">Reject / Rework Detail <small class="text-muted">(reject <span data-defect-sum="reject">0</span>, rework <span data-defect-sum="rework">0</span>)</small></h6>
+                    <h6 class="mb-0">Reject / Rework Detail <small class="text-muted">(per size, must add up to that size's reject / rework — <span data-defect-check></span>)</small></h6>
                     <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="defect"><i class="fa-solid fa-plus"></i> Add Row</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">
-                        <thead><tr><th style="width:120px">Type</th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
+                        <thead><tr><th style="width:90px">Size</th><th style="width:120px">Type</th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
                         <tbody id="defectRowsBody">
                             @foreach($oldDefects ?: [[]] as $i => $d)
-                                @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => $i, 'd' => $d])
+                                @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => $i, 'd' => $d, 'withSize' => true])
                             @endforeach
                         </tbody>
                     </table>
                 </div>
                 <template id="defectRowTemplate">
-                    @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => '__INDEX__', 'd' => []])
+                    @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => '__INDEX__', 'd' => [], 'withSize' => true])
                 </template>
                 @endif
 
@@ -125,50 +126,118 @@
     const balances = @json($balances);
     const poParts = @json($poParts);
     const poSizes = @json($poSizes);
-    const sizeSelect = document.getElementById('sizeSelect');
+    const poOrdered = @json($poOrdered);
+    const sizeNames = @json($sizeNames);
+    const cols = @json(array_keys($cols));
+    const mode = @json($mode);
+    const isQc = @json($isQc);
+    const oldSizes = @json(old('sizes', []));
     const partInput = document.getElementById('partInput');
-    const label = @json($label);
     const poSelect = document.getElementById('poSelect');
-    const box = document.getElementById('balanceBox');
+    const body = document.getElementById('sizeRowsBody');
     const jq = typeof $ !== 'undefined' ? $ : null;
 
-    // Only the PO's sizes can be picked.
-    function filterSizes() {
-        const allowed = (poSizes[poSelect.value] || []).map(String);
-        Array.from(sizeSelect.options).forEach(o => { if (o.value) { o.hidden = o.disabled = ! allowed.includes(o.value); } });
-        if (sizeSelect.selectedOptions[0]?.disabled) sizeSelect.value = '';
+    // Balance of one size (part-wise stages: that part's balance).
+    function bal(sizeId) {
+        let b = (balances[poSelect.value] || {})[sizeId];
+        if (b && partInput) {
+            const part = partInput.value.trim();
+            b = part ? ((b.parts || {})[part] || b.newPart) : null;
+        }
+        return b;
+    }
+    // Most a size can get in a column: input ≤ can take in; output / pass ≤ in the stage (+ what comes in now).
+    function maxFor(b, col, row) {
+        if (! b) return 0;
+        if (col === 'input_qty') return b.available;
+        const comingIn = row ? (parseInt(row.querySelector('[data-col="input_qty"]')?.value || 0, 10)) : 0;
+        return b.wip + Math.min(comingIn, b.available);
     }
 
-    function showBalance() {
-        filterSizes();
-        let b = (balances[poSelect.value] || {})[sizeSelect.value];
+    function build() {
+        const ids = poSizes[poSelect.value] || [];
         if (partInput) {
-            // Part-wise stage: offer the PO's cut parts and show that part's balance.
             const cut = poParts[poSelect.value] || [];
             document.getElementById('poPartHint').textContent = cut.length ? 'Cut for this PO: ' + cut.join(', ') : '';
-            const part = partInput.value.trim();
-            b = b && part ? ((b.parts || {})[part] || b.newPart) : null;
         }
-        if (! b) { box.style.display = 'none'; return; }
-        box.style.display = '';
-        const sendWord = partInput ? 'at cutting, can be sent' : 'can take in';
-        const backWord = partInput ? 'returned to cutting' : 'pass';
-        box.innerHTML = 'Size ' + sizeSelect.selectedOptions[0].text + ' — ' + sendWord + ': <strong>' + b.available + '</strong> pcs · At ' + label + ' now: <strong>' + b.wip + '</strong>'
-            + ' · So far — sent ' + b.input + ', ' + backWord + ' ' + b.pass + ', rework ' + b.rework + ', reject ' + b.reject;
+        body.innerHTML = '';
+        if (! ids.length) {
+            body.innerHTML = '<tr><td colspan="' + (5 + cols.length) + '" class="text-center text-muted">Pick a style · color.</td></tr>';
+            return totals();
+        }
+        ids.forEach(function (id) {
+            const b = bal(id);
+            const tr = document.createElement('tr');
+            tr.dataset.size = id;
+            let html = '<td><strong>' + (sizeNames[id] || id) + '</strong></td>'
+                + '<td class="text-right">' + ((poOrdered[poSelect.value] || {})[id] || 0) + '</td>'
+                + '<td class="text-right font-weight-bold">' + (b ? b.available : (partInput ? '<span class="text-muted">pick part</span>' : 0)) + '</td>'
+                + '<td class="text-right">' + (b ? b.wip : '') + '</td>'
+                + '<td class="text-right small text-muted">' + (b ? b.input + ' / ' + b.pass + (b.reject ? ' · rej ' + b.reject : '') : '') + '</td>';
+            cols.forEach(function (c) {
+                const v = (oldSizes[id] || {})[c] || '';
+                html += '<td><input type="number" min="0" step="1" name="sizes[' + id + '][' + c + ']" value="' + v + '" class="form-control form-control-sm text-right" data-col="' + c + '"></td>';
+            });
+            tr.innerHTML = html;
+            body.appendChild(tr);
+        });
+        totals();
+        refreshDefectSizes();
     }
 
-    function defectSums() {
-        ['reject', 'rework'].forEach(function (type) {
-            let sum = 0;
-            document.querySelectorAll('#defectRowsBody tr').forEach(function (row) {
-                if (row.querySelector('[data-defect-type]').value === type) sum += parseInt(row.querySelector('[data-defect-qty]').value || 0, 10);
+    function totals() {
+        cols.forEach(function (c) {
+            let t = 0;
+            body.querySelectorAll('[data-col="' + c + '"]').forEach(function (i) {
+                t += parseInt(i.value || 0, 10);
+                const row = i.closest('tr');
+                const over = (parseInt(i.value || 0, 10)) > maxFor(bal(row.dataset.size), c, row) && (c === 'input_qty' || c === 'pass_qty');
+                i.classList.toggle('is-invalid', over);
             });
-            const el = document.querySelector('[data-defect-sum="' + type + '"]');
-            if (! el) return;
-            const want = parseInt(document.querySelector('[data-defect-total="' + type + '"]').value || 0, 10);
-            el.textContent = sum + (sum !== want ? ' ≠ ' + want : ' ✓');
-            el.className = sum === want ? 'text-success' : 'text-danger';
+            const el = document.querySelector('[data-col-total="' + c + '"]');
+            if (el) el.textContent = t;
         });
+        defectCheck();
+    }
+
+    // Fill all: each size gets what it can take (input) or what is in the stage (output).
+    document.getElementById('fillAll').addEventListener('click', function () {
+        body.querySelectorAll('tr[data-size]').forEach(function (row) {
+            const b = bal(row.dataset.size);
+            const input = row.querySelector('[data-col="' + (mode === 'output' ? 'pass_qty' : 'input_qty') + '"]');
+            if (input && b) input.value = (mode === 'output' ? b.wip : b.available) || '';
+        });
+        totals();
+    });
+
+    // Buyer QC: defect rows carry the size; per size they must add up to its reject / rework.
+    function refreshDefectSizes(scope) {
+        const ids = poSizes[poSelect.value] || [];
+        (scope || document).querySelectorAll('[data-defect-size]').forEach(function (sel) {
+            const cur = sel.value || sel.dataset.old || '';
+            sel.innerHTML = '<option value="">— Size —</option>' + ids.map(id => '<option value="' + id + '"' + (String(id) === String(cur) ? ' selected' : '') + '>' + (sizeNames[id] || id) + '</option>').join('');
+        });
+    }
+    function defectCheck() {
+        const out = document.querySelector('[data-defect-check]');
+        if (! out) return;
+        const want = {}, got = {};
+        body.querySelectorAll('tr[data-size]').forEach(function (row) {
+            ['reject_qty', 'rework_qty'].forEach(function (c) {
+                const v = parseInt(row.querySelector('[data-col="' + c + '"]')?.value || 0, 10);
+                if (v) want[row.dataset.size + '|' + c.replace('_qty', '')] = v;
+            });
+        });
+        document.querySelectorAll('#defectRowsBody tr').forEach(function (row) {
+            const q = parseInt(row.querySelector('[data-defect-qty]').value || 0, 10);
+            if (! q) return;
+            const k = (row.querySelector('[data-defect-size]').value || '?') + '|' + row.querySelector('[data-defect-type]').value;
+            got[k] = (got[k] || 0) + q;
+        });
+        const keys = new Set([...Object.keys(want), ...Object.keys(got)]);
+        const bad = [...keys].filter(k => (want[k] || 0) !== (got[k] || 0));
+        out.textContent = bad.length ? 'not matching: ' + bad.map(k => { const [s, t] = k.split('|'); return (sizeNames[s] || s) + ' ' + t + ' ' + (got[k] || 0) + '/' + (want[k] || 0); }).join(', ') : '✓';
+        out.className = bad.length ? 'text-danger' : 'text-success';
     }
 
     // Sewing: show only the Inventory machines on the chosen line.
@@ -187,13 +256,13 @@
         });
     }
 
-    if (partInput) partInput.addEventListener('change', showBalance);
-    sizeSelect.addEventListener('change', showBalance);
-    if (jq) { jq(poSelect).on('change', showBalance); if (lineSelect) jq(lineSelect).on('change', () => filterMachines()); }
-    document.addEventListener('input', function (e) { if (e.target.closest('#defectRowsBody') || e.target.matches('[data-defect-total]')) defectSums(); });
-    document.addEventListener('change', function (e) { if (e.target.matches('[data-defect-type]')) defectSums(); });
-    document.getElementById('defectRowsBody')?.addEventListener('msfl:rows-changed', function (e) { filterMachines(e.detail?.row); defectSums(); });
-    showBalance(); defectSums(); filterMachines();
+    body.addEventListener('input', totals);
+    if (partInput) partInput.addEventListener('change', build);
+    if (jq) { jq(poSelect).on('change', build); if (lineSelect) jq(lineSelect).on('change', () => filterMachines()); }
+    document.addEventListener('input', function (e) { if (e.target.closest('#defectRowsBody')) defectCheck(); });
+    document.addEventListener('change', function (e) { if (e.target.closest('#defectRowsBody')) defectCheck(); });
+    document.getElementById('defectRowsBody')?.addEventListener('msfl:rows-changed', function (e) { refreshDefectSizes(e.detail?.row); filterMachines(e.detail?.row); defectCheck(); });
+    build(); filterMachines();
 })();
 </script>
 @endpush

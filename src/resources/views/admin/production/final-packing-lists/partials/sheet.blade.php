@@ -28,7 +28,7 @@
 <div class="fpl">
     <table>
         <tr>
-            <td class="hk">INVOICE NO</td><td class="l">{{ $sheet['invoices'] ?: '—' }}</td>
+            <td class="hk">INVOICE NO</td><td class="l">{{ $sheet['invoices'] ?: ($fpl->invoice_no ?: '—') }}</td>
             <td class="hk">DATE</td><td class="l">{{ $fpl->pack_date?->format('d.m.y') }}</td>
         </tr>
         <tr>

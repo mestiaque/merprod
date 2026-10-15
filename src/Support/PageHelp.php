@@ -549,6 +549,7 @@ class PageHelp
                     '<strong>Carton Packing List</strong>: প্রতিটা সারি = একই রকম pack করা কয়েকটা carton — PO, Carton From…To, <strong>প্রতি carton-এ</strong> size ধরে pcs, প্রতি carton-এর NW / GW (kg), মাপ L × W × H (cm)। Copy বাটনে পরের carton নম্বর নিজে বসে।',
                     'উপরের EXP / B/L / vessel / port দিন → Save। Invoice-এর qty, carton, ওজন, CBM আর টাকা carton list থেকে নিজে হিসাব হয়।',
                     'Invoice পাতায় <strong>Commercial Invoice</strong> / <strong>Carton Packing List</strong> বাটনে print।',
+                    'মাল পাঠানোর সময় <strong>Create Shipment</strong> চাপুন — Inventory Shipment buyer, invoice no, PO আর qty সহ ভরা অবস্থায় খোলে। Save করলে Gate Pass খোলে; Gate Pass-এর print-ই <strong>Delivery Challan</strong> (invoice-এর carton থেকে size ধরে qty)।',
                 ],
                 'example' => 'CI-2026-0001: LC ELC-2026-0001, PO D-HM-4501 400 pcs × $9.40 = $3,760, 20 carton, B/L MAEU123।',
                 'before' => 'Export LC (active) / Packing / Inventory Shipment',
@@ -563,10 +564,12 @@ class PageHelp
                     'Short / Excess-এর কারণ: Buyer QC-তে reject থাকলে নিজে বসে; না হলে QC লিখবে (যেমন "01 pcs Marketing Sample Send")।',
                     '<strong>Print</strong> করে buyer-কে দিন। Approve পেলে তারিখ, কে approve করল আর approve করা কপি দিয়ে <strong>Buyer Approved</strong>।',
                     'ভুল হলে <strong>Re-open</strong> — সংখ্যা আবার production থেকে আসে।',
+                    '<strong>Invoice No</strong>: Commercial Invoice হলে নিজে বসে; তার আগে Edit-এ হাতে লিখে রাখা যায়।',
+                    'নিচের <strong>After packing</strong> বক্সে style ধরে দেখায়: pack হয়েছে → Finish Store-এ এসেছে → shipment হয়েছে → invoice হয়েছে। <strong>Receive in Finish Store</strong> বাটনে Inventory-র Finish Store receive খোলে PO বাছা অবস্থায়।',
                 ],
                 'example' => 'PO KK-SFL-52-26: 267504 Mustard order 35, cut 35, ship 34 (−1, Marketing Sample); 267505 Khaki 20 / 20 / 19।',
                 'before' => 'Packing / Buyer QC',
-                'after' => 'Commercial Invoice (Carton Packing List)',
+                'after' => 'Finish Store (Inventory) → Commercial Invoice → Shipment → Delivery Challan',
             ],
             'production.hourly-report' => [
                 'title' => 'Daily Hourly Production Report',
@@ -582,9 +585,9 @@ class PageHelp
             ],
             'production.entries.sewing' => $stage('Sewing', 'Line-এ সেলাই — দিনে কোন line কত pcs নিল, কত pass, rework, reject। Reject কোন part-এ আর কোন মেশিনে হয়েছে তাও দেওয়া যায় (মেশিন optional)।', 'Cutting / Embroidery', 'Washing (থাকলে) / Finishing', 'ধরুন Line 2-এ আজ 200 input, 180 pass, 12 rework (open seam), 3 reject (needle hole — front part, একটা SNLS মেশিনে)।'),
             'production.entries.washing' => $stage('Washing', 'Garment wash — শুধু সেই PO-তে যেখানে "needs washing" টিক দেওয়া। পাঠানো ("Send to Washing") আর ফেরত ("Receive from Washing") আলাদা entry, আলাদা তারিখে।', 'Sewing', 'Finishing', 'Ladies Denim Jacket (Stone Wash): 480 input, 478 pass, 2 reject (shade)।'),
-            'production.entries.finishing' => $stage('Finishing', 'Thread cutting, ironing, button, tag লাগানো ইত্যাদি।', 'Sewing / Washing', 'Buyer QC', 'ধরুন 950 pcs input, 950 pass।'),
+            'production.entries.finishing' => $stage('Finishing', 'Thread cutting, ironing, button, tag লাগানো ইত্যাদি। <strong>Receive in Finishing</strong> (কত pcs এলো) আর <strong>Finishing Output</strong> (কত শেষ হলো) আলাদা entry, আলাদা দিনে। Style · Color বাছলেই Sewing-এর মতো সব size-এর table আসে — কত নেওয়া যায় দেখায়, <strong>Fill all</strong> চাপলে বাকি সবটা বসে যায়।', 'Sewing / Washing', 'Buyer QC', 'ধরুন 950 pcs input, 950 pass।'),
             'production.entries.final_qc' => $stage('Buyer QC', '<strong>Buyer QC</strong> — তৈরি পোশাকের (ready product) QC, Finishing শেষ হওয়া pcs Packing-এর আগে buyer-এর মান অনুযায়ী check। এটা step-wise QC (Production → QC) থেকে আলাদা। Pass হওয়া pcs-ই Packing নিতে পারে; alter / rework ঠিক হলে Production → Rework → Buyer QC card-এ দিন।', 'Finishing', 'Packing', 'ধরুন 950 input, 945 pass, 5 reject (stain)।'),
-            'production.entries.packing' => $stage('Packing', 'Polybag, carton-এ ভরা। Packed qty-ই Inventory-র <strong>Finish Store</strong>-এ receive করা যায় (তার বেশি না)।', 'Buyer QC', 'Inventory → Finish Store receive', '945 pcs packed → Inventory-তে সর্বোচ্চ 945 pcs Finish Store-এ receive করা যাবে।'),
+            'production.entries.packing' => $stage('Packing', 'Polybag, carton-এ ভরা। <strong>Receive in Packing</strong> আর <strong>Packed (Output)</strong> আলাদা entry; size-এর table, <strong>Fill all</strong>। Packed qty-ই Inventory-র <strong>Finish Store</strong>-এ receive করা যায় (তার বেশি না)।', 'Buyer QC', 'Inventory → Finish Store receive', '945 pcs packed → Inventory-তে সর্বোচ্চ 945 pcs Finish Store-এ receive করা যাবে।'),
 
             'production.qc' => [
                 'title' => 'QC (step-wise)',
@@ -597,7 +600,7 @@ class PageHelp
                 'example' => 'Cutting-এ কাটা 830 pcs check: 827 pass, 3টা Front panel-এ fabric hole (Reject 3) → Cutting pass 827।',
                 'before' => 'Cutting / Sewing / … entry',
                 'after' => 'পরের step',
-                'actions' => ['create' => 'উপরের বক্সে দেখাবে ওই step-এ pass হওয়া কত pcs এখনো আছে — পরের step যা নিয়ে ফেলেছে তা আর এখানে ধরা যায় না।'],
+                'actions' => ['create' => 'Style · Color বাছলে PO-র <strong>সব size-এর table</strong> আসে — প্রতিটা size-এ কত pass হওয়া pcs এখনো আছে দেখায়; যে size-এ লিখবেন শুধু সেগুলো save হয় (বাকি ফাঁকা রাখুন)। Detail row-এ size বাছুন — প্রতিটা size-এর reject-এর সাথে মিলতে হবে।'],
             ],
             'production.rework' => [
                 'title' => 'Rework',
@@ -610,7 +613,7 @@ class PageHelp
                 'example' => 'Cutting-এর 5টা sleeve বাঁকা → Rework Found 5 (pass 827 থেকে 822)। পরদিন recut: 4টা ঠিক (Passed 4), 1টা নষ্ট (Reject 1) → Cutting pass 826।',
                 'before' => 'QC / step entry',
                 'after' => 'পরের step',
-                'actions' => ['create' => 'উপরের বক্সে দেখাবে ওই step-এ pass হওয়া কত pcs আছে (rework-এ পাঠানো যায়) আর কত pcs rework-এ আটকে আছে।'],
+                'actions' => ['create' => 'Style · Color বাছলে সব size-এর table আসে — প্রতিটা size-এ pass হওয়া কত pcs আছে (rework-এ পাঠানো যায়) আর কত pcs rework-এ আটকে আছে। এক entry-তে কয়েকটা size একসাথে দেওয়া যায়।'],
             ],
 
             // ---------------------------------------------------------------- Reports

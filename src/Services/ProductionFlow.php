@@ -54,15 +54,21 @@ class ProductionFlow
         'rework' => 'Rework',
     ];
 
-    /** Stages whose input (sent) and output (received back) are separate entries on their own dates. */
-    public const SPLIT_STAGES = ['embroidery', 'washing'];
+    /**
+     * Stages whose input and output are separate entries on their own dates: embroidery / washing
+     * (sent out, received back) and finishing / packing (received in, output done).
+     */
+    public const SPLIT_STAGES = ['embroidery', 'washing', 'finishing', 'packing'];
 
-    /** Labels of a split stage's two entries: [input (sent), output (received back)]. */
+    /** Labels of a split stage's two entries: [input, output]. */
     public static function splitLabels(string $stage): array
     {
-        return $stage === 'embroidery'
-            ? ['Send to Embroidery (from Cutting)', 'Return to Cutting (from Embroidery)']
-            : ['Send to ' . self::label($stage), 'Receive from ' . self::label($stage)];
+        return match ($stage) {
+            'embroidery' => ['Send to Embroidery (from Cutting)', 'Return to Cutting (from Embroidery)'],
+            'finishing' => ['Receive in Finishing', 'Finishing Output'],
+            'packing' => ['Receive in Packing', 'Packed (Output)'],
+            default => ['Send to ' . self::label($stage), 'Receive from ' . self::label($stage)],
+        };
     }
 
     /** Net pieces an entry adds to its stage's pass (QC / rework found take pieces back out). */

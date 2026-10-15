@@ -1,7 +1,8 @@
 {{-- Pack date, remarks and QC's short / excess note per style. props: fpl, sheet --}}
 <div class="row">
     @include('merchandising-sfl::admin.partials.input', ['name' => 'pack_date', 'label' => 'Packing List Date', 'type' => 'date', 'required' => true, 'value' => $fpl->pack_date])
-    @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 9, 'value' => $fpl->remarks])
+    @include('merchandising-sfl::admin.partials.input', ['name' => 'invoice_no', 'label' => 'Invoice No', 'value' => $fpl->invoice_no, 'attrs' => 'placeholder="' . e(($sheet['invoices'] ?? '') ?: 'until a Commercial Invoice has this PO') . '"'])
+    @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6, 'value' => $fpl->remarks])
 </div>
 <h6>Short / Excess — QC note after final checking <small class="text-muted">(filled from Buyer QC rejects; type the reason, e.g. "01 pcs Marketing Sample Send")</small></h6>
 <div class="table-responsive">

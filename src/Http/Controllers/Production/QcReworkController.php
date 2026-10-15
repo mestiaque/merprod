@@ -68,7 +68,7 @@ class QcReworkController extends Controller
             return redirect()->route("msfl.production.{$kind}.index");
         }
 
-        $pos = Lookups::productionPos()->load('sizes')->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
+        $pos = Lookups::productionPos()->load('sizes.size')->filter(fn (OrderPo $po) => in_array($stage, $this->flow->route($po), true))->values();
         $partWise = ProductionFlow::partWise($stage);
         // po => size => [ready (passed, still here), wip (waiting, incl. rework)] — and per part for part-wise steps.
         $balances = $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $po->sizes->mapWithKeys(function ($ps) use ($po, $stage, $partWise) {
@@ -93,7 +93,9 @@ class QcReworkController extends Controller
             'machines' => ProductionFlow::machines(),
             'garmentParts' => Lookups::garmentParts(),
             'selectedPo' => $request->integer('order_po_id') ?: null,
-            'poSizes' => $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => $po->sizes->pluck('size_id')->all()]),
+            // po => size ids in display order (XS → 3XL).
+            'poSizes' => $pos->mapWithKeys(fn (OrderPo $po) => [$po->id => Size::displaySort($po->sizes->pluck('size')->filter())->pluck('id')->all()]),
+            'sizeNames' => Size::query()->pluck('name', 'id'),
         ]);
     }
 
@@ -108,24 +110,30 @@ class QcReworkController extends Controller
         ];
     }
 
+    /**
+     * One entry per size from the size table (sizes[size_id][pass_qty|rework_qty|reject_qty]); the old
+     * one-size form (size_id + qty fields) still works. Defect rows name their size. One bad size → nothing saved.
+     */
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('msfl_prod_entry.add');
         $kind = $this->kind($request);
         $stage = (string) $request->input('stage');
+        $qtyRule = ['nullable', 'integer', 'min:0'];
 
         $data = $request->validate([
             'stage' => ['required', Rule::in(array_keys(self::stages($kind)))],
             'order_po_id' => ['required', Rule::exists('msfl_order_pos', 'id')],
             'entry_date' => ['required', 'date', 'before_or_equal:today'],
-            'size_id' => ['required', Rule::exists('inv_sizes', 'id')],
+            'size_id' => ['nullable', Rule::exists('inv_sizes', 'id')],
+            'sizes' => ['nullable', 'array'],
+            'sizes.*.pass_qty' => $qtyRule, 'sizes.*.rework_qty' => $qtyRule, 'sizes.*.reject_qty' => $qtyRule,
             'part_name' => [ProductionFlow::partWise($stage) ? 'required' : 'nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'line_id' => [Rule::requiredIf(ProductionFlow::usesLine($stage)), 'nullable', Rule::exists('msfl_lines', 'id')->whereNull('deleted_at')],
-            'pass_qty' => ['nullable', 'integer', 'min:0'],
-            'rework_qty' => ['nullable', 'integer', 'min:0'],
-            'reject_qty' => ['nullable', 'integer', 'min:0'],
+            'pass_qty' => $qtyRule, 'rework_qty' => $qtyRule, 'reject_qty' => $qtyRule,
             'remarks' => ['nullable', 'string', 'max:255'],
             'defects' => ['nullable', 'array'],
+            'defects.*.size_id' => ['nullable', 'integer'],
             'defects.*.type' => ['nullable', 'in:reject,rework'],
             'defects.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'defects.*.machine_id' => ['nullable', 'integer', Rule::exists('inv_machines', 'id')],
@@ -136,55 +144,74 @@ class QcReworkController extends Controller
         $qc = $kind === 'qc';
         $part = ProductionFlow::partWise($stage) ? trim($data['part_name']) : null;
         $usesLine = ProductionFlow::usesLine($stage);
+
         // QC: passed pieces checked — pass (counted only) / reject. Rework: found (passed → WIP), fixed pass / reject.
-        $qty = [
+        $bySize = $data['sizes'] ?? (! empty($data['size_id']) ? [$data['size_id'] => $data] : []);
+        $rows = collect($bySize)->mapWithKeys(fn ($q, $sizeId) => [(int) $sizeId => [
             'input_qty' => 0,
-            'pass_qty' => (int) ($data['pass_qty'] ?? 0),
-            'rework_qty' => $qc ? 0 : (int) ($data['rework_qty'] ?? 0),
-            'reject_qty' => (int) ($data['reject_qty'] ?? 0),
-        ];
+            'pass_qty' => (int) ($q['pass_qty'] ?? 0),
+            'rework_qty' => $qc ? 0 : (int) ($q['rework_qty'] ?? 0),
+            'reject_qty' => (int) ($q['reject_qty'] ?? 0),
+        ]])->filter(fn ($q) => array_sum($q) > 0);
+        if ($rows->isEmpty()) {
+            throw ValidationException::withMessages(['sizes' => $qc ? 'Enter the checked pass and / or reject of at least one size.' : 'Enter the rework found or fixed of at least one size.']);
+        }
+
         $defects = collect($data['defects'] ?? [])
-            ->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, $qc ? ['reject'] : ['reject', 'rework'], true))->values();
+            ->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, $qc ? ['reject'] : ['reject', 'rework'], true))
+            ->map(fn ($d) => ['size_id' => (int) (($d['size_id'] ?? null) ?: ($rows->count() === 1 ? $rows->keys()->first() : 0))] + $d)
+            ->groupBy('size_id');
+        if ($defects->has(0)) {
+            throw ValidationException::withMessages(['defects' => 'Pick the size of every reject / rework row.']);
+        }
 
         $po = OrderPo::with('order')->findOrFail($data['order_po_id']);
 
-        $entry = DB::transaction(function () use ($po, $stage, $qc, $part, $qty, $defects, $data, $usesLine) {
+        $saved = DB::transaction(function () use ($po, $stage, $qc, $part, $rows, $defects, $data, $usesLine) {
             OrderPo::query()->whereKey($po->id)->lockForUpdate()->first();
 
-            $errors = $this->balanceErrors($po, $stage, $qc, $part, (int) $data['size_id'], $qty) + $this->flow->defectErrors($defects, $qty);
-            if ($errors) {
-                throw ValidationException::withMessages($errors);
-            }
+            $saved = collect();
+            // One size at a time: each check sees the sizes already saved above it.
+            foreach ($rows as $sizeId => $qty) {
+                $sizeDefects = $defects->get($sizeId, collect());
+                $errors = $this->balanceErrors($po, $stage, $qc, $part, $sizeId, $qty) + $this->flow->defectErrors($sizeDefects, $qty);
+                if ($errors) {
+                    throw ValidationException::withMessages(["sizes.{$sizeId}" => 'Size ' . (Size::find($sizeId)->name ?? $sizeId) . ': ' . implode(' ', $errors)]);
+                }
 
-            $entry = Entry::create($qty + [
-                'stage' => $stage,
-                'kind' => $qc ? 'qc' : 'rework',
-                'entry_date' => $data['entry_date'],
-                'order_po_id' => $po->id,
-                'size_id' => $data['size_id'],
-                'part_name' => $part,
-                'line_id' => $usesLine ? $data['line_id'] : null,
-                'remarks' => $data['remarks'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
-            foreach ($defects as $d) {
-                $entry->defects()->create([
-                    'type' => $d['type'],
-                    'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : $part,
-                    'machine_id' => $d['machine_id'] ?? null,
-                    'defect' => $d['defect'] ?? null,
-                    'qty' => (int) $d['qty'],
+                $entry = Entry::create($qty + [
+                    'stage' => $stage,
+                    'kind' => $qc ? 'qc' : 'rework',
+                    'entry_date' => $data['entry_date'],
+                    'order_po_id' => $po->id,
+                    'size_id' => $sizeId,
+                    'part_name' => $part,
+                    'line_id' => $usesLine ? $data['line_id'] : null,
+                    'remarks' => $data['remarks'] ?? null,
+                    'created_by' => auth()->id(),
                 ]);
+                foreach ($sizeDefects as $d) {
+                    $entry->defects()->create([
+                        'type' => $d['type'],
+                        'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : $part,
+                        'machine_id' => $d['machine_id'] ?? null,
+                        'defect' => $d['defect'] ?? null,
+                        'qty' => (int) $d['qty'],
+                    ]);
+                }
+                $saved->push($entry);
             }
 
-            return $entry;
+            return $saved;
         });
 
-        $what = $qc ? "QC — pass {$entry->pass_qty}, reject {$entry->reject_qty}" : "rework — found {$entry->rework_qty}, pass {$entry->pass_qty}, reject {$entry->reject_qty}";
+        $what = $qc
+            ? 'QC — pass ' . $saved->sum('pass_qty') . ', reject ' . $saved->sum('reject_qty')
+            : 'rework — found ' . $saved->sum('rework_qty') . ', pass ' . $saved->sum('pass_qty') . ', reject ' . $saved->sum('reject_qty');
 
         return redirect()->route("msfl.production.{$kind}." . ($request->boolean('add_another') ? 'create' : 'index'),
             $request->boolean('add_another') ? ['order_po_id' => $po->id, 'stage' => $stage] : [])
-            ->with('success', ProductionFlow::label($stage) . ($part ? " ({$part})" : '') . " {$what} saved.");
+            ->with('success', ProductionFlow::label($stage) . ($part ? " ({$part})" : '') . " {$what} saved for {$saved->count()} size(s).");
     }
 
     public function destroy(Entry $entry): RedirectResponse

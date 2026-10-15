@@ -64,7 +64,7 @@ class FinalPackingListController extends Controller
         }
 
         $fpl = DB::transaction(function () use ($data, $numbers) {
-            $fpl = FinalPackingList::create(collect($data)->only(['order_id', 'po_no', 'pack_date', 'remarks'])->all() + [
+            $fpl = FinalPackingList::create(collect($data)->only(['order_id', 'po_no', 'pack_date', 'invoice_no', 'remarks'])->all() + [
                 'fpl_no' => $numbers->next('final_packing_list', FinalPackingList::class, 'fpl_no'), 'created_by' => auth()->id(),
             ]);
             $this->saveNotes($fpl, $data['notes'] ?? []);
@@ -79,7 +79,10 @@ class FinalPackingListController extends Controller
     {
         $this->authorize('msfl_final_packing_list.view');
 
-        return view('merchandising-sfl::admin.production.final-packing-lists.show', ['fpl' => $finalPackingList->load('order.buyer'), 'sheet' => $this->sheet($finalPackingList)]);
+        return view('merchandising-sfl::admin.production.final-packing-lists.show', [
+            'fpl' => $finalPackingList->load('order.buyer'), 'sheet' => $this->sheet($finalPackingList),
+            'after' => $this->figures->afterPacking($finalPackingList->poLines()->with(['style', 'color', 'order'])->get()),
+        ]);
     }
 
     public function edit(FinalPackingList $finalPackingList): View|RedirectResponse
@@ -99,7 +102,7 @@ class FinalPackingListController extends Controller
         $data = $this->validated($request, $finalPackingList);
 
         DB::transaction(function () use ($finalPackingList, $data) {
-            $finalPackingList->update(collect($data)->only(['pack_date', 'remarks'])->all());
+            $finalPackingList->update(collect($data)->only(['pack_date', 'invoice_no', 'remarks'])->all());
             $this->saveNotes($finalPackingList, $data['notes'] ?? []);
         });
 
@@ -176,6 +179,7 @@ class FinalPackingListController extends Controller
             'po_no' => ['required', 'string', 'max:100'],
         ]) + [
             'pack_date' => ['required', 'date'],
+            'invoice_no' => ['nullable', 'string', 'max:100'],
             'remarks' => ['nullable', 'string', 'max:5000'],
             'notes' => ['nullable', 'array'],
             'notes.*' => ['nullable', 'string', 'max:255'],

@@ -31,7 +31,7 @@ class FinalPackingList extends Model
 
     protected $table = 'msfl_prod_final_packing_lists';
 
-    protected $fillable = ['fpl_no', 'order_id', 'po_no', 'pack_date', 'buyer_approved_on', 'buyer_approved_by', 'approval_file', 'remarks', 'created_by'];
+    protected $fillable = ['fpl_no', 'order_id', 'po_no', 'pack_date', 'invoice_no', 'buyer_approved_on', 'buyer_approved_by', 'approval_file', 'remarks', 'created_by'];
 
     protected $casts = ['pack_date' => 'date', 'buyer_approved_on' => 'date', 'snapshot' => 'array'];
 

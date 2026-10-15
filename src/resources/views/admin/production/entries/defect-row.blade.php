@@ -1,5 +1,8 @@
-{{-- props: index, d (old values), garmentParts (Master Data), machines (Inventory; optional pick, for machine-wise rejection) --}}
+{{-- props: index, d (old values), garmentParts (Master Data), machines (Inventory; optional pick, for machine-wise rejection), withSize (bool: Buyer QC rows name their size — options filled by the form's script) --}}
 <tr>
+    @if($withSize ?? false)
+        <td><select name="defects[{{ $index }}][size_id]" class="form-control form-control-sm" data-defect-size data-old="{{ $d['size_id'] ?? '' }}"><option value="">— Size —</option></select></td>
+    @endif
     <td>
         <select name="defects[{{ $index }}][type]" class="form-control form-control-sm" data-defect-type>
             <option value="reject" @selected(($d['type'] ?? 'reject') === 'reject')>Reject</option>

@@ -4,6 +4,7 @@ namespace ME\MerchandisingSfl\Services;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use ME\MerchandisingSfl\Models\OrderPo;
 use ME\MerchandisingSfl\Models\Size;
 
@@ -45,6 +46,30 @@ class PackingFigures
             'packed' => $packed,
             'invoiced' => $this->invoicedBySize($po->id, $ignoreInvoiceId),
         ];
+    }
+
+    /**
+     * After packing, per PO line of a final packing list: packed (production) → received in the
+     * Finish Store (Inventory FG receive) → on a shipment (Inventory) → on a commercial invoice.
+     */
+    public function afterPacking(Collection $pos): array
+    {
+        $ids = $pos->pluck('id')->all();
+        $fg = Schema::hasTable('inv_finished_goods_receive_items') ? DB::table('inv_finished_goods_receives as r')
+            ->join('inv_finished_goods_receive_items as ri', 'ri.fg_receive_id', '=', 'r.id')->whereNull('r.deleted_at')
+            ->whereIn('r.msfl_order_po_id', $ids)->groupBy('r.msfl_order_po_id')->selectRaw('r.msfl_order_po_id po, SUM(ri.quantity) q')->pluck('q', 'po') : collect();
+        $shipped = Schema::hasTable('inv_shipment_items') ? DB::table('inv_shipment_items as si')->join('inv_shipments as s', 's.id', '=', 'si.shipment_id')
+            ->whereNull('s.deleted_at')->whereIn('si.msfl_order_po_id', $ids)->groupBy('si.msfl_order_po_id')->selectRaw('si.msfl_order_po_id po, SUM(si.quantity) q')->pluck('q', 'po') : collect();
+        $invoiced = DB::table('msfl_com_invoice_lines as l')->join('msfl_com_invoices as i', 'i.id', '=', 'l.invoice_id')->whereNull('i.deleted_at')
+            ->whereIn('l.order_po_id', $ids)->groupBy('l.order_po_id')->selectRaw('l.order_po_id po, SUM(l.qty) q')->pluck('q', 'po');
+
+        return $pos->map(fn (OrderPo $po) => [
+            'po' => $po,
+            'packed' => (int) $this->flow->summary($po)['packing']['pass'],
+            'fg' => (int) ($fg[$po->id] ?? 0),
+            'shipped' => (int) ($shipped[$po->id] ?? 0),
+            'invoiced' => (int) ($invoiced[$po->id] ?? 0),
+        ])->values()->all();
     }
 
     /** size_id => pcs of a PO on invoice cartons (invoices not deleted, optionally leaving one out). */

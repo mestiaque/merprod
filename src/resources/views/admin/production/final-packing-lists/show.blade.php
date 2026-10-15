@@ -49,6 +49,43 @@
                 @if($fpl->remarks)<p class="small mb-0 mt-1"><strong>Remarks:</strong> {{ $fpl->remarks }}</p>@endif
             </div>
         </div>
+
+        {{-- Next steps: Finish Store (Inventory) → Shipment + Delivery Challan (Inventory, Gate Pass) ← Commercial Invoice --}}
+        @php
+            $fgRoute = \Illuminate\Support\Facades\Route::has('inventory.fg-receives.create');
+            $shipRoute = \Illuminate\Support\Facades\Route::has('inventory.shipments.index');
+        @endphp
+        <div class="card mb-3">
+            <div class="card-header py-2"><h6 class="mb-0">After packing — Finish Store → Shipment → Delivery Challan · Commercial Invoice</h6></div>
+            <div class="card-body py-2">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle mb-1">
+                        <thead><tr><th>Style · Color</th><th class="text-right">Packed</th><th class="text-right">In Finish Store</th><th class="text-right">Shipped</th><th class="text-right">Invoiced</th><th>Next</th></tr></thead>
+                        <tbody>
+                            @foreach($after as $a)
+                                <tr>
+                                    <td>{{ $a['po']->style->style_no ?? '' }} · {{ $a['po']->color->name ?? '' }}</td>
+                                    <td class="text-right">{{ number_format($a['packed']) }}</td>
+                                    <td class="text-right {{ $a['fg'] < $a['packed'] ? 'text-warning' : '' }}">{{ number_format($a['fg']) }}</td>
+                                    <td class="text-right">{{ number_format($a['shipped']) }}</td>
+                                    <td class="text-right">{{ number_format($a['invoiced']) }}</td>
+                                    <td>
+                                        @if($fgRoute && $a['fg'] < $a['packed'])
+                                            @can('inv_fg_receive.add')<a href="{{ route('inventory.fg-receives.create', ['msfl_order_po_id' => $a['po']->id]) }}" class="btn btn-sm btn-outline-success"><i class="fa-solid fa-warehouse"></i> Receive in Finish Store ({{ number_format($a['packed'] - $a['fg']) }})</a>@endcan
+                                        @endif
+                                        @if($a['invoiced'] < $a['packed'])
+                                            @can('msfl_com_invoice.add')<a href="{{ route('msfl.commercial.invoices.create') }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-file-invoice-dollar"></i> Commercial Invoice</a>@endcan
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted mb-0">Finish Store receive is in Inventory (capped by packed qty). Shipment: Inventory → Shipment — pick the Commercial Invoice there and it fills itself; then the Gate Pass prints the <strong>Delivery Challan</strong>.
+                    @if($shipRoute) <a href="{{ route('inventory.shipments.index') }}">Open Shipments</a>@endif</p>
+            </div>
+        </div>
     @endunless
 
     <div class="{{ $printMode ? '' : 'card' }}"><div class="{{ $printMode ? '' : 'card-body' }}">

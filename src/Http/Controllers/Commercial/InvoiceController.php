@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use ME\MerchandisingSfl\Http\Controllers\Controller;
 use ME\MerchandisingSfl\Http\Requests\Commercial\InvoiceRequest;
@@ -75,7 +76,11 @@ class InvoiceController extends Controller
         $this->authorize('msfl_com_invoice.view');
         $invoice->load(['buyer', 'exportLc.currency', 'shipMode', 'creator', 'lines.orderPo.style', 'lines.orderPo.color', 'lines.orderPo.order', 'cartons.sizes', 'cartons.orderPo.style', 'cartons.orderPo.color']);
 
-        return view('merchandising-sfl::admin.commercial.invoices.show', ['invoice' => $invoice, 'sizes' => $this->cartonSizes($invoice)]);
+        // Inventory shipments carrying this invoice no (+ their gate passes = delivery challans).
+        $shipments = Schema::hasTable('inv_shipments') ? DB::table('inv_shipments')->whereNull('deleted_at')->where('invoice_no', $invoice->invoice_no)->get(['id', 'shipment_no', 'shipment_date', 'status']) : collect();
+        $challans = $shipments->isNotEmpty() ? DB::table('inv_gate_passes')->whereNull('deleted_at')->whereIn('shipment_id', $shipments->pluck('id'))->get(['id', 'gate_pass_no']) : collect();
+
+        return view('merchandising-sfl::admin.commercial.invoices.show', ['invoice' => $invoice, 'sizes' => $this->cartonSizes($invoice), 'shipments' => $shipments, 'challans' => $challans]);
     }
 
     /** Commercial Invoice or Packing List on printMaster2. */
