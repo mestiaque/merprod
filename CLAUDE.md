@@ -109,6 +109,7 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 - `inv_shipment_items` carries `msfl_order_po_id`; `inv_requisitions / inv_issues / inv_grns / inv_finished_goods_receives / inv_production_consumptions` carry `msfl_buyer_id`, `msfl_style_id`, `msfl_order_po_id`.
 - `ME\SflInventory\Services\MerchandisingLink` = the bridge (v2 buyers/styles/POs, validation, `inventoryBuyerId()` maps a v2 buyer to `inv_buyers` by name, `finishSummary()` uses v2 `ProductionFlow` packing pass).
 - Buyer Store issue only works if a posted GRN exists for the same inventory buyer + style text — v2 requisitions set both.
+- **Finished-good items come from the style**: one per v2 style (`inv_items.msfl_style_id`), code `FG-<style no>`, name `<style no> — <style name> (<buyer>)`, PCS, category Finished Goods, store = Finish Store — made by `MerchandisingLink::finishedGoodItem()` on the first Finish Store receive (item left on "Auto"); `styleFinishedItemId()` also adopts an older hand-made `FG-<style no>` item; FG receive / shipment forms pick it by themselves (`styleFinishedItems()`).
 - Inventory items need a store (`opening_store_id`). Buyer-supplied GRNs post immediately; issues are created already approved.
 
 ## How to add things
