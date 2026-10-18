@@ -61,6 +61,12 @@ class Invoice extends Model
     }
 
     /** "US DOLLAR ONE THOUSAND FIVE HUNDRED FIVE AND CENTS 50 ONLY" for the printed invoice. */
+    /** PL<YYMMDD>-<001> — the carton packing list number that goes with this invoice. */
+    public function packingListNo(): string
+    {
+        return \ME\MerchandisingSfl\Services\DocumentNumberService::packingListNo((string) $this->invoice_no);
+    }
+
     public function amountInWords(): string
     {
         $value = round((float) $this->total_value, 2);

@@ -28,7 +28,7 @@ It covers inquiry → style / tech pack → costing → samples → order + PO �
 | Routes | prefix `admin/merchandising-sfl`, names `msfl.*` (config `merchandising-sfl.route`) |
 | Views | `merchandising-sfl::admin.*` (`src/resources/views/admin`) |
 | Permissions | four groups like the sidebar — `MERCHANDISING`, `PLANNING`, `PRODUCTION`, `COMMERCIAL` (`Config/permission.php`); keys `msfl_<module>.<action>` (list / add / edit / view / delete / approve / all) |
-| Document numbers | `<PREFIX>-<YYYY>-<0001>` via `Services/DocumentNumberService` (prefixes in `Config/config.php`: INQ CST ORD BOM SMP BLT TNA CUT ELC CI FPL) |
+| Document numbers | `<PREFIX>-<YYYY>-<0001>` via `Services/DocumentNumberService` (prefixes in `Config/config.php`: INQ CST ORD BOM SMP BLT TNA CUT ELC FPL); **daily** `<PREFIX><YYMMDD>-<001>` (date = the document's date, counter restarts each day) via `DocumentNumberService::daily()`: Commercial Invoice `IN261017-001`, its packing list `PL261017-001` (derived, `Invoice::packingListNo()`, also written to the Inventory shipment), Delivery Challan = Inventory gate pass `CL261017-001` (`sfl-inventory` `DocumentNumberService::daily()`); the challan print says **Signature Required** |
 
 ## Who owns which master (no duplicates!)
 

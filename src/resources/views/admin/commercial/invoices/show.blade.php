@@ -13,7 +13,7 @@
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-            <h4 class="mb-0">Commercial Invoice — {{ $invoice->invoice_no }}</h4>
+            <h4 class="mb-0">Commercial Invoice — {{ $invoice->invoice_no }} <small class="text-muted">· Packing List {{ $invoice->packingListNo() }}</small></h4>
             <div>
                 <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'invoice']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Commercial Invoice</a>
                 <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'packing']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-box"></i> Carton Packing List</a>

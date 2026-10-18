@@ -1,7 +1,7 @@
 {{-- Commercial Invoice ($doc = invoice) or Carton Packing List ($doc = packing) on printMaster2. --}}
 @extends('printMaster2')
 
-@section('title', ($doc === 'packing' ? 'Carton Packing List — ' : 'Commercial Invoice — ') . $invoice->invoice_no)
+@section('title', $doc === 'packing' ? 'Carton Packing List — ' . $invoice->packingListNo() : 'Commercial Invoice — ' . $invoice->invoice_no)
 
 @php
     $lc = $invoice->exportLc;
@@ -23,11 +23,11 @@
 @endpush
 
 @section('contents')
-    @include('merchandising-sfl::admin.partials.print-header', ['title' => $doc === 'packing' ? 'Carton Packing List' : 'Commercial Invoice', 'subtitle' => $invoice->invoice_no, 'page' => $doc === 'packing' ? 'A4 landscape' : 'A4 portrait'])
+    @include('merchandising-sfl::admin.partials.print-header', ['title' => $doc === 'packing' ? 'Carton Packing List' : 'Commercial Invoice', 'subtitle' => $doc === 'packing' ? $invoice->packingListNo() : $invoice->invoice_no, 'page' => $doc === 'packing' ? 'A4 landscape' : 'A4 portrait'])
 
     <table class="ci-box">
         <tr>
-            <td class="k">Invoice No / Date</td><td>{{ $invoice->invoice_no }} · {{ $invoice->invoice_date->format('d-M-Y') }}</td>
+            <td class="k">{{ $doc === 'packing' ? 'Packing List No / Date' : 'Invoice No / Date' }}</td><td>{{ $doc === 'packing' ? $invoice->packingListNo() : $invoice->invoice_no }} · {{ $invoice->invoice_date->format('d-M-Y') }}@if($doc === 'packing')<br>Invoice No: {{ $invoice->invoice_no }}@endif</td>
             <td class="k">{{ strtoupper($lc->type) }} No / Date</td><td>{{ $lc->buyer_lc_no }} · {{ $lc->lc_date->format('d-M-Y') }}</td>
         </tr>
         <tr>

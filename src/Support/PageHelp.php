@@ -551,7 +551,7 @@ class PageHelp
                     'Invoice পাতায় <strong>Commercial Invoice</strong> / <strong>Carton Packing List</strong> বাটনে print।',
                     'মাল পাঠানোর সময় <strong>Create Shipment</strong> চাপুন — Inventory Shipment buyer, invoice no, PO আর qty সহ ভরা অবস্থায় খোলে। Save করলে Gate Pass খোলে; Gate Pass-এর print-ই <strong>Delivery Challan</strong> (invoice-এর carton থেকে size ধরে qty)।',
                 ],
-                'example' => 'CI-2026-0001: LC ELC-2026-0001, PO D-HM-4501 400 pcs × $9.40 = $3,760, 20 carton, B/L MAEU123।',
+                'example' => 'IN261017-001 (packing list PL261017-001): LC ELC-2026-0001, PO D-HM-4501 400 pcs × $9.40 = $3,760, 20 carton, B/L MAEU123।',
                 'before' => 'Export LC (active) / Packing / Inventory Shipment',
                 'after' => 'LC Status / Export Register (পরে Bank Submission)',
                 'actions' => ['create' => 'Size ধরে packed − আগে invoice করা qty-র বেশি দেওয়া যায় না; carton নম্বর দুই সারিতে একই হতে পারে না। LC value + tolerance ছাড়ালে save হয়, কিন্তু সতর্ক করে — amendment লাগতে পারে।'],

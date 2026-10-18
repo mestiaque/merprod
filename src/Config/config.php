@@ -25,7 +25,8 @@ return [
     'sewing_hours' => range(8, 19),
     'sewing_break_hour' => 13,
 
-    // Document number prefixes — "<PREFIX>-<YYYY>-<0001>".
+    // Document number prefixes — "<PREFIX>-<YYYY>-<0001>"; com_invoice / packing_list
+    // are daily: "<PREFIX><YYMMDD>-<001>" (IN261017-001, PL261017-001).
     'number_prefixes' => [
         'inquiry'    => 'INQ',
         'cost_sheet' => 'CST',
@@ -36,7 +37,8 @@ return [
         'tna'        => 'TNA',
         'cutting'    => 'CUT',
         'export_lc'  => 'ELC',
-        'com_invoice' => 'CI',
+        'com_invoice' => 'IN',
+        'packing_list' => 'PL',
         'final_packing_list' => 'FPL',
     ],
 ];

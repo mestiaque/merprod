@@ -61,7 +61,7 @@ class InvoiceController extends Controller
         $lc = ExportLc::findOrFail($request->export_lc_id);
         $invoice = DB::transaction(function () use ($request, $numbers, $lc) {
             $invoice = Invoice::create(Arr::except($request->validated(), ['cartons']) + [
-                'invoice_no' => $numbers->next('com_invoice', Invoice::class, 'invoice_no'), 'buyer_id' => $lc->buyer_id, 'created_by' => auth()->id(),
+                'invoice_no' => $numbers->daily('com_invoice', Invoice::class, 'invoice_no', $request->validated('invoice_date')), 'buyer_id' => $lc->buyer_id, 'created_by' => auth()->id(),
             ]);
             $this->saveCartons($invoice, $request->validated('cartons'));
 
