@@ -124,6 +124,20 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
             Route::post('export-lcs/{export_lc}/status', [Commercial\ExportLcController::class, 'changeStatus'])->name('export-lcs.status');
             Route::resource('invoices', Commercial\InvoiceController::class);
             Route::get('invoices/{invoice}/print/{doc}', [Commercial\InvoiceController::class, 'print'])->whereIn('doc', ['invoice', 'packing'])->name('invoices.print');
+
+            // Record-keeping screens (CommercialRecordRegistry): Supplier PI, BTB LC, Import Shipment,
+            // Export Documents, Bank Realization — each with its own route names.
+            foreach (array_keys(\ME\MerchandisingSfl\Support\CommercialRecordRegistry::all()) as $record) {
+                Route::prefix($record)->name("$record.")->group(function () use ($record) {
+                    Route::get('/', [Commercial\RecordController::class, 'index'])->defaults('record', $record)->name('index');
+                    Route::get('create', [Commercial\RecordController::class, 'create'])->defaults('record', $record)->name('create');
+                    Route::post('/', [Commercial\RecordController::class, 'store'])->defaults('record', $record)->name('store');
+                    Route::get('{id}', [Commercial\RecordController::class, 'show'])->defaults('record', $record)->whereNumber('id')->name('show');
+                    Route::get('{id}/edit', [Commercial\RecordController::class, 'edit'])->defaults('record', $record)->whereNumber('id')->name('edit');
+                    Route::put('{id}', [Commercial\RecordController::class, 'update'])->defaults('record', $record)->whereNumber('id')->name('update');
+                    Route::delete('{id}', [Commercial\RecordController::class, 'destroy'])->defaults('record', $record)->whereNumber('id')->name('destroy');
+                });
+            }
         });
 
         // Production — fabric requisition → cutting → stage entries (pcs + QC)

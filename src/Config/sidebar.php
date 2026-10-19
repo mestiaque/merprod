@@ -145,7 +145,12 @@ return [
                     ],
                 ],
                 ['title' => 'Export LC / Sales Contract', 'icon' => 'fa-solid fa-file-contract', 'icon_color' => 'text-primary', 'permission' => 'msfl_export_lc', 'route' => "$base/commercial/export-lcs"],
+                ['title' => 'Supplier PI', 'icon' => 'fa-solid fa-file-lines', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_supplier_pi', 'route' => "$base/commercial/supplier-pis"],
+                ['title' => 'Back-to-Back LC', 'icon' => 'fa-solid fa-right-left', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_btb_lc', 'route' => "$base/commercial/btb-lcs"],
+                ['title' => 'Import Shipment', 'icon' => 'fa-solid fa-truck-ramp-box', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_import_shipment', 'route' => "$base/commercial/import-shipments"],
                 ['title' => 'Commercial Invoice', 'icon' => 'fa-solid fa-file-invoice-dollar', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_invoice', 'route' => "$base/commercial/invoices"],
+                ['title' => 'Export Documents', 'icon' => 'fa-solid fa-folder-open', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_export_document', 'route' => "$base/commercial/export-documents"],
+                ['title' => 'Bank Realization', 'icon' => 'fa-solid fa-money-bill-transfer', 'icon_color' => 'text-primary', 'permission' => 'msfl_com_realization', 'route' => "$base/commercial/realizations"],
                 [
                     'title' => 'Reports',
                     'icon' => 'fa-solid fa-chart-pie',

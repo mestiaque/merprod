@@ -86,6 +86,12 @@ return [
         // 'approve' = Activate / Close / Re-open an LC.
         'msfl_export_lc' => ['label' => 'Export LC / Sales Contract', 'permissions' => $crud + ['approve' => 'Activate / Close']],
         'msfl_com_invoice' => ['label' => 'Commercial Invoice (+ Packing List)', 'permissions' => $crud],
+        // Record-keeping only (data entry + file)
+        'msfl_com_supplier_pi' => ['label' => 'Supplier PI', 'permissions' => $crud],
+        'msfl_com_btb_lc' => ['label' => 'Back-to-Back LC', 'permissions' => $crud],
+        'msfl_com_import_shipment' => ['label' => 'Import Shipment', 'permissions' => $crud],
+        'msfl_com_export_document' => ['label' => 'Export Documents (CO / GSP / EXP / Shipping Advice)', 'permissions' => $crud],
+        'msfl_com_realization' => ['label' => 'Bank Realization (PRC / ERC)', 'permissions' => $crud],
         'msfl_com_report' => ['label' => 'Commercial Reports (LC Status, Export Register)', 'permissions' => ['view' => 'View', 'all' => 'All']],
     ],
 ];
