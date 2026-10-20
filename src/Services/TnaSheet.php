@@ -171,7 +171,7 @@ class TnaSheet
         $sample = fn (string $code) => $samples->first(fn ($s) => ($s->sampleType->code ?? null) === $code);
         $approved = fn (string $code) => $samples->first(fn ($s) => ($s->sampleType->code ?? null) === $code && $s->status === 'approved');
 
-        $bom = ($this->cache['boms'][$po->style_id] ?? collect())->first(fn ($b) => ! $b->order_id || $b->order_id === $po->order_id);
+        $bom = ($this->cache['boms'][$po->style_id] ?? collect())->first(fn ($b) => ! $b->order_id || (int) $b->order_id === (int) $po->order_id);
         $fabric = $bom?->items->first(fn ($i) => ($i->item->type ?? null) === 'fabric');
         $yy = $fabric ? (float) $fabric->consumption * (1 + (float) $fabric->wastage_percent / 100) : null;
         $cost = ($this->cache['costs'][$po->style_id] ?? collect())->first();

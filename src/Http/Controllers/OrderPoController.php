@@ -33,7 +33,7 @@ class OrderPoController extends Controller
 
     public function update(OrderPoRequest $request, Order $order, OrderPo $po): RedirectResponse
     {
-        abort_unless($po->order_id === $order->id && $order->isEditable(), 403);
+        abort_unless((int) $po->order_id === (int) $order->id && $order->isEditable(), 403);
 
         DB::transaction(function () use ($order, $po, $request) {
             $this->lines->save($order, $po, $request->validated());
@@ -46,7 +46,7 @@ class OrderPoController extends Controller
     public function destroy(Order $order, OrderPo $po): RedirectResponse
     {
         $this->authorize('msfl_order.edit');
-        abort_unless($po->order_id === $order->id && $order->isEditable(), 403);
+        abort_unless((int) $po->order_id === (int) $order->id && $order->isEditable(), 403);
 
         if ($reason = $this->lines->usedIn($po)) {
             return back()->with('error', $reason);

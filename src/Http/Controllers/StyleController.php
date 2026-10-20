@@ -163,7 +163,7 @@ class StyleController extends Controller
     public function destroyImage(Style $style, StyleImage $image): RedirectResponse
     {
         $this->authorize('msfl_style.edit');
-        abort_unless($image->style_id === $style->id, 404);
+        abort_unless((int) $image->style_id === (int) $style->id, 404);
 
         $this->files->delete($image->path);
         $image->delete();

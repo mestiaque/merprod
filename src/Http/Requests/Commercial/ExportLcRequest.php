@@ -67,7 +67,7 @@ class ExportLcRequest extends FormRequest
                 if ($invoiced) {
                     $validator->errors()->add('po_ids', 'A PO already shipped on a commercial invoice of this LC cannot be removed.');
                 }
-                if ((int) $this->buyer_id !== $lc->buyer_id && $lc->invoices()->exists()) {
+                if ((int) $this->buyer_id !== (int) $lc->buyer_id && $lc->invoices()->exists()) {
                     $validator->errors()->add('buyer_id', 'The buyer cannot change once invoices are made on this LC.');
                 }
             }

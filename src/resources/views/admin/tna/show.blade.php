@@ -187,7 +187,7 @@
                                                 <select name="{{ $f }}[responsible_id]" class="form-control form-control-sm">
                                                     <option value=""></option>
                                                     @foreach($users as $user)
-                                                        <option value="{{ $user->id }}" @selected($task->responsible_id === $user->id)>{{ $user->name }}</option>
+                                                        <option value="{{ $user->id }}" @selected((int) $task->responsible_id === (int) $user->id)>{{ $user->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </td>
