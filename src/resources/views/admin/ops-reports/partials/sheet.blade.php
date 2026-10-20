@@ -8,6 +8,7 @@
     $rows = $built['rows'];
     $companyName = (general()?->title ?? null) ?: config('merchandising-sfl.company.name');
     $companyAddress = (general()?->address_one ?? null) ?: config('sfl-inventory.company.address');
+    $companyLogo = general()?->logo ? general()->logoUrl() : null;
     $statusClass = function ($v) {
         return match ((string) $v) {
             'Critical', 'Blocked', 'Loss', 'Failed', 'Fail', 'Open' => 'st-red',
@@ -21,19 +22,27 @@
 @endphp
 <style>
     .ops { font-size: 11px; color: #111; }
-    .ops .ops-co { font-weight: 800; font-size: 15px; }
-    .ops .ops-addr { font-size: 10px; text-decoration: underline; margin-bottom: 8px; }
-    .ops .ops-band { background: #0f2a4a; color: #fff; font-weight: 800; font-size: 15px; letter-spacing: .4px; padding: 6px 8px; text-transform: uppercase; }
-    .ops .ops-meta { display: flex; flex-wrap: wrap; gap: 0; margin: 4px 0; }
-    .ops .ops-meta div { display: flex; }
-    .ops .ops-meta .k { background: #1f4e79; color: #fff; font-weight: 700; padding: 2px 6px; }
-    .ops .ops-meta .v { background: #fff8e6; padding: 2px 8px; min-width: 120px; border: 1px solid #e5e7eb; }
-    .ops .ops-kpis { display: flex; flex-wrap: wrap; margin: 6px 0; max-width: 100%; }
-    .ops .ops-kpi { min-width: 150px; text-align: center; border: 1px solid #cbd5e1; }
-    .ops .ops-kpi .k { background: #1f4e79; color: #fff; font-weight: 700; font-size: 9.5px; text-transform: uppercase; padding: 1px 4px; }
-    .ops .ops-kpi:nth-child(4) .k { background: #c89b3c; }
-    .ops .ops-kpi .v { font-weight: 800; font-size: 14px; background: #eef2f7; padding: 1px 4px; }
-    .ops .ops-guide { background: #f5f2ec; color: #6b7280; font-style: italic; font-size: 10px; padding: 6px 8px; margin-bottom: 8px; }
+    /* Header */
+    .ops .ops-head { display: grid; grid-template-columns: 90px 1fr 90px; align-items: center; padding-bottom: 8px; border-bottom: 3px double #0f2a4a; }
+    .ops .ops-logo { max-width: 80px; max-height: 56px; object-fit: contain; }
+    .ops .ops-head-c { text-align: center; }
+    .ops .ops-co { font-weight: 800; font-size: 22px; letter-spacing: 1px; text-transform: uppercase; color: #0f2a4a; line-height: 1.2; }
+    .ops .ops-addr { font-size: 11px; color: #475569; margin-top: 2px; }
+    .ops .ops-band { margin: 10px auto 10px; text-align: center; }
+    .ops .ops-band span { display: inline-block; background: #0f2a4a; color: #fff; font-weight: 800; font-size: 14px; letter-spacing: 1.5px; padding: 6px 28px; border-radius: 3px; text-transform: uppercase; box-shadow: inset 0 -3px 0 #c89b3c; }
+    .ops .ops-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+    .ops .ops-meta > div { padding: 5px 10px; box-shadow: 1px 0 0 #e2e8f0, 0 1px 0 #e2e8f0; }
+    .ops .ops-meta .k { display: block; font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+    .ops .ops-meta .v { display: block; font-size: 12px; font-weight: 700; color: #0f172a; }
+    .ops .ops-meta .v input { height: 22px; padding: 1px 4px; font-size: 11px; border: 1px solid #e2d3a8; background: #fffdf5; }
+    .ops .ops-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 8px; }
+    .ops .ops-kpi { border: 1px solid #cbd5e1; border-top: 3px solid #1f4e79; border-radius: 4px; text-align: center; padding: 5px 4px; background: #fff; }
+    .ops .ops-kpi:nth-child(4n) { border-top-color: #c89b3c; }
+    .ops .ops-kpi .k { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+    .ops .ops-kpi .v { font-size: 17px; font-weight: 800; color: #0f2a4a; line-height: 1.3; }
+    .ops .ops-guide { background: #f8f6f1; border-left: 3px solid #c89b3c; color: #57534e; font-size: 10px; padding: 5px 10px; margin-bottom: 8px; }
+    .ops .ops-guide b { color: #0f2a4a; }
+    .ops .ops-legend { display: inline-block; width: 10px; height: 10px; border: 1px solid #cbd5e1; vertical-align: -1px; margin: 0 2px 0 6px; }
     .ops table.ops-table { border-collapse: collapse; width: 100%; }
     .ops table.ops-table th { background: #0f2a4a !important; color: #fff !important; font-weight: 700; font-size: 10px; padding: 4px 4px; border: 1px solid #334155; text-align: center; vertical-align: middle; white-space: normal; min-width: 60px; }
     .ops table.ops-table td { border: 1px solid #d1d5db; padding: 2px 4px; font-size: 10.5px; vertical-align: middle; white-space: nowrap; }
@@ -54,14 +63,21 @@
 </style>
 
 <div class="ops">
-    <div class="ops-co">{{ $companyName }}</div>
-    <div class="ops-addr">{{ $companyAddress }}</div>
-    <div class="ops-band">{{ $report->title() }}</div>
+    <div class="ops-head">
+        <div>@if($companyLogo)<img src="{{ $companyLogo }}" class="ops-logo" alt="" onerror="this.remove()">@endif</div>
+        <div class="ops-head-c">
+            <div class="ops-co">{{ $companyName }}</div>
+            <div class="ops-addr">{{ $companyAddress }}</div>
+        </div>
+        <div></div>
+    </div>
+    <div class="ops-band"><span>{{ $report->title() }}</span></div>
 
     <div class="ops-meta">
         <div><span class="k">Reporting Date</span><span class="v">{{ $built['date']->format('d-M-Y') }}</span></div>
-        <div><span class="k">Prepared By</span><span class="v">{{ auth()->user()?->name }}</span></div>
         <div><span class="k">Department</span><span class="v">{{ $report->department() }}</span></div>
+        <div><span class="k">Prepared By</span><span class="v">{{ auth()->user()?->name }}</span></div>
+        <div><span class="k">Printed On</span><span class="v">{{ now()->format('d-M-Y h:i A') }}</span></div>
         @foreach($report->settingsShown() as $sk)
             <div>
                 <span class="k">{{ OpsReport::SETTINGS[$sk][0] }}</span>
@@ -85,7 +101,10 @@
         </div>
     @endif
 
-    <div class="ops-guide">UPDATE GUIDANCE: {{ $report->guidance() }} | Pale yellow = manual input; pale blue = automatic formula.</div>
+    <div class="ops-guide"><b>Update guidance:</b> {{ $report->guidance() }}
+        <span class="ops-legend" style="background:#fff8e6"></span>manual input
+        <span class="ops-legend" style="background:#eaf2fb"></span>automatic formula
+    </div>
 
     <div class="{{ $print ? '' : 'table-responsive' }}">
         <table class="ops-table">
