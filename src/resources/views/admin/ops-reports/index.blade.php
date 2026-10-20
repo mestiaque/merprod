@@ -7,6 +7,7 @@
 @section('contents')
 <div class="flex-grow-1 msfl-module">
     @include('merchandising-sfl::admin.partials.alerts')
+    @include('merchandising-sfl::admin.partials.ui-kit')
     <div class="card">
         <div class="card-header"><h4 class="mb-0">Operations Reports</h4></div>
         <div class="card-body">

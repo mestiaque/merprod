@@ -8,6 +8,7 @@
 @php $filters = $report->filters(); @endphp
 <div class="flex-grow-1 msfl-module">
     @include('merchandising-sfl::admin.partials.alerts')
+    @include('merchandising-sfl::admin.partials.ui-kit')
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
             <h4 class="mb-0">{{ $report->title() }}</h4>

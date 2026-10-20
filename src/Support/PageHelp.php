@@ -30,6 +30,7 @@ class PageHelp
             'masters' => 'masters.' . $route->parameter('master'),
             'production.entries' => 'production.entries.' . $route->parameter('stage'),
             'reports' => $action === 'index' ? 'reports' : 'reports.' . $route->parameter('report'),
+            'ops-reports' => $action === 'index' ? 'ops-reports' : 'ops-reports.' . $route->parameter('report'),
             default => $module,
         };
 
@@ -484,6 +485,7 @@ class PageHelp
                     'Size অনুযায়ী pcs আর Pcs per Bundle দিন — bundle নিজে তৈরি হয় (print করা যায়)।',
                     'পরের stage এই pcs নিয়ে ফেললে cutting আর delete করা যায় না।',
                     'কাটা panel-এ reject বা rework পাওয়া গেলে <strong>Production → QC</strong>-এ Step = Cutting বেছে দিন; rework ঠিক হলে <strong>Production → Rework</strong>-এ।',
+                    '<strong>সীমা:</strong> একটা size-এ মোট কাটা = order qty + সর্বোচ্চ <strong>5%</strong> বেশি (wastage)। এর বেশি, PO-তে নেই এমন size, বা ভবিষ্যতের তারিখ দিলে সিস্টেম নেবে না — error-এ লেখা থাকে আর কত কাটা যাবে।',
                 ],
                 'example' => 'ধরুন 450 pcs কাটা হলো, 25 pcs করে bundle → 18টা bundle।',
                 'before' => 'Fabric Requisition (issue)',
@@ -633,7 +635,8 @@ class PageHelp
             'production.entries.sewing' => $stage('Sewing', 'Line-এ সেলাই — দিনে কোন line কত pcs নিল, কত pass, rework, reject। Reject কোন part-এ আর কোন মেশিনে হয়েছে তাও দেওয়া যায় (মেশিন optional)।', 'Cutting / Embroidery', 'Washing (থাকলে) / Finishing', 'ধরুন Line 2-এ আজ 200 input, 180 pass, 12 rework (open seam), 3 reject (needle hole — front part, একটা SNLS মেশিনে)।'),
             'production.entries.washing' => $stage('Washing', 'Garment wash — শুধু সেই PO-তে যেখানে "needs washing" টিক দেওয়া। পাঠানো ("Send to Washing") আর ফেরত ("Receive from Washing") আলাদা entry, আলাদা তারিখে।', 'Sewing', 'Finishing', 'Ladies Denim Jacket (Stone Wash): 480 input, 478 pass, 2 reject (shade)।'),
             'production.entries.finishing' => $stage('Finishing', 'Thread cutting, ironing, button, tag লাগানো ইত্যাদি। <strong>Receive in Finishing</strong> (কত pcs এলো) আর <strong>Finishing Output</strong> (কত শেষ হলো) আলাদা entry, আলাদা দিনে। Style · Color বাছলেই Sewing-এর মতো সব size-এর table আসে — কত নেওয়া যায় দেখায়, <strong>Fill all</strong> চাপলে বাকি সবটা বসে যায়।', 'Sewing / Washing', 'Buyer QC', 'ধরুন 950 pcs input, 950 pass।'),
-            'production.entries.final_qc' => $stage('Buyer QC', '<strong>Buyer QC</strong> — তৈরি পোশাকের (ready product) QC, Finishing শেষ হওয়া pcs Packing-এর আগে buyer-এর মান অনুযায়ী check। এটা step-wise QC (Production → QC) থেকে আলাদা। Pass হওয়া pcs-ই Packing নিতে পারে; alter / rework ঠিক হলে Production → Rework → Buyer QC card-এ দিন।', 'Finishing', 'Packing', 'ধরুন 950 input, 945 pass, 5 reject (stain)।'),
+            'production.entries.final_qc' => ['actions' => ['create' => 'Reject / Rework-এর Detail-এ প্রতিটা row-এ <strong>Severity</strong> (Critical / Major / Minor) বাছা বাধ্যতামূলক — DHU রিপোর্টে এটাই গোনা হয়।', 'edit' => 'Detail-এ প্রতিটা row-এ <strong>Severity</strong> বাছুন (আগের entry-তে না থাকলে এখন বাছতে হবে)।']]
+                + $stage('Buyer QC', '<strong>Buyer QC</strong> — তৈরি পোশাকের (ready product) QC, Finishing শেষ হওয়া pcs Packing-এর আগে buyer-এর মান অনুযায়ী check। এটা step-wise QC (Production → QC) থেকে আলাদা। Pass হওয়া pcs-ই Packing নিতে পারে; alter / rework ঠিক হলে Production → Rework → Buyer QC card-এ দিন।', 'Finishing', 'Packing', 'ধরুন 950 input, 945 pass, 5 reject (stain)।'),
             'production.entries.packing' => $stage('Packing', 'Polybag, carton-এ ভরা। <strong>Receive in Packing</strong> আর <strong>Packed (Output)</strong> আলাদা entry; size-এর table, <strong>Fill all</strong>। Packed qty-ই Inventory-র <strong>Finish Store</strong>-এ receive করা যায় (তার বেশি না)।', 'Buyer QC', 'Inventory → Finish Store receive', '945 pcs packed → Inventory-তে সর্বোচ্চ 945 pcs Finish Store-এ receive করা যাবে।'),
 
             'production.qc' => [
@@ -643,6 +646,7 @@ class PageHelp
                     'Step-এর <strong>card</strong>-এ click করুন, তারপর <strong>PO</strong>, তারিখ দিন (Sewing হলে Line; Cutting / Embroidery হলে <strong>Part</strong>)।',
                     '<strong>QC Pass</strong> = check করে ঠিক পাওয়া pcs (শুধু গোনা হয়, pass থেকে কমে না)। <strong>Reject</strong> = বাতিল — ওই step-এর pass থেকে কমে, flow থেকে বেরিয়ে যায়।',
                     'নিচের Detail-এ reject-এর Part, Defect আর (চাইলে) Machine দিন — যোগফল মিলতে হবে।',
+                    'প্রতিটা Detail row-এ <strong>Severity</strong> (Critical / Major / Minor) বাছা বাধ্যতামূলক — <strong>Daily Quality DHU & RFT</strong> রিপোর্টে Critical / Major / Minor সংখ্যা এখান থেকেই আসে।',
                 ],
                 'example' => 'Cutting-এ কাটা 830 pcs check: 827 pass, 3টা Front panel-এ fabric hole (Reject 3) → Cutting pass 827।',
                 'before' => 'Cutting / Sewing / … entry',
@@ -656,6 +660,7 @@ class PageHelp
                     'Step-এর <strong>card</strong>-এ click করুন, তারপর <strong>PO</strong>, তারিখ দিন (Sewing হলে Line; Cutting / Embroidery হলে <strong>Part</strong>)।',
                     'Rework-এ পাঠালে <strong>Rework Found</strong> দিন (Detail-এ কারণ সহ)।',
                     'ঠিক হলে <strong>Passed after rework</strong> দিন (পরের step নিতে পারবে); ঠিক না হলে <strong>Reject</strong>। একই entry-তে দুটোই দেওয়া যায়, আলাদা দিনেও।',
+                    'Detail-এর প্রতিটা row-এ <strong>Severity</strong> (Critical / Major / Minor) বাছতে হবে।',
                 ],
                 'example' => 'Cutting-এর 5টা sleeve বাঁকা → Rework Found 5 (pass 827 থেকে 822)। পরদিন recut: 4টা ঠিক (Passed 4), 1টা নষ্ট (Reject 1) → Cutting pass 826।',
                 'before' => 'QC / step entry',
@@ -683,6 +688,240 @@ class PageHelp
             'reports.requisition-details' => self::report('Requisition Details', 'Buyer / style / PO অনুযায়ী প্রতিটা requisition-এর item: কত চাওয়া হলো, কত approve, কত store থেকে নেওয়া হলো, আর কবে কত নেওয়া হলো (তারিখ: qty, challan)। Style দিয়ে filter করলে এক style-এর সব requisition একসাথে দেখা যায়।', 'Fabric Requisition / Inventory issue'),
             'reports.requisition-summary' => self::report('Requisition Summary', 'Buyer → style → item অনুযায়ী মোট: কয়টা requisition, কত চাওয়া, approve, নেওয়া, কত এখনো বাকি, আর প্রথম ও শেষ কবে নেওয়া হলো।', 'Fabric Requisition / Inventory issue'),
             'reports.sample-turnaround' => self::report('Sample Turnaround', 'প্রতিটা sample: request → submit → decision, কত দিন লাগল।', 'Samples'),
+        ] + self::opsReports();
+    }
+
+    /**
+     * The operations reports (Support\OpsReports) — Excel-template layouts with typed cells.
+     * Each: what it is, how to use it, and every column's source / calculation.
+     */
+    private static function opsReports(): array
+    {
+        $sys = 'সিস্টেম থেকে আসে (সাদা ঘর)';
+        $typed = 'আপনি লিখবেন (হলুদ ঘর)';
+        $calc = 'নিজে হিসাব হয় (নীল ঘর)';
+        $ops = fn (string $title, string $what, array $extraSteps, array $fields, string $example, string $before, string $after) => [
+            'title' => $title,
+            'what' => $what,
+            'steps' => array_merge([
+                'উপরে <strong>Reporting Date</strong> (দরকার হলে From / To, Buyer, Line) বেছে <strong>Filter</strong> চাপুন। Daily রিপোর্ট ওই তারিখের হিসাব দেখায়।',
+                'রঙের মানে: <strong>সাদা</strong> = সিস্টেমের ডেটা (বদলানো যায় না) · <strong>হলুদ</strong> = আপনি লিখবেন · <strong>নীল</strong> = formula, নিজে হিসাব হয়। কিছু হলুদ ঘরে ধূসর লেখা থাকে — ওটা সিস্টেমের মান; আপনি নতুন কিছু লিখলে সেটাই চলবে, মুছে দিলে আবার সিস্টেমেরটা।',
+                'হলুদ ঘরে লিখে নিচে <strong>Save changes</strong> চাপুন — শুধু বদলানো ঘরগুলো save হয়। কোনো ঘর ভুল হলে (সংখ্যার জায়গায় লেখা, সীমার বেশি, ভুল তারিখ) উপরে লাল error-এ কোন row, কোন column লেখা থাকে, আর <strong>কিছুই save হয় না</strong> — ঠিক করে আবার Save।',
+                '<strong>Print</strong> = ডেটাসহ। <strong>Blank Print</strong> = খালি ফর্ম (৫টা খালি row) — হাতে লিখে ব্যবহারের জন্য।',
+            ], $extraSteps),
+            'fields' => $fields,
+            'example' => $example,
+            'before' => $before,
+            'after' => $after,
+            'actions' => ['index' => null],
+        ];
+
+        return [
+            'ops-reports' => [
+                'title' => 'Operations Reports',
+                'what' => 'Factory-র ৮টা রিপোর্ট, client-এর Excel template-এর হুবহু কলাম আর KPI সহ: Shipment Readiness, Pre-Production Readiness, Material Shortage, Daily Cutting, Daily Quality DHU & RFT, Daily Finishing & Packing, Daily Line CM & Profit, Order Closing। যে ডেটা সিস্টেমে আছে নিজে আসে, যা নেই রিপোর্টেই লিখে রাখা যায়, আর হিসাব সব নিজে হয়।',
+                'steps' => [
+                    'একটা রিপোর্ট খুলুন — প্রতিটার উপরে এরকম "এই পাতা কী কাজে" box-এ সেই রিপোর্টের প্রতিটা column কোথা থেকে আসে আর কী হিসাব, লেখা আছে।',
+                    'হলুদ ঘরে লিখতে অনুমতি লাগে: Role Setup → <strong>Reports → Edit (report inputs)</strong> বা <strong>All</strong>। শুধু View থাকলে রিপোর্ট দেখা আর print করা যায়।',
+                    'ভুল এন্ট্রি আটকানো আছে: Cutting order-এর 5%-এর বেশি না; পরের stage আগের stage-এর বেশি নিতে পারে না; Shipment Finish Store-এর বেশি না; Gate Pass shipment ও stock-এর বেশি না; Production Consumption stock-এর বেশি না; production শুরু হওয়া PO-র style / color বা কাটা size বদলানো যায় না।',
+                ],
+                'example' => null,
+                'before' => 'Order · Production · Inventory · Commercial',
+                'after' => 'Print / Client',
+            ],
+
+            'ops-reports.shipment-readiness' => $ops('Shipment Readiness & Risk Report',
+                'কোন PO ship করার জন্য কতটা তৈরি — production, inspection আর export document মিলিয়ে প্রতিটা PO-র <strong>Overall Risk</strong>। Ex-factory তারিখ সামনে-পিছে (default ১৫ দিন আগে থেকে ৪৫ দিন পর) পড়ে এমন PO দেখায়।',
+                ['Packing List, Invoice, EXP, UD / Contract, BL / AWB — Final Packing List ও Commercial-এ দেওয়া থাকলে নিজে আসে; না থাকলে এখানে লিখুন।'],
+                [
+                    $sys => [
+                        'Buyer / Style / PO / Product / Order Qty' => 'Order → PO line থেকে।',
+                        'Ex-Factory Date' => 'T&A-র ex-factory তারিখ (PO-র নিজের shipment তারিখ থেকে T&A-র একই ব্যবধান বাদ দিয়ে); T&A না থাকলে shipment তারিখ। লিখে বদলানো যায়।',
+                        'Finished Qty' => 'Production → Finishing-এর মোট output।',
+                        'Packed Qty' => 'Production → Packing-এর মোট packed (QC reject বাদ)।',
+                        'Packing List / Invoice / EXP / UD / Contract / BL / AWB' => 'Final Packing List (Approved / Draft), Commercial Invoice (Invoice, EXP, B/L), Export LC (UD / Contract)। না থাকলে নিজে লিখুন।',
+                    ],
+                    $typed => [
+                        'Inspection Booking' => 'Buyer inspection-এর তারিখ।',
+                        'Inspection Status / AQL Result / Carton Status' => 'তালিকা থেকে বাছুন (Not Booked / Booked / Passed / Failed …; Pass / Fail / Pending; Not Started / In Progress / Completed)।',
+                        'Freight Booking / Customs Status' => 'Pending / Booked / Not Required; Pending / Submitted / Cleared।',
+                        'Required Action / Owner / Remarks' => 'যা করতে হবে, কে দায়িত্বে।',
+                    ],
+                    $calc => [
+                        'Production Ready %' => 'Packed Qty ÷ Order Qty × 100।',
+                        'Documents Ready %' => '৭টা document-এর কয়টা হয়েছে ÷ 7 × 100: Packing List (Approved), Invoice, EXP, UD/Contract, BL/AWB, Freight (Booked বা Not Required), Customs (Cleared)।',
+                        'Overall Risk' => '<strong>Ready</strong> = 100% packed + AQL Pass + সব document। না হলে: AQL Fail / Inspection Failed / ex-factory ৩ দিন বা কম → <strong>Critical</strong>; ৭ দিন বা কম → <strong>High</strong>; ১৪ দিন বা কম → <strong>Medium</strong>; বাকি <strong>Low</strong>।',
+                        'KPI' => 'Shipment POs, Order Qty, Packed Qty, Ready POs, Critical / High — উপরের হিসাবের যোগফল।',
+                    ],
+                ],
+                'DEMO-PO-01: 600 order, 326 packed → 54.3% ready; ex-factory ২ দিন পর আর সব document হয়নি → Critical।',
+                'Packing · Final Packing List · Commercial', 'Shipment / Gate Pass'),
+
+            'ops-reports.pre-production' => $ops('Pre-Production Readiness Report',
+                'Production শুরুর (PCD) আগে প্রতিটা PO-র সব approval gate হয়েছে কিনা — Tech Pack থেকে PP Meeting। PCD default ১৫ দিন আগে থেকে ৪৫ দিন পর।',
+                ['প্রতিটা gate-এ Approved / Pending / In Progress / Not Applicable বাছুন। "Auto: …" দেখালে সিস্টেম নিজে বের করেছে — বদলাতে চাইলে বাছুন।'],
+                [
+                    $sys => [
+                        'Date' => 'PO-র PCD (production শুরুর তারিখ)।',
+                        'PP Meeting Plan' => 'T&A-র PP Meeting task-এর তারিখ।',
+                        'Tech Pack' => 'Style-এ tech pack file থাকলে Approved।',
+                        'PP Sample / Size Set' => 'Samples-এ PP / Size Set sample: approved → Approved, চলমান → In Progress; T&A-তে done থাকলেও Approved।',
+                        'Fabric / Trims / PP Meeting' => 'T&A task (Fabric In-house, Trims In-house, PP Meeting) done → Approved, N/A → Not Applicable।',
+                        'Wash Approval' => 'PO-তে "needs washing" না থাকলে Not Applicable; থাকলে T&A Wash Standard।',
+                    ],
+                    $typed => [
+                        'Pattern / Marker / Testing / Other Approval' => 'এগুলো সিস্টেমে নেই — নিজে বাছুন। খালি রাখলে Pending ধরা হয়।',
+                        'Owner / Missing Item / Action' => 'দায়িত্ব কার। Missing Item খালি রাখলে নিজে লেখে কোন gate বাকি।',
+                    ],
+                    $calc => [
+                        'Readiness %' => 'Approved gate ÷ (মোট gate − Not Applicable) × 100।',
+                        'Overall Status' => '<strong>Ready</strong> = 100%। না হলে: PCD আজ বা পার হয়ে গেছে → <strong>Blocked</strong>; ৭ দিনের মধ্যে → <strong>At Risk</strong>; বাকি <strong>In Progress</strong>।',
+                    ],
+                ],
+                'DEMO-PO-02: 9টা gate-এর 4টা Approved → 44.4%, PCD ৩ দিন পর → At Risk।',
+                'Tech Pack · Samples · T&A', 'Cutting'),
+
+            'ops-reports.material-shortage' => $ops('Daily Material Shortage Report',
+                'Style অনুযায়ী প্রতিটা material: কত লাগবে, কত এসেছে, কত কম, আর কতদিনে লাগবে — কম থাকলে risk। (Inventory-তে GRN PO ধরে না, style ধরে রাখা হয় — তাই style ধরে হিসাব; PO No.-তে style-এর চলমান PO গুলো।)',
+                ['Required Qty BOM থেকে আলাদা হলে নিজে লিখুন; Expected Arrival, Owner, Remarks লিখুন।'],
+                [
+                    $sys => [
+                        'Required Qty' => 'Style-এর Inventory requisition-এ যত চাওয়া হয়েছে (লিখে বদলানো যায়)।',
+                        'Received Qty' => 'Style-এর posted GRN-এ যত এসেছে (Merchandising style, বা একই buyer + একই style no)।',
+                        'Approved / Issued Qty' => 'Requisition-এ approve আর store থেকে দেওয়া।',
+                        'Required By Date' => 'Style-এর চলমান PO-গুলোর সবচেয়ে আগের PCD (লিখে বদলানো যায়)।',
+                        'Supplier' => 'GRN থেকে — buyer পাঠালে "Buyer supplied", কিনলে supplier-এর নাম।',
+                    ],
+                    $typed => ['Expected Arrival / Owner / Remarks' => 'কবে আসবে, কে দেখবে।'],
+                    $calc => [
+                        'Shortage Qty' => 'Required − Received (কম হলে 0)।',
+                        'Shortage %' => 'Shortage ÷ Required × 100।',
+                        'Days to Need' => 'Required By − Reporting Date (মাইনাস = দেরি হয়ে গেছে)।',
+                        'Risk Status' => 'কম নেই → <strong>OK</strong>; কম আছে আর ৩ দিন বা কম → <strong>Critical</strong>; ৭ দিন বা কম → <strong>High</strong>; বাকি <strong>Medium</strong>।',
+                    ],
+                ],
+                'DEMO style-এ Hang tag লাগবে 1000, এসেছে 600 → 400 কম (40%), PCD পার হয়ে গেছে → Critical।',
+                'GRN · Requisition', 'Cutting'),
+
+            'ops-reports.cutting-daily' => $ops('Daily Cutting Production Report',
+                'একদিনের cutting: plan বনাম আসল কাটা, reject, recut, কত বাকি আর কাপড় খরচ ঠিক আছে কিনা। সেদিন কাটা হয়েছে, এখনো কাটা চলছে বা সপ্তাহের মধ্যে PCD — এমন PO দেখায়।',
+                ['Planned Cut, Recut Qty, Marker Efficiency % লিখুন; BOM না থাকলে Standard Cons./Pc লিখুন।'],
+                [
+                    $sys => [
+                        'Actual Cut' => 'Production → Cutting-এ সেদিন কত কাটা।',
+                        'Cut Reject' => 'Production → QC (Cutting)-এ সেদিনের reject।',
+                        'Fabric Issued (m)' => 'Cutting entry-র Fabric Used (সেদিনের মোট)।',
+                        'Standard Cons./Pc' => 'BOM-এর fabric consumption + wastage (লিখে বদলানো যায়)।',
+                    ],
+                    $typed => [
+                        'Planned Cut' => 'সেদিন কত কাটার plan।',
+                        'Recut Qty' => 'Reject হওয়া panel আবার কাটা — PO-র মোট cut reject থেকে আগে recut হওয়া বাদ দিয়ে যত বাকি, তার বেশি না।',
+                        'Marker Efficiency %' => '0–100।',
+                    ],
+                    $calc => [
+                        'Net Good Cut' => 'Actual Cut − Cut Reject + Recut।',
+                        'Cut Balance' => 'Order Qty − (আজ পর্যন্ত মোট কাটা − মোট reject + মোট recut)। মাইনাস = order-এর বেশি কাটা।',
+                        'Achievement %' => 'Actual ÷ Planned × 100।',
+                        'Actual Cons./Pc' => 'Fabric Issued ÷ Actual Cut।',
+                        'Consumption Var. %' => '(Actual − Standard) ÷ Standard × 100 — প্লাস মানে বেশি কাপড় লেগেছে।',
+                    ],
+                ],
+                'DEMO-PO-02: plan 200, কাটা 150, reject 3, recut 3 → net 150, balance 250, achievement 75%; 180 m ÷ 150 = 1.2 vs standard 1.15 → +4.35%।',
+                'Cutting · Cutting QC', 'Sewing'),
+
+            'ops-reports.quality-dhu-rft' => $ops('Daily Quality DHU & RFT Report',
+                'Line, PO আর inspection point অনুযায়ী মান: কতগুলো check, কতগুলো খুঁত, DHU আর RFT। Inspection point: Sewing End-line (hourly output), প্রতিটা step-এর QC, আর Buyer QC। (Rework entry মেরামতের হিসাব, inspection না — তাই এখানে নেই।)',
+                ['Root Cause, Corrective Action, Owner, Due Date, Action Status লিখুন।'],
+                [
+                    $sys => [
+                        'Checked Pcs' => 'Pass + Alteration + Reject।',
+                        'Defective Pcs' => 'Alteration (rework) + Reject।',
+                        'Total Defects' => 'QC-র Reject / Rework detail row-এর যোগফল (অন্তত Defective Pcs-এর সমান)।',
+                        'Alteration Qty / Reject Qty' => 'Rework আর Reject pcs।',
+                        'Critical / Major / Minor Defects' => 'Detail row-এর <strong>Severity</strong> অনুযায়ী (QC, Rework, Buyer QC-তে বাছা বাধ্যতামূলক)।',
+                        'Top Defect 1 / 2, Count' => 'সবচেয়ে বেশি হওয়া দুটো defect।',
+                    ],
+                    $typed => ['Root Cause / Corrective Action / Owner / Due Date / Action Status' => 'কেন হলো, কী ব্যবস্থা, কে, কবে, Open / In Progress / Closed।'],
+                    $calc => [
+                        'DHU %' => 'Total Defects ÷ Checked × 100 (প্রতি ১০০ পিসে কতটা খুঁত)।',
+                        'RFT %' => '(Checked − Defective) ÷ Checked × 100 (প্রথমবারেই ঠিক)।',
+                        'Alteration % / Reject %' => 'Alteration ÷ Checked, Reject ÷ Checked × 100।',
+                    ],
+                ],
+                'DEMO-PO-01 Sewing End-line: 213 check, 3 খুঁত → DHU 1.41%, RFT 98.6%।',
+                'Sewing hourly · QC · Buyer QC', 'Corrective action'),
+
+            'ops-reports.finishing-packing' => $ops('Daily Finishing & Packing Report',
+                'Finishing থেকে Packing পর্যন্ত এলাকা একসাথে: সকালে কত ছিল, কত ঢুকল, কত প্যাক হলো, দিনের শেষে কত রইল, order-এর কত বাকি।',
+                ['Thread Trimmed, Ironed, Inspected, Metal Detected, Folded, Poly Completed, Carton Qty, QA Release লিখুন। এগুলো সেদিন finishing-এ থাকা pcs (Opening WIP + Received)-এর বেশি দেওয়া যায় না।'],
+                [
+                    $sys => [
+                        'Opening WIP' => 'আগের দিন পর্যন্ত: Finishing-এ ঢোকা − Packed − এলাকার reject।',
+                        'Received' => 'সেদিন Finishing-এ ঢোকা (Receive in Finishing)।',
+                        'Alteration / Rejected' => 'সেদিন Finishing / Buyer QC / Packing-এর rework আর reject।',
+                        'Packed Today / Cumulative Packed' => 'সেদিনের packed আর আজ পর্যন্ত মোট।',
+                    ],
+                    $typed => [
+                        'Thread Trimmed … Poly Completed' => 'প্রতিটা ধাপে কত pcs — সীমা: Opening WIP + Received।',
+                        'Carton Qty / QA Release / Owner / Remarks' => 'Carton সংখ্যা, Pending / Released / On Hold।',
+                    ],
+                    $calc => [
+                        'Closing WIP' => 'Opening WIP + Received − Packed Today − Rejected।',
+                        'Process Ach. %' => 'Packed Today ÷ (Opening WIP + Received) × 100।',
+                        'Order Balance' => 'Order Qty − Cumulative Packed।',
+                    ],
+                ],
+                'DEMO-PO-01: সকালে 58, ঢুকল 120, প্যাক 26 → দিনের শেষে 152; order-এর 274 বাকি।',
+                'Buyer QC', 'Finish Store · Shipment'),
+
+            'ops-reports.cm-profit' => $ops('Daily Line CM & Profit Report',
+                'প্রতিটা sewing line × PO-র একদিনের আয় (CM) বনাম খরচ — লাভ না লোকসান, target margin ছুঁল কিনা।',
+                ['উপরের header-এ একবার rate বসান: BDT/USD, Target Margin, Operator ও Helper-এর ঘণ্টাপ্রতি মজুরি, OT rate, লাইনপ্রতি দিনের Overhead। এগুলো সব দিনের, সব লাইনের জন্য।', 'প্রতিদিন OT Hours আর Rework / Reject / Other Cost লিখুন।'],
+                [
+                    $sys => [
+                        'Good Output' => 'Sewing-এর সেদিনের pass (QC reject বাদ)।',
+                        'Selling CM/Pc (USD)' => 'Style-এর Confirm CM (না থাকলে approved Cost Sheet-এর CM, তারপর Target CM) ÷ 12 (dozen থেকে pcs)।',
+                        'Operators / Helpers / Working Hours' => 'Sewing board-এর সেদিনের plan।',
+                        'Direct Labour (BDT)' => '(Operators × Operator rate + Helpers × Helper rate) × Working Hours।',
+                        'OT Cost (BDT)' => 'OT Hours × (Operators + Helpers) × OT rate।',
+                        'Allocated OH (BDT)' => 'লাইনের দিনের Overhead, লাইনের PO-গুলোর মধ্যে output অনুযায়ী ভাগ।',
+                    ],
+                    $typed => ['OT Hours / Rework / Reject / Other Cost' => 'সেদিনের; উপরের ৩টা খরচও চাইলে লিখে বদলানো যায়।'],
+                    $calc => [
+                        'CM Earned (USD)' => 'Good Output × Selling CM/Pc।',
+                        'Total Mfg. Cost (BDT)' => 'Labour + OT + OH + Rework + Reject + Other।',
+                        'Mfg. Cost (USD) / per Pc' => 'Total ÷ Exchange Rate; ÷ Good Output।',
+                        'Profit / Loss · Margin %' => 'CM Earned − Mfg. Cost (USD); ÷ CM Earned × 100।',
+                        'Margin Variance · Status' => 'Margin − Target; লোকসান → Loss, target-এর সমান বা বেশি → On Target, কম → Below Target।',
+                    ],
+                ],
+                'DEMO-PO-01: 208 pcs × $1.50 = $312; খরচ ৳29,597 ÷ 120 = $246.64 → লাভ $65.36, margin 20.9% → On Target।',
+                'Sewing board · Style CM', 'Order Closing'),
+
+            'ops-reports.order-closing' => $ops('Style / PO Wise Order Closing Report',
+                'Production শেষে (বা চলাকালীন) একটা PO-র পুরো হিসাব: কবে কাটা / সেলাই, কত লোক, কত ঘণ্টা, target বনাম achieve, আর pcs প্রতি লাভ / লোকসান। নিচে signature: IE, Planning, Floor InCharge, QA/QC, Production Manager, MD।',
+                ['উপরে <strong>Default CPM</strong> (প্রতি মিনিটের খরচ, USD) বসান — Cost Sheet-এ CPM না থাকলে এটা লাগে।', 'Iron Man Used, Remarks, Management Action লিখুন।'],
+                [
+                    $sys => [
+                        'Shipment Qty' => 'Inventory shipment-এ এই PO-র মোট।',
+                        'Cutting Start / Closing · Sewing Start / Completion' => 'প্রথম ও শেষ cutting / sewing তারিখ।',
+                        'Operators / Helpers / Hours/Day / SMV / Target Production/day' => 'Sewing plan-এর গড়।',
+                        'Working Days' => 'যে কয়দিন sewing output হয়েছে।',
+                        'Machines Used' => 'যে লাইনে সেলাই হয়েছে তাদের machine (Line setup)।',
+                        'CPM / Cost-Sales Rate' => 'Cost Sheet-এর CPM (না থাকলে Default CPM); Selling CM per pc (Confirm CM ÷ 12)।',
+                    ],
+                    $typed => ['Iron Man Used / Remarks / Management Action' => 'Iron Man সিস্টেমে নেই — লিখুন।'],
+                    $calc => [
+                        'Total days in Cutting · Total Used Hours' => 'Closing − Start + 1; Working Days × Hours/Day।',
+                        'Achieved Production of the Day · Achievement %' => 'মোট sewing output ÷ Working Days; ÷ Target × 100।',
+                        'Hourly Target / Achievement / Avg. Hourly Output' => 'Target ÷ Hours; Achieved ÷ Hours; মোট output ÷ Used Hours।',
+                        'Cost/Pc considering Achieved Production' => 'CPM × (Operators + Helpers + Iron Man) × Used Hours × 60 ÷ মোট output।',
+                        'PnL / Pcs · PnL of whole Order · CM Margin %' => 'Sales-rate CM − ওপরের cost; × Shipment Qty; ÷ Sales-rate CM × 100।',
+                        'Closure Status' => 'Shipment ≥ Order → Closed (বেশি হলে Excess Shipped), না হলে Open — বদলানো যায় (Short Shipped)।',
+                    ],
+                ],
+                'চলমান PO-তে লোকসান দেখাতে পারে — কয়েকদিনের অল্প output-এর বিপরীতে পুরো দিনের লোকবলের খরচ ধরা হয়। PO শেষ হলে আসল ছবি।',
+                'Cutting · Sewing · Shipment', 'Management'),
         ];
     }
 
