@@ -9,7 +9,7 @@
             <th>Size</th><th>Part</th><th>Line</th>
             <th class="text-right">In</th><th class="text-right">Pass</th><th class="text-right">Rework</th><th class="text-right">Reject</th>
             <th>Defects (part · machine · defect · pcs)</th><th>Remarks</th><th>By</th>
-            @can('msfl_prod_entry.delete')<th class="text-right">Actions</th>@endcan
+            @canany(['msfl_prod_entry.edit', 'msfl_prod_entry.delete'])<th class="text-right">Actions</th>@endcanany
         </tr>
     </thead>
     <tbody>
@@ -39,12 +39,19 @@
                 </td>
                 <td>{{ $entry->remarks }}</td>
                 <td>{{ $entry->creator->name ?? '-' }}</td>
-                @can('msfl_prod_entry.delete')
+                @canany(['msfl_prod_entry.edit', 'msfl_prod_entry.delete'])
                     <td class="text-right">
-                        <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteEntryModal"
-                            data-action="{{ $entry->kind !== 'production' ? route('msfl.production.' . $entry->kind . '.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
+                        @can('msfl_prod_entry.edit')
+                            @if($entry->kind === 'production')
+                                <a href="{{ route('msfl.production.entries.edit', ['stage' => $entry->stage, 'entry' => $entry]) }}" class="btn-custom primary"><i class="fa-solid fa-pen"></i></a>
+                            @endif
+                        @endcan
+                        @can('msfl_prod_entry.delete')
+                            <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteEntryModal"
+                                data-action="{{ $entry->kind !== 'production' ? route('msfl.production.' . $entry->kind . '.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
+                        @endcan
                     </td>
-                @endcan
+                @endcanany
             </tr>
         @empty
             <tr><td colspan="16" class="text-center text-muted">No entries yet.</td></tr>

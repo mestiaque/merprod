@@ -183,6 +183,8 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
                 Route::get('/', [EntryController::class, 'index'])->name('index');
                 Route::get('create', [EntryController::class, 'create'])->name('create');
                 Route::post('/', [EntryController::class, 'store'])->name('store');
+                Route::get('{entry}/edit', [EntryController::class, 'edit'])->whereNumber('entry')->name('edit');
+                Route::put('{entry}', [EntryController::class, 'update'])->whereNumber('entry')->name('update');
                 Route::delete('{entry}', [EntryController::class, 'destroy'])->whereNumber('entry')->name('destroy');
             });
         });

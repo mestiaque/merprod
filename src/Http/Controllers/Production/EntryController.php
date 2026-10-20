@@ -201,6 +201,96 @@ class EntryController extends Controller
         return $request->input('mode') === 'output' ? 'output' : 'input';
     }
 
+    /**
+     * Fixing a wrong quantity — PO / size / part / line stay as entered (changing
+     * those would mean re-checking a different balance entirely). Both Input and
+     * Pass stay editable regardless of stage: a split-stage (embroidery / washing /
+     * finishing / packing) entry normally has only one of them set, but older
+     * entries from before stages were split can carry both, and hiding either
+     * field here would silently zero it out on save.
+     */
+    public function edit(string $stage, Entry $entry): View
+    {
+        $this->authorize('msfl_prod_entry.edit');
+        abort_unless($entry->stage === $stage, 404);
+
+        $entry->load(['orderPo.order.buyer', 'orderPo.style', 'orderPo.color', 'size', 'line', 'defects']);
+
+        $split = in_array($stage, ProductionFlow::SPLIT_STAGES, true) ? ProductionFlow::splitLabels($stage) : null;
+
+        return view('merchandising-sfl::admin.production.entries.edit', [
+            'stage' => $stage,
+            'entry' => $entry,
+            'split' => $split,
+            'isQc' => $stage === 'final_qc',
+            'garmentParts' => Lookups::garmentParts(),
+            'machines' => ProductionFlow::machines(),
+        ]);
+    }
+
+    public function update(Request $request, string $stage, Entry $entry): RedirectResponse
+    {
+        $this->authorize('msfl_prod_entry.edit');
+        abort_unless($entry->stage === $stage, 404);
+
+        $isQc = $stage === 'final_qc';
+
+        $data = $request->validate([
+            'entry_date' => ['required', 'date', 'before_or_equal:today'],
+            'input_qty' => ['nullable', 'integer', 'min:0'],
+            'pass_qty' => ['nullable', 'integer', 'min:0'],
+            'rework_qty' => ['nullable', 'integer', 'min:0'],
+            'reject_qty' => ['nullable', 'integer', 'min:0'],
+            'remarks' => ['nullable', 'string', 'max:255'],
+            'defects' => ['nullable', 'array'],
+            'defects.*.type' => ['nullable', 'in:reject,rework'],
+            'defects.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
+            'defects.*.machine_id' => ['nullable', 'integer', Rule::exists('inv_machines', 'id')],
+            'defects.*.defect' => ['nullable', 'string', 'max:150'],
+            'defects.*.qty' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $qty = [
+            'input_qty' => (int) ($data['input_qty'] ?? 0),
+            'pass_qty' => (int) ($data['pass_qty'] ?? 0),
+            'rework_qty' => $isQc ? (int) ($data['rework_qty'] ?? 0) : 0,
+            'reject_qty' => $isQc ? (int) ($data['reject_qty'] ?? 0) : 0,
+        ];
+        $defects = $isQc
+            ? collect($data['defects'] ?? [])->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, ['reject', 'rework'], true))->values()
+            : collect();
+
+        DB::transaction(function () use ($entry, $stage, $qty, $defects, $data) {
+            $po = $entry->orderPo()->with('order')->lockForUpdate()->first();
+            // Would removing this entry's old values break a later entry? If so, changing them would too.
+            if ($error = $this->flow->deleteBlocked($entry)) {
+                throw ValidationException::withMessages(['input_qty' => $error]);
+            }
+            $errors = $this->flow->validate($po, $stage, $qty, $entry->id, $entry->part_name, $entry->size_id);
+            $errors += $this->flow->defectErrors($defects, $qty);
+            if ($errors) {
+                throw ValidationException::withMessages($errors);
+            }
+
+            $entry->update($qty + ['entry_date' => $data['entry_date'], 'remarks' => $data['remarks'] ?? null]);
+            $entry->defects()->delete();
+            foreach ($defects as $d) {
+                $entry->defects()->create([
+                    'type' => $d['type'],
+                    'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : null,
+                    'machine_id' => $d['machine_id'] ?? null,
+                    'defect' => $d['defect'] ?? null,
+                    'qty' => (int) $d['qty'],
+                ]);
+            }
+        });
+
+        $label = ProductionFlow::label($stage);
+
+        return redirect()->route('msfl.production.entries.index', ['stage' => $stage])
+            ->with('success', "{$label}" . ($entry->part_name ? " ({$entry->part_name})" : '') . " entry updated: in {$entry->input_qty}, pass {$entry->pass_qty}, rework {$entry->rework_qty}, reject {$entry->reject_qty}.");
+    }
+
     public function destroy(string $stage, Entry $entry): RedirectResponse
     {
         $this->authorize('msfl_prod_entry.delete');
