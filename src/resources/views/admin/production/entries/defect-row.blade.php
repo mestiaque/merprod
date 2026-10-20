@@ -10,6 +10,12 @@
         </select>
     </td>
     <td>
+        <select name="defects[{{ $index }}][severity]" class="form-control form-control-sm" data-defect-severity>
+            <option value="">— Severity —</option>
+            @foreach(\ME\MerchandisingSfl\Models\Production\EntryDefect::SEVERITIES as $sv => $sl)<option value="{{ $sv }}" @selected(($d['severity'] ?? '') === $sv)>{{ $sl }}</option>@endforeach
+        </select>
+    </td>
+    <td>
         <select name="defects[{{ $index }}][part_name]" class="form-control form-control-sm">
             <option value="">— Part (optional) —</option>
             @foreach($garmentParts as $gp)<option value="{{ $gp }}" @selected(($d['part_name'] ?? '') === $gp)>{{ $gp }}</option>@endforeach

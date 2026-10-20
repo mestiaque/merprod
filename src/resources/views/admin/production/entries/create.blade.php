@@ -95,7 +95,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">
-                        <thead><tr><th style="width:90px">Size</th><th style="width:120px">Type</th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
+                        <thead><tr><th style="width:90px">Size</th><th style="width:120px">Type</th><th style="width:120px">Severity <span class="text-danger">*</span></th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
                         <tbody id="defectRowsBody">
                             @foreach($oldDefects ?: [[]] as $i => $d)
                                 @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => $i, 'd' => $d, 'withSize' => true])

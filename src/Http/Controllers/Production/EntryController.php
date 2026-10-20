@@ -95,6 +95,7 @@ class EntryController extends Controller
             'defects' => ['nullable', 'array'],
             'defects.*.size_id' => ['nullable', 'integer'],
             'defects.*.type' => ['nullable', 'in:reject,rework'],
+            'defects.*.severity' => ['nullable', 'in:critical,major,minor'],
             'defects.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'defects.*.machine_id' => ['nullable', 'integer', Rule::exists('inv_machines', 'id')],
             'defects.*.defect' => ['nullable', 'string', 'max:150'],
@@ -140,6 +141,9 @@ class EntryController extends Controller
         if ($isQc && $defects->has(0)) {
             throw ValidationException::withMessages(['defects' => 'Pick the size of every reject / rework row.']);
         }
+        if ($isQc && ($missing = \ME\MerchandisingSfl\Models\Production\EntryDefect::missingSeverity($defects->flatten(1)))) {
+            throw ValidationException::withMessages(['defects' => $missing]);
+        }
 
         $saved = DB::transaction(function () use ($po, $stage, $rows, $defects, $data, $usesLine, $partWise, $names) {
             // Lock the PO so two entries can't both pass the balance check.
@@ -170,6 +174,7 @@ class EntryController extends Controller
                 foreach ($sizeDefects as $d) {
                     $entry->defects()->create([
                         'type' => $d['type'],
+                    'severity' => $d['severity'] ?? null,
                         'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : null,
                         'machine_id' => $d['machine_id'] ?? null,
                         'defect' => $d['defect'] ?? null,
@@ -244,6 +249,7 @@ class EntryController extends Controller
             'remarks' => ['nullable', 'string', 'max:255'],
             'defects' => ['nullable', 'array'],
             'defects.*.type' => ['nullable', 'in:reject,rework'],
+            'defects.*.severity' => ['nullable', 'in:critical,major,minor'],
             'defects.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'defects.*.machine_id' => ['nullable', 'integer', Rule::exists('inv_machines', 'id')],
             'defects.*.defect' => ['nullable', 'string', 'max:150'],
@@ -259,6 +265,9 @@ class EntryController extends Controller
         $defects = $isQc
             ? collect($data['defects'] ?? [])->filter(fn ($d) => (int) ($d['qty'] ?? 0) > 0 && in_array($d['type'] ?? null, ['reject', 'rework'], true))->values()
             : collect();
+        if ($missing = \ME\MerchandisingSfl\Models\Production\EntryDefect::missingSeverity($defects)) {
+            throw ValidationException::withMessages(['defects' => $missing]);
+        }
 
         DB::transaction(function () use ($entry, $stage, $qty, $defects, $data) {
             $po = $entry->orderPo()->with('order')->lockForUpdate()->first();
@@ -277,6 +286,7 @@ class EntryController extends Controller
             foreach ($defects as $d) {
                 $entry->defects()->create([
                     'type' => $d['type'],
+                    'severity' => $d['severity'] ?? null,
                     'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : null,
                     'machine_id' => $d['machine_id'] ?? null,
                     'defect' => $d['defect'] ?? null,

@@ -117,6 +117,13 @@ Route::middleware($route['middleware'] ?? ['web', 'auth'])
         Route::get('reports/{report}', [ReportController::class, 'show'])->whereIn('report', array_keys(Reports::LIST))->name('reports.show');
         Route::get('reports/{report}/print', [ReportController::class, 'print'])->whereIn('report', array_keys(Reports::LIST))->name('reports.print');
 
+        // Operations reports (Excel-template layouts with typed cells)
+        $opsKeys = array_keys(\ME\MerchandisingSfl\Support\OpsReports\OpsReports::LIST);
+        Route::get('ops-reports', [\ME\MerchandisingSfl\Http\Controllers\OpsReportController::class, 'index'])->name('ops-reports.index');
+        Route::get('ops-reports/{report}', [\ME\MerchandisingSfl\Http\Controllers\OpsReportController::class, 'show'])->whereIn('report', $opsKeys)->name('ops-reports.show');
+        Route::post('ops-reports/{report}', [\ME\MerchandisingSfl\Http\Controllers\OpsReportController::class, 'save'])->whereIn('report', $opsKeys)->name('ops-reports.save');
+        Route::get('ops-reports/{report}/print', [\ME\MerchandisingSfl\Http\Controllers\OpsReportController::class, 'print'])->whereIn('report', $opsKeys)->name('ops-reports.print');
+
         // Commercial — Export LC / SC → Commercial Invoice (+ packing list)
         Route::prefix('commercial')->name('commercial.')->group(function () {
             Route::get('dashboard', [Commercial\DashboardController::class, 'index'])->name('dashboard');

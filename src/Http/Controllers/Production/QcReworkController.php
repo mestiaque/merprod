@@ -135,6 +135,7 @@ class QcReworkController extends Controller
             'defects' => ['nullable', 'array'],
             'defects.*.size_id' => ['nullable', 'integer'],
             'defects.*.type' => ['nullable', 'in:reject,rework'],
+            'defects.*.severity' => ['nullable', 'in:critical,major,minor'],
             'defects.*.part_name' => ['nullable', 'string', 'max:100', Rule::exists('msfl_garment_parts', 'name')->whereNull('deleted_at')],
             'defects.*.machine_id' => ['nullable', 'integer', Rule::exists('inv_machines', 'id')],
             'defects.*.defect' => ['nullable', 'string', 'max:150'],
@@ -163,6 +164,9 @@ class QcReworkController extends Controller
             ->groupBy('size_id');
         if ($defects->has(0)) {
             throw ValidationException::withMessages(['defects' => 'Pick the size of every reject / rework row.']);
+        }
+        if ($missing = \ME\MerchandisingSfl\Models\Production\EntryDefect::missingSeverity($defects->flatten(1))) {
+            throw ValidationException::withMessages(['defects' => $missing]);
         }
 
         $po = OrderPo::with('order')->findOrFail($data['order_po_id']);
@@ -193,6 +197,7 @@ class QcReworkController extends Controller
                 foreach ($sizeDefects as $d) {
                     $entry->defects()->create([
                         'type' => $d['type'],
+                    'severity' => $d['severity'] ?? null,
                         'part_name' => filled($d['part_name'] ?? null) ? trim($d['part_name']) : $part,
                         'machine_id' => $d['machine_id'] ?? null,
                         'defect' => $d['defect'] ?? null,

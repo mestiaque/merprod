@@ -3,7 +3,7 @@
 @php
     use ME\MerchandisingSfl\Services\ProductionFlow;
     $label = ProductionFlow::label($stage);
-    $oldDefects = old('defects', $entry->defects->map(fn ($d) => ['type' => $d->type, 'part_name' => $d->part_name, 'machine_id' => $d->machine_id, 'defect' => $d->defect, 'qty' => $d->qty])->all());
+    $oldDefects = old('defects', $entry->defects->map(fn ($d) => ['type' => $d->type, 'severity' => $d->severity, 'part_name' => $d->part_name, 'machine_id' => $d->machine_id, 'defect' => $d->defect, 'qty' => $d->qty])->all());
     $heading = $label . ' Entry — Edit';
 @endphp
 
@@ -56,7 +56,7 @@
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">
-                        <thead><tr><th style="width:120px">Type</th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
+                        <thead><tr><th style="width:120px">Type</th><th style="width:120px">Severity <span class="text-danger">*</span></th><th>Part</th><th>Machine <small class="text-muted">(optional)</small></th><th>Defect</th><th style="width:110px">Pcs</th><th style="width:40px"></th></tr></thead>
                         <tbody id="defectRowsBody">
                             @foreach($oldDefects ?: [[]] as $i => $d)
                                 @include('merchandising-sfl::admin.production.entries.defect-row', ['index' => $i, 'd' => $d])

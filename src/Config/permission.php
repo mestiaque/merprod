@@ -49,7 +49,8 @@ return [
         'msfl_post_costing' => ['label' => 'Post Cost Sheet (Budget vs Actual)', 'permissions' => ['list' => 'List', 'view' => 'View', 'all' => 'All']],
 
         // Also opens Production → Reports and Planning → T&A Status (same report screens).
-        'msfl_report' => ['label' => 'Reports (+ Production Reports, T&A Status)', 'permissions' => ['view' => 'View', 'all' => 'All']],
+        // 'edit' = type the hand-entered cells of the Operations Reports (Shipment Readiness, DHU & RFT, Cutting …).
+        'msfl_report' => ['label' => 'Reports (+ Production Reports, T&A Status, Operations Reports)', 'permissions' => ['view' => 'View', 'edit' => 'Edit (report inputs)', 'all' => 'All']],
     ],
 
     'PLANNING' => [
