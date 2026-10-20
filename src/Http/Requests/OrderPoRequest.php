@@ -70,6 +70,10 @@ class OrderPoRequest extends FormRequest
             if ($duplicate) {
                 $validator->errors()->add('po_no', 'This PO already has a line for the same style and color.');
             }
+
+            if ($po && ($reason = app(\ME\MerchandisingSfl\Services\OrderPoLines::class)->lockedChange($po, (int) $this->style_id, (int) $this->color_id, array_map('intval', $this->input('sizes', []))))) {
+                $validator->errors()->add('sizes', $reason);
+            }
         }];
     }
 }

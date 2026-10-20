@@ -62,7 +62,7 @@ class CuttingController extends Controller
 
         $data = $request->validate([
             'order_po_id' => ['required', Rule::exists('msfl_order_pos', 'id')],
-            'cutting_date' => ['required', 'date'],
+            'cutting_date' => ['required', 'date', 'before_or_equal:today'],
             'table_no' => ['nullable', 'string', 'max:50'],
             'lay_count' => ['nullable', 'integer', 'min:0'],
             'fabric_used' => ['nullable', 'numeric', 'min:0'],
@@ -93,7 +93,27 @@ class CuttingController extends Controller
             throw ValidationException::withMessages(['parts' => 'Parts can only be entered for sizes cut in this cutting.']);
         }
 
-        $cutting = DB::transaction(function () use ($data, $sizes, $parts, $numbers) {
+        $cutting = DB::transaction(function () use ($data, $sizes, $parts, $numbers, $po) {
+            // Per size: everything cut so far plus this cutting stays within the order qty + the excess allowance.
+            OrderPo::query()->whereKey($po->id)->lockForUpdate()->first();
+            $ordered = $po->sizes()->pluck('qty', 'size_id');
+            $cutSoFar = DB::table('msfl_prod_cutting_sizes as s')->join('msfl_prod_cuttings as c', 'c.id', '=', 's.cutting_id')
+                ->whereNull('c.deleted_at')->where('c.order_po_id', $po->id)->groupBy('s.size_id')->selectRaw('s.size_id, SUM(s.qty) q')->pluck('q', 'size_id');
+            $excess = (float) config('merchandising-sfl.cutting_excess_percent', 5);
+            $names = Size::query()->whereIn('id', $sizes->keys())->pluck('name', 'id');
+            foreach ($sizes as $sizeId => $qty) {
+                $name = $names[$sizeId] ?? $sizeId;
+                if (! isset($ordered[$sizeId])) {
+                    throw ValidationException::withMessages(["sizes.{$sizeId}" => "Size {$name} is not in this PO."]);
+                }
+                $max = (int) floor((int) $ordered[$sizeId] * (1 + $excess / 100));
+                $after = (int) ($cutSoFar[$sizeId] ?? 0) + $qty;
+                if ($after > $max) {
+                    throw ValidationException::withMessages(["sizes.{$sizeId}" => "Size {$name}: order {$ordered[$sizeId]} pcs (+{$excess}% allowed = {$max}), already cut " . (int) ($cutSoFar[$sizeId] ?? 0)
+                        . ', so only ' . max(0, $max - (int) ($cutSoFar[$sizeId] ?? 0)) . " more can be cut (you entered {$qty})."]);
+                }
+            }
+
             $cutting = Cutting::create([
                 'cutting_no' => $numbers->next('cutting', Cutting::class, 'cutting_no'),
                 'total_qty' => $sizes->sum(),

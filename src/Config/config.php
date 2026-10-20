@@ -25,6 +25,9 @@ return [
     'sewing_hours' => range(8, 19),
     'sewing_break_hour' => 13,
 
+    // Cutting: how far above a size's order qty the total cut may go (wastage / excess allowance).
+    'cutting_excess_percent' => (float) env('MERCHANDISING_SFL_CUTTING_EXCESS', 5),
+
     // Document number prefixes — "<PREFIX>-<YYYY>-<0001>"; com_invoice / packing_list
     // are daily: "<PREFIX><YYMMDD>-<001>" (IN261017-001, PL261017-001).
     'number_prefixes' => [

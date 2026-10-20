@@ -123,6 +123,10 @@ class OrderRequest extends FormRequest
                 if (! empty($row['pcd_date']) && ! empty($row['shipment_date']) && Carbon::parse($row['shipment_date'])->lt(Carbon::parse($row['pcd_date']))) {
                     $validator->errors()->add("pos.{$i}.shipment_date", $label . 'the shipment date is before the PCD.');
                 }
+                if (! empty($row['id']) && ($existingPo = $existing->get((int) $row['id']))
+                    && ($reason = app(OrderPoLines::class)->lockedChange($existingPo, (int) $row['style_id'], (int) $row['color_id'], array_map('intval', (array) $row['sizes'])))) {
+                    $validator->errors()->add("pos.{$i}.sizes", $label . $reason);
+                }
                 $key = mb_strtolower(trim($row['po_no'])) . '|' . $row['style_id'] . '|' . $row['color_id'];
                 if (isset($seen[$key])) {
                     $validator->errors()->add("pos.{$i}.po_no", $label . 'the same PO and style as row ' . ($seen[$key] + 1) . '.');

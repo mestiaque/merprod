@@ -85,6 +85,34 @@ class OrderPoLines
         return null;
     }
 
+    /**
+     * Once a PO line has work against it, its style / color can't change and a size that was cut
+     * or produced can't be dropped — that would leave those entries pointing at nothing.
+     * $sizes = the edited [size_id => qty]. Returns the reason, or null.
+     */
+    public function lockedChange(OrderPo $po, int $styleId, int $colorId, array $sizes): ?string
+    {
+        if (! $this->usedIn($po)) {
+            return null;
+        }
+        $label = "PO {$po->po_no} (" . ($po->style->style_no ?? '') . ' · ' . ($po->color->name ?? '') . ')';
+        if ($styleId !== (int) $po->style_id || $colorId !== (int) $po->color_id) {
+            return "{$label} already has production / inventory work — its style and color can't be changed.";
+        }
+        $worked = DB::table('msfl_prod_cutting_sizes as s')->join('msfl_prod_cuttings as c', 'c.id', '=', 's.cutting_id')
+            ->whereNull('c.deleted_at')->where('c.order_po_id', $po->id)->distinct()->pluck('s.size_id')
+            ->merge(DB::table('msfl_prod_entries')->whereNull('deleted_at')->where('order_po_id', $po->id)->whereNotNull('size_id')->distinct()->pluck('size_id'))
+            ->map(fn ($id) => (int) $id)->unique();
+        $dropped = $worked->filter(fn ($id) => (int) ($sizes[$id] ?? 0) <= 0);
+        if ($dropped->isNotEmpty()) {
+            $names = DB::table('inv_sizes')->whereIn('id', $dropped)->pluck('name')->implode(', ');
+
+            return "{$label}: size {$names} is already cut / in production — its quantity can't be removed.";
+        }
+
+        return null;
+    }
+
     private function tracked(OrderPo $po): array
     {
         return ['po_qty' => (string) $po->po_qty, 'pcd_date' => $po->pcd_date?->toDateString(), 'shipment_date' => $po->shipment_date?->toDateString()];
