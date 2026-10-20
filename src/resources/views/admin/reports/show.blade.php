@@ -13,6 +13,7 @@
             <h4 class="mb-0">{{ $title }} @isset($result['period'])<small class="text-muted">— {{ $result['period'] }}</small>@endisset</h4>
             <div class="d-flex gap-1">
                 <a href="{{ route('msfl.reports.print', ['report' => $key] + request()->query()) }}" target="_blank" class="btn btn-primary btn-sm"><i class="fa-solid fa-print"></i> Print</a>
+                <a href="{{ route('msfl.reports.print', ['report' => $key, 'blank' => 1] + request()->query()) }}" target="_blank" class="btn btn-outline-secondary btn-sm" title="Empty template with 5 blank rows"><i class="fa-regular fa-file"></i> Blank Print</a>
                 <a href="{{ route('msfl.reports.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Reports</a>
             </div>
         </div>

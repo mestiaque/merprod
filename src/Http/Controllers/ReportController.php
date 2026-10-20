@@ -31,8 +31,16 @@ class ReportController extends Controller
     public function print(Request $request, string $report, Reports $reports): View
     {
         $this->authorize((Reports::LIST[$report][4] ?? 'msfl_report') . '.view');
+        $data = $this->data($request, $report, $reports);
+        // Blank print: same columns, no data — 5 empty rows to fill in by hand.
+        if ($request->boolean('blank')) {
+            $empty = fn (array $t) => ['rows' => [], 'totals' => null, 'row_classes' => []] + $t;
+            $data['result'] = isset($data['result']['sections'])
+                ? ['sections' => array_map($empty, $data['result']['sections'])] + $data['result']
+                : $empty($data['result']);
+        }
 
-        return view('merchandising-sfl::admin.reports.print', $this->data($request, $report, $reports));
+        return view('merchandising-sfl::admin.reports.print', $data);
     }
 
     private function data(Request $request, string $report, Reports $reports): array

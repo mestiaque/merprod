@@ -18,5 +18,5 @@
 
 @section('contents')
     @include('merchandising-sfl::admin.partials.print-header', ['title' => $title, 'subtitle' => $result['period'] ?? null, 'page' => 'A4 landscape'])
-    @include('merchandising-sfl::admin.reports.partials.result', ['result' => $result])
+    @include('merchandising-sfl::admin.reports.partials.result', ['result' => $result, 'blankRows' => 5])
 @endsection

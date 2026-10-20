@@ -12,7 +12,12 @@
                 @endforeach
             </tr>
         @empty
-            <tr><td colspan="{{ count($result['headers']) + 1 }}" class="text-center text-muted">No data for these filters.</td></tr>
+            @if($blankRows ?? 0)
+                {{-- Printed blank form: empty rows to fill in by hand. --}}
+                @for($i = 1; $i <= $blankRows; $i++)<tr style="height:22px"><td>{{ $i }}</td>@foreach($result['headers'] as $h)<td>&nbsp;</td>@endforeach</tr>@endfor
+            @else
+                <tr><td colspan="{{ count($result['headers']) + 1 }}" class="text-center text-muted">No data for these filters.</td></tr>
+            @endif
         @endforelse
     </tbody>
     @if(! empty($result['totals']) && count($result['rows']))

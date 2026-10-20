@@ -128,7 +128,12 @@
                         @endforeach
                     </tr>
                 @empty
-                    <tr><td colspan="{{ count($cols) }}" style="text-align:center; color:#6b7280; padding:10px">No data for this date / these filters.</td></tr>
+                    @if($print)
+                        {{-- Blank form for printing: 5 empty rows to fill in by hand. --}}
+                        @for($i = 0; $i < 5; $i++)<tr style="height:24px">@foreach($cols as $c)<td>&nbsp;</td>@endforeach</tr>@endfor
+                    @else
+                        <tr><td colspan="{{ count($cols) }}" style="text-align:center; color:#6b7280; padding:10px">No data for this date / these filters.</td></tr>
+                    @endif
                 @endforelse
             </tbody>
         </table>

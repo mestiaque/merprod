@@ -33,8 +33,14 @@ class OpsReportController extends Controller
     public function print(Request $request, string $report): View
     {
         $this->authorize('msfl_report.view');
+        $data = $this->data($request, $report);
+        // Blank print: the empty template (header, KPIs at 0, 5 empty rows) to fill in by hand.
+        if ($request->boolean('blank')) {
+            $data['built']['rows'] = [];
+            $data['built']['kpis'] = $data['report']->kpis([]);
+        }
 
-        return view('merchandising-sfl::admin.ops-reports.print', $this->data($request, $report));
+        return view('merchandising-sfl::admin.ops-reports.print', $data);
     }
 
     /** Saves the typed cells (only those changed are sent) and the shared settings — each checked against the rebuilt report. */
