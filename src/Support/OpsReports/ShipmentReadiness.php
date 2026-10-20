@@ -71,10 +71,23 @@ class ShipmentReadiness extends OpsReport
         $from = $r->filled('from') ? Carbon::parse($r->from) : $date->copy()->subDays(15);
         $to = $r->filled('to') ? Carbon::parse($r->to) : $date->copy()->addDays(45);
         $plans = DB::table('msfl_tna_plans')->whereNull('deleted_at')->where('status', '!=', 'cancelled')->whereNotNull('ex_factory_date')
-            ->get(['order_id', 'style_id', 'ex_factory_date'])->keyBy(fn ($p) => $p->order_id . '|' . $p->style_id);
+            ->get(['order_id', 'style_id', 'shipment_date', 'ex_factory_date'])->keyBy(fn ($p) => $p->order_id . '|' . $p->style_id);
+        // One T&A covers an order + style; each PO keeps the T&A's shipment → ex-factory gap on its own shipment date.
+        $exFactory = function ($po) use ($plans) {
+            $plan = $plans[$po->order_id . '|' . $po->style_id] ?? null;
+            if (! $po->shipment_date) {
+                return $plan->ex_factory_date ?? null;
+            }
+            if (! $plan || ! $plan->shipment_date) {
+                return $po->shipment_date->toDateString();
+            }
+            $gap = Carbon::parse($plan->ex_factory_date)->diffInDays(Carbon::parse($plan->shipment_date), false);
 
-        $pos = $this->pos($r)->orderBy('shipment_date')->get()->filter(function ($po) use ($plans, $from, $to) {
-            $ex = $plans[$po->order_id . '|' . $po->style_id]->ex_factory_date ?? $po->shipment_date?->toDateString();
+            return $po->shipment_date->copy()->subDays(max(0, (int) $gap))->toDateString();
+        };
+
+        $pos = $this->pos($r)->orderBy('shipment_date')->get()->filter(function ($po) use ($exFactory, $from, $to) {
+            $ex = $exFactory($po);
 
             return $ex && $ex >= $from->toDateString() && $ex <= $to->toDateString();
         })->values();
@@ -89,11 +102,11 @@ class ShipmentReadiness extends OpsReport
             ->whereIn('p.order_po_id', $ids)->get(['p.order_po_id', 'c.lc_no', 'c.buyer_lc_no'])->groupBy('order_po_id');
         $list = fn ($rows, $f) => collect($rows)->pluck($f)->filter()->unique()->implode(', ') ?: null;
 
-        return $pos->map(function ($po) use ($plans, $pass, $fpl, $inv, $lc, $list) {
+        return $pos->map(function ($po) use ($exFactory, $pass, $fpl, $inv, $lc, $list) {
             $f = $fpl[$po->order_id . '|' . $po->po_no] ?? null;
 
             return ['_key' => 'po:' . $po->id, '_label' => 'PO ' . $po->po_no] + $this->poCells($po) + [
-                'ex_factory' => $plans[$po->order_id . '|' . $po->style_id]->ex_factory_date ?? $po->shipment_date?->toDateString(),
+                'ex_factory' => $exFactory($po),
                 'finished_qty' => $pass[$po->id]['finishing'] ?? 0,
                 'packed_qty' => $pass[$po->id]['packing'] ?? 0,
                 'packing_list' => $f ? ($f->status === 'approved' ? 'Approved ' : 'Draft ') . $f->fpl_no : null,
