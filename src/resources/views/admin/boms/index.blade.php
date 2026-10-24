@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">BOM (Bill of Materials)</h4>
             @can('msfl_bom.add')
-                <a href="{{ route('msfl.boms.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New BOM</a>
+                <a href="{{ route('msfl.boms.create') }}" class="btn btn-primary btn-sm btn-icon" title="New BOM"><i class="fa-solid fa-plus"></i></a>
             @endcan
         </div>
         <div class="card-body">
@@ -40,8 +40,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
-                    <a href="{{ route('msfl.boms.index') }}" class="btn btn-light btn-sm">Reset</a>
+                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                    <a href="{{ route('msfl.boms.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>

@@ -27,10 +27,10 @@
                     <a href="{{ route('msfl.samples.create', ['style_id' => $style->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-vial"></i> Sample</a>
                 @endcan
                 @can('msfl_style.edit')
-                    <a href="{{ route('msfl.styles.edit', $style) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                    <a href="{{ route('msfl.styles.edit', $style) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                 @endcan
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.styles.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.styles.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
             </div>
         </div>
         <div class="card-body">

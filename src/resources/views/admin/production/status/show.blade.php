@@ -17,7 +17,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Production — {{ $po->label() }}</h4>
             @include('merchandising-sfl::admin.partials.print-button')
-            <a href="{{ route('msfl.production.status.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="{{ route('msfl.production.status.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
         </div>
         <div class="card-body">
             <div class="row">

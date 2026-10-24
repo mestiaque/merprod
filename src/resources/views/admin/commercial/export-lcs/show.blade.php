@@ -36,7 +36,7 @@
                 @endif
                 @if($lc->isEditable())
                     @can('msfl_export_lc.edit')
-                        <a href="{{ route('msfl.commercial.export-lcs.edit', $lc) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                        <a href="{{ route('msfl.commercial.export-lcs.edit', $lc) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                     @endcan
                 @endif
                 <a href="{{ route('msfl.commercial.export-lcs.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>

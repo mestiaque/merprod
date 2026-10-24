@@ -17,7 +17,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $heading }}</h4>
-            <a href="{{ $back }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="{{ $back }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ $model->exists ? route("msfl.commercial.$slug.update", $model->id) : route("msfl.commercial.$slug.store") }}" enctype="multipart/form-data">

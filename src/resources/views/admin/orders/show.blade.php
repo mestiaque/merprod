@@ -33,11 +33,11 @@
                 @endforeach
                 @if($order->isEditable())
                     @can('msfl_order.edit')
-                        <a href="{{ route('msfl.orders.edit', $order) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                        <a href="{{ route('msfl.orders.edit', $order) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                     @endcan
                 @endif
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.orders.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.orders.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
             </div>
         </div>
         <div class="card-body">

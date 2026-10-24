@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ 'New Order' }}</h4>
-            <a href="{{ route('msfl.orders.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="{{ route('msfl.orders.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ route('msfl.orders.store') }}" enctype="multipart/form-data">

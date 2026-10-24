@@ -17,7 +17,7 @@
             <div>
                 @include('merchandising-sfl::admin.partials.print-button')
                 @can('msfl_tna_template.add')
-                    <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#createTemplateModal"><i class="fa-solid fa-plus"></i> New Template</button>
+                    <button type="button" class="btn btn-primary btn-sm btn-icon" data-toggle="modal" data-target="#createTemplateModal" title="New Template"><i class="fa-solid fa-plus"></i></button>
                 @endcan
             </div>
         </div>

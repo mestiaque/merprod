@@ -25,7 +25,7 @@
                         <a href="{{ route('inventory.gate-passes.print', $gp->id) }}" target="_blank" class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-print"></i> Delivery Challan {{ $gp->gate_pass_no }}</a>
                     @endforeach
                 @endif
-                @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $invoice) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>@endcan
+                @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $invoice) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>@endcan
                 <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>

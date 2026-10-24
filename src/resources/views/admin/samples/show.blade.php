@@ -33,7 +33,7 @@
                 @endcan
                 @can('msfl_sample.edit')
                     @if($sample->isEditable())
-                        <a href="{{ route('msfl.samples.edit', $sample) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                        <a href="{{ route('msfl.samples.edit', $sample) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                         <form method="POST" action="{{ route('msfl.samples.status', $sample) }}" class="d-inline" onsubmit="return confirm('Cancel this sample?');">
                             @csrf <input type="hidden" name="status" value="cancelled">
                             <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-ban"></i> Cancel</button>

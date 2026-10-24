@@ -21,9 +21,9 @@
                 @if($req)<span class="badge badge-light border">{{ ucfirst(str_replace('_', ' ', $req->status)) }}</span>@endif</h4>
             <div class="d-flex flex-wrap gap-1">
                 @if($req && Route::has('inventory.requisitions.print'))
-                    <a href="{{ route('inventory.requisitions.print', $req->id) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Print</a>
+                    <a href="{{ route('inventory.requisitions.print', $req->id) }}" target="_blank" class="btn btn-outline-secondary btn-sm btn-icon" title="Print"><i class="fa-solid fa-print"></i></a>
                 @endif
-                <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
             </div>
         </div>
         <div class="card-body">

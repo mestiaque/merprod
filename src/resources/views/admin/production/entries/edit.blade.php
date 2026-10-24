@@ -19,7 +19,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $heading }}</h4>
-            <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
         </div>
         <div class="card-body">
             <dl class="row mb-3 small">

@@ -32,8 +32,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
-                    <a href="{{ route('msfl.production.sewing.index') }}" class="btn btn-light btn-sm">Reset</a>
+                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                    <a href="{{ route('msfl.production.sewing.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
                 </div>
             </form>
 

@@ -18,8 +18,8 @@
                 <div class="col-md-3 mb-2"><select name="buyer_id" class="form-control form-control-sm msfl-select2"><option value="">All Buyers</option>
                     @foreach($buyers as $b)<option value="{{ $b->id }}" @selected(request('buyer_id') == $b->id)>{{ $b->name }}</option>@endforeach</select></div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
-                    <a href="{{ route('msfl.post-costing.index') }}" class="btn btn-light btn-sm">Reset</a>
+                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
+                    <a href="{{ route('msfl.post-costing.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>

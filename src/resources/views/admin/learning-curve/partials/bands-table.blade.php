@@ -34,7 +34,7 @@
                         </td>
                     @endforeach
                     @if($editable)
-                        <td><button type="submit" form="band-form-{{ $band->id }}" class="btn btn-sm btn-outline-primary">Save</button></td>
+                        <td><button type="submit" form="band-form-{{ $band->id }}" class="btn btn-sm btn-outline-primary btn-icon" title="Save"><i class="fa-solid fa-floppy-disk"></i></button></td>
                     @endif
                 </tr>
             @endforeach

@@ -19,7 +19,7 @@
                     @include('merchandising-sfl::admin.partials.print-button')
                     @if($costSheet->isEditable())
                         @can('msfl_cost_sheet.edit')
-                            <a href="{{ route('msfl.cost-sheets.edit', $costSheet) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                            <a href="{{ route('msfl.cost-sheets.edit', $costSheet) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                         @endcan
                         @can('msfl_cost_sheet.approve')
                             <form method="POST" action="{{ route('msfl.cost-sheets.approve', $costSheet) }}" class="d-inline" onsubmit="return confirm('Approve this cost sheet? It cannot be edited afterwards.');">
@@ -28,7 +28,7 @@
                             </form>
                         @endcan
                     @endif
-                    <a href="{{ route('msfl.cost-sheets.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                    <a href="{{ route('msfl.cost-sheets.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
                 </div>
             </div>
             <div class="card-body py-2">

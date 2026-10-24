@@ -22,10 +22,10 @@
                     <a href="{{ route('msfl.cost-sheets.create', ['inquiry_id' => $inquiry->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-calculator"></i> Create Cost Sheet</a>
                 @endcan
                 @can('msfl_inquiry.edit')
-                    <a href="{{ route('msfl.inquiries.edit', $inquiry) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                    <a href="{{ route('msfl.inquiries.edit', $inquiry) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                 @endcan
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.inquiries.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.inquiries.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
             </div>
         </div>
         <div class="card-body">

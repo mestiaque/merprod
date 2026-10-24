@@ -18,7 +18,7 @@
                 @include('merchandising-sfl::admin.partials.print-button')
                 @if($bom->isEditable())
                     @can('msfl_bom.edit')
-                        <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+                        <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
                     @endcan
                     @can('msfl_bom.approve')
                         <form method="POST" action="{{ route('msfl.boms.approve', $bom) }}" class="d-inline" onsubmit="return confirm('Approve this BOM? It cannot be edited afterwards.');">

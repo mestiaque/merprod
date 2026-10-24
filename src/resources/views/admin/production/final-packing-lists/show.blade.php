@@ -18,7 +18,7 @@
                 <div>
                     @include('merchandising-sfl::admin.partials.print-button')
                     @if($fpl->isEditable())
-                        @can('msfl_final_packing_list.edit')<a href="{{ route('msfl.production.final-packing-lists.edit', $fpl) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>@endcan
+                        @can('msfl_final_packing_list.edit')<a href="{{ route('msfl.production.final-packing-lists.edit', $fpl) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>@endcan
                     @else
                         @can('msfl_final_packing_list.approve')
                             <form method="POST" action="{{ route('msfl.production.final-packing-lists.reopen', $fpl) }}" class="d-inline" onsubmit="return confirm('Re-open? Figures become live from production again.');">
@@ -26,7 +26,7 @@
                             </form>
                         @endcan
                     @endif
-                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
                 </div>
             </div>
             <div class="card-body py-2">

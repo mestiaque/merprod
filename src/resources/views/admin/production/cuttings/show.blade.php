@@ -17,7 +17,7 @@
             <div class="d-flex gap-1">
                 <a href="{{ route('msfl.production.status.show', $cutting->order_po_id) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-chart-column"></i> PO Status</a>
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
             </div>
         </div>
         <div class="card-body">

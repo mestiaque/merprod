@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ 'Edit Bulletin — ' . $bulletin->bulletin_no }}</h4>
-            <a href="{{ route('msfl.bulletins.show', $bulletin) }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+            <a href="{{ route('msfl.bulletins.show', $bulletin) }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ route('msfl.bulletins.update', $bulletin) }}" enctype="multipart/form-data">
