@@ -32,8 +32,8 @@
                     <div class="col-md-4 mb-2"><strong>{{ $field['label'] }}:</strong> {{ \ME\MerchandisingSfl\Support\CommercialRecordRegistry::display($field, $model) }}</div>
                 @endforeach
                 @foreach($definition['fields'] as $field)
-                    @if($field['type'] === 'file' && $model->{$field['name']} && ! $printMode)
-                        <div class="col-md-4 mb-2"><strong>{{ $field['label'] }}:</strong> <a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($model->{$field['name']}) }}" target="_blank"><i class="fa-solid fa-paperclip"></i> View</a></div>
+                    @if($field['type'] === 'file' && ! $printMode)
+                        @include('merchandising-sfl::admin.commercial.partials.attachments-list', ['value' => $model->{$field['name']}, 'label' => $field['label']])
                     @endif
                 @endforeach
                 @foreach($definition['fields'] as $field)

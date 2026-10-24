@@ -35,7 +35,12 @@ class CommercialRecordRegistry
         $date = fn ($d) => $d?->format('d M Y') ?? '-';
         $remarks = ['name' => 'remarks', 'label' => 'Remarks', 'type' => 'textarea', 'col' => 12];
         $file = fn (string $label) => ['name' => 'attachment', 'label' => $label, 'type' => 'file'];
-        $fileColumn = ['label' => 'File', 'value' => fn ($m) => $m->attachment ? '<a href="' . e(FileUploadService::link($m->attachment)) . '" target="_blank"><i class="fa-solid fa-paperclip"></i></a>' : '', 'html' => true];
+        // Paperclip + file count; opens the first file (the record page lists them all).
+        $fileColumn = ['label' => 'Files', 'value' => function ($m) {
+            $files = FileUploadService::list($m->attachment);
+
+            return $files ? '<a href="' . e(FileUploadService::link($files[0]['path'])) . '" target="_blank" title="' . e(implode(', ', array_column($files, 'name'))) . '"><i class="fa-solid fa-paperclip"></i> ' . count($files) . '</a>' : '';
+        }, 'html' => true, 'class' => 'text-nowrap'];
 
         return [
             'supplier-pis' => [
@@ -49,7 +54,7 @@ class CommercialRecordRegistry
                     ['name' => 'export_lc_id', 'label' => 'Master LC / SC', 'type' => 'select', 'options' => $exportLcs, 'exists' => 'msfl_com_export_lcs'],
                     ['name' => 'currency_id', 'label' => 'Currency', 'type' => 'select', 'options' => $currencies, 'exists' => 'msfl_currencies'],
                     ['name' => 'pi_value', 'label' => 'PI Value', 'type' => 'decimal', 'required' => true],
-                    $file('PI copy (PDF)'),
+                    $file('PI copy / documents'),
                     $remarks,
                 ],
                 'columns' => [
@@ -82,7 +87,7 @@ class CommercialRecordRegistry
                     ['name' => 'last_shipment_date', 'label' => 'Last Shipment Date', 'type' => 'date'],
                     ['name' => 'expiry_date', 'label' => 'Expiry Date', 'type' => 'date'],
                     ['name' => 'maturity_date', 'label' => 'Maturity / Payment Date', 'type' => 'date'],
-                    $file('LC copy (PDF)'),
+                    $file('LC copy / documents'),
                     // Supplier PIs this BTB LC is opened against: still open ones, plus its own.
                     [
                         'name' => 'supplier_pi_ids', 'label' => 'Supplier PI(s)', 'type' => 'pick', 'col' => 12,
@@ -148,7 +153,7 @@ class CommercialRecordRegistry
                     ['name' => 'arrival_date', 'label' => 'Arrival (port / factory)', 'type' => 'date'],
                     ['name' => 'doc_release_date', 'label' => 'Document Release Date', 'type' => 'date'],
                     ['name' => 'goods_release_date', 'label' => 'Goods Release Date', 'type' => 'date'],
-                    $file('Documents (PDF)'),
+                    $file('Shipment documents (invoice, packing list, B/L, bill of entry…)'),
                     $remarks,
                 ],
                 'columns' => [
@@ -177,7 +182,7 @@ class CommercialRecordRegistry
                     ['name' => 'doc_date', 'label' => 'Document Date', 'type' => 'date'],
                     ['name' => 'forwarder', 'label' => 'Freight Forwarder / Shipping Line', 'type' => 'text'],
                     ['name' => 'booking_date', 'label' => 'Booking Date', 'type' => 'date'],
-                    $file('Document (PDF)'),
+                    $file('Document files'),
                     $remarks,
                 ],
                 'columns' => [
@@ -205,7 +210,7 @@ class CommercialRecordRegistry
                     ['name' => 'bank_charge', 'label' => 'Bank Charge', 'type' => 'decimal'],
                     ['name' => 'prc_no', 'label' => 'PRC / ERC No', 'type' => 'text', 'max' => 100],
                     ['name' => 'prc_date', 'label' => 'PRC / ERC Date', 'type' => 'date'],
-                    $file('PRC / bank advice (PDF)'),
+                    $file('PRC / bank advice'),
                     $remarks,
                 ],
                 'columns' => [
@@ -262,11 +267,16 @@ class CommercialRecordRegistry
                 'decimal' => [$required, 'numeric', 'min:0', 'max:99999999999999'],
                 'select' => [$required, isset($field['exists']) ? Rule::exists($field['exists'], 'id') : Rule::in(array_keys(self::options($field, $record)))],
                 'pick' => ['nullable', 'array'],
-                'file' => array_merge(['nullable'], FileUploadService::RULES),
+                'file' => ['nullable', 'array', 'max:20'],
                 default => [$required, 'string', 'max:' . ($field['max'] ?? 255)],
             };
             if ($field['type'] === 'pick') {
                 $rules[$name . '.*'] = ['integer', Rule::in(array_keys(self::options($field, $record)))];
+            }
+            if ($field['type'] === 'file') {
+                $rules[$name . '.*'] = FileUploadService::RULES;
+                $rules['remove_' . $name] = ['nullable', 'array'];
+                $rules['remove_' . $name . '.*'] = ['string'];
             }
         }
 

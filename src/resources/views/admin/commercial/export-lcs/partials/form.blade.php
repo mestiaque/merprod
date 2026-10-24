@@ -25,11 +25,7 @@
     @include('merchandising-sfl::admin.partials.select', ['name' => 'issuing_bank_id', 'label' => "Issuing Bank (buyer's)", 'options' => $banks->whereIn('bank_type', ['buyer', 'other'])->mapWithKeys(fn ($b) => [$b->id => $b->label()]), 'value' => $lc->issuing_bank_id])
 
     @include('merchandising-sfl::admin.partials.select', ['name' => 'lien_bank_id', 'label' => 'Lien / Advising Bank (ours)', 'options' => $banks->where('bank_type', 'our')->mapWithKeys(fn ($b) => [$b->id => $b->label()]), 'value' => $lc->lien_bank_id])
-    <div class="col-md-3 mb-3">
-        <label class="form-label">Attachment (LC copy)</label>
-        <input type="file" name="attachment" class="form-control form-control-sm">
-        @if($lc->attachment)<small><a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($lc->attachment) }}" target="_blank">Current file</a> — upload to replace</small>@endif
-    </div>
+    @include('merchandising-sfl::admin.commercial.partials.attachments-input', ['name' => 'attachment', 'label' => 'LC copy / documents', 'value' => $lc->attachment, 'col' => 6])
     @include('merchandising-sfl::admin.partials.input', ['name' => 'remarks', 'label' => 'Remarks', 'col' => 6, 'value' => $lc->remarks])
     @if($lc->status === 'active')
         @include('merchandising-sfl::admin.partials.input', ['name' => 'amendment_remarks', 'label' => 'Amendment note (if value / dates change)', 'col' => 6, 'value' => null])

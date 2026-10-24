@@ -41,11 +41,7 @@
                                 </div>
                                 @break
                             @case('file')
-                                <div class="col-md-{{ $field['col'] ?? 3 }} mb-3">
-                                    <label class="form-label">{{ $field['label'] }}</label>
-                                    <input type="file" name="{{ $field['name'] }}" class="form-control form-control-sm">
-                                    @if($model->{$field['name']})<small><a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($model->{$field['name']}) }}" target="_blank">Current file</a> — upload to replace</small>@endif
-                                </div>
+                                @include('merchandising-sfl::admin.commercial.partials.attachments-input', ['name' => $field['name'], 'label' => $field['label'], 'value' => $model->{$field['name']}, 'col' => $field['col'] ?? 6])
                                 @break
                             @default
                                 @include('merchandising-sfl::admin.partials.input', [

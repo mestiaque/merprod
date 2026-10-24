@@ -140,7 +140,7 @@ class RecordController extends Controller
         return (int) request()->route('id');
     }
 
-    /** Validated data → the model's own columns: picks are synced separately, the file is stored (replacing the old one). */
+    /** Validated data → the model's own columns: picks are synced separately; files are added to / removed from the record's list. */
     private function attributes(array $definition, array $data, Request $request, ?string $currentFile): array
     {
         $attributes = [];
@@ -149,7 +149,7 @@ class RecordController extends Controller
                 continue;
             }
             $attributes[$field['name']] = $field['type'] === 'file'
-                ? $this->files->store($request->file($field['name']), 'commercial', $currentFile)
+                ? $this->files->storeList((array) $request->file($field['name'], []), 'commercial', $currentFile, (array) ($data['remove_' . $field['name']] ?? []))
                 : ($data[$field['name']] ?? null);
         }
 

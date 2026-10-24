@@ -57,7 +57,7 @@
                 <div class="col-md-3 mb-2"><strong>Issuing Bank:</strong> {{ $lc->issuingBank?->label() ?? '-' }}</div>
                 <div class="col-md-3 mb-2"><strong>Lien Bank:</strong> {{ $lc->lienBank?->label() ?? '-' }}@if($lc->lienBank?->account_no) <small class="text-muted">A/C {{ $lc->lienBank->account_no }}</small>@endif</div>
                 @if($lc->attachment && ! $printMode)
-                    <div class="col-md-3 mb-2"><strong>Attachment:</strong> <a href="{{ \ME\MerchandisingSfl\Services\FileUploadService::link($lc->attachment) }}" target="_blank">View</a></div>
+                    @include('merchandising-sfl::admin.commercial.partials.attachments-list', ['value' => $lc->attachment, 'label' => 'Documents'])
                 @endif
                 @if($lc->remarks)<div class="col-12 mb-2"><strong>Remarks:</strong> {!! nl2br(e($lc->remarks)) !!}</div>@endif
             </div>

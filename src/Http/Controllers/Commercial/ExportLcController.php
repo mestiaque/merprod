@@ -56,8 +56,8 @@ class ExportLcController extends Controller
 
     public function store(ExportLcRequest $request, DocumentNumberService $numbers): RedirectResponse
     {
-        $data = Arr::except($request->validated(), ['attachment', 'po_ids', 'amendment_remarks']);
-        $data['attachment'] = $this->files->store($request->file('attachment'), 'commercial');
+        $data = Arr::except($request->validated(), ['attachment', 'remove_attachment', 'po_ids', 'amendment_remarks']);
+        $data['attachment'] = $this->files->storeList((array) $request->file('attachment', []), 'commercial', null);
 
         $lc = DB::transaction(function () use ($data, $numbers, $request) {
             $lc = ExportLc::create($data + ['lc_no' => $numbers->next('export_lc', ExportLc::class, 'lc_no'), 'created_by' => auth()->id()]);
@@ -92,8 +92,8 @@ class ExportLcController extends Controller
     public function update(ExportLcRequest $request, ExportLc $exportLc): RedirectResponse
     {
         abort_unless($exportLc->isEditable(), 403);
-        $data = Arr::except($request->validated(), ['attachment', 'po_ids', 'amendment_remarks']);
-        $data['attachment'] = $this->files->store($request->file('attachment'), 'commercial', $exportLc->attachment);
+        $data = Arr::except($request->validated(), ['attachment', 'remove_attachment', 'po_ids', 'amendment_remarks']);
+        $data['attachment'] = $this->files->storeList((array) $request->file('attachment', []), 'commercial', $exportLc->attachment, (array) $request->input('remove_attachment', []));
 
         DB::transaction(function () use ($exportLc, $data, $request) {
             $before = $this->amendable($exportLc);
