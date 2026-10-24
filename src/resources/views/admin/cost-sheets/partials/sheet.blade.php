@@ -60,6 +60,7 @@
 
 <div class="cs-sheet">
     @if($letterhead ?? true)
+        @if(report_logo_url())<img src="{{ report_logo_url() }}" alt="Logo" style="display:block;height:50px;max-width:160px;object-fit:contain;margin:0 auto 4px;">@endif
         <div class="co-name">{{ general()->title ?? '' }}</div>
         <div class="co-title">OPEN COST SHEET</div>
     @endif

@@ -8,7 +8,7 @@
     $rows = $built['rows'];
     $companyName = (general()?->title ?? null) ?: config('merchandising-sfl.company.name');
     $companyAddress = (general()?->address_one ?? null) ?: config('sfl-inventory.company.address');
-    $companyLogo = general()?->logo ? general()->logoUrl() : null;
+    $companyLogo = report_logo_url();
     $statusClass = function ($v) {
         return match ((string) $v) {
             'Critical', 'Blocked', 'Loss', 'Failed', 'Fail', 'Open' => 'st-red',

@@ -6,8 +6,8 @@
 @include('merchandising-sfl::admin.partials.print-kit', ['page' => $page ?? 'A4 portrait'])
 <div class="print-header">
     <div class="company-info" style="justify-content:center; flex-direction:column; align-items:center; text-align:center;">
-        @if(general() && general()->logo())
-            <img src="{{ asset(general()->logo()) }}" alt="Logo" class="company-logo" style="margin-bottom:4px;">
+        @if(report_logo_url())
+            <img src="{{ report_logo_url() }}" alt="Logo" class="company-logo" style="margin-bottom:4px;">
         @endif
         <div class="company-name">{{ general()->title ?? '' }}</div>
         @if(general()?->address_one)
