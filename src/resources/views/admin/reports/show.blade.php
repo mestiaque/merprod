@@ -28,6 +28,10 @@
                     <div class="col-md-2 mb-2"><select name="style_id" class="form-control form-control-sm msfl-select2"><option value="">All Styles</option>
                         @foreach($styles as $st)<option value="{{ $st->id }}" @selected(request('style_id') == $st->id)>{{ $st->style_no }} — {{ $st->name }}</option>@endforeach</select></div>
                 @endif
+                @if(in_array('order_status', $filters, true))
+                    <div class="col-md-2 mb-2"><select name="order_status" class="form-control form-control-sm"><option value="">All Status</option>
+                        @foreach(\ME\MerchandisingSfl\Models\Order::STATUSES as $statusKey => $status)<option value="{{ $statusKey }}" @selected(request('order_status') === $statusKey)>{{ $status[0] }}</option>@endforeach</select></div>
+                @endif
                 @if(in_array('dates', $filters, true))
                     <div class="col-md-2 mb-2"><input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}" title="From"></div>
                     <div class="col-md-2 mb-2"><input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}" title="To"></div>

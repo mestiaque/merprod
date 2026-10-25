@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use ME\MerchandisingSfl\Models\CostSheet;
 use ME\MerchandisingSfl\Models\DailyTarget;
+use ME\MerchandisingSfl\Models\Order;
 use ME\MerchandisingSfl\Models\OrderPo;
 use ME\MerchandisingSfl\Models\Production\Cutting;
 use ME\MerchandisingSfl\Models\Production\Entry;
@@ -27,7 +28,7 @@ class Reports
 {
     /** key => [title, icon, filters used, description, permission (default msfl_report)] */
     public const LIST = [
-        'order-book' => ['Order Book', 'fa-book', ['buyer', 'dates'], 'Every PO line of running orders: qty, value, dates and how much is packed / in the Finish Store.'],
+        'order-book' => ['Order Book', 'fa-book', ['buyer', 'order_status', 'dates'], 'Every PO line of the orders (all statuses, or pick one): qty, value, dates and how much is packed / in the Finish Store.'],
         'daily-production' => ['Daily Production', 'fa-industry', ['buyer', 'dates', 'stage', 'line'], 'Stage entries day by day: input, pass, rework, reject.'],
         'line-output' => ['Line Wise Output (WIP)', 'fa-list-check', ['date', 'line'], 'One day of the sewing floor: per line and style today\'s input, target, output and what is left in the line (WIP); per line the FOB value and CM of target and output, today and month to date; factory cutting, poly (packing) and shipout against Daily Targets.'],
         'defects' => ['Defect Analysis', 'fa-triangle-exclamation', ['dates', 'stage', 'line'], 'Rejects and rework by stage, part, machine and defect.'],
@@ -60,10 +61,12 @@ class Reports
         };
     }
 
-    private function pos(Request $r)
+    /** PO lines of confirmed (running) orders, or of the given order statuses ([] = any status). */
+    private function pos(Request $r, array $statuses = ['confirmed'])
     {
         return OrderPo::query()->with(['order.buyer', 'style', 'color'])
-            ->whereHas('order', fn ($q) => $q->where('status', 'confirmed')->when($r->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $r->buyer_id)));
+            ->whereHas('order', fn ($q) => $q->when($statuses, fn ($q) => $q->whereIn('status', $statuses))
+                ->when($r->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $r->buyer_id)));
     }
 
     /** po_id => [stage => pass] for the given POs. */
@@ -90,23 +93,25 @@ class Reports
 
     private function orderBook(Request $r, $from, $to): array
     {
-        $pos = $this->pos($r)->when($from, fn ($q) => $q->where('shipment_date', '>=', $from))->when($to, fn ($q) => $q->where('shipment_date', '<=', $to))
+        // All order statuses unless one is picked (the old report showed confirmed orders only).
+        $status = array_key_exists((string) $r->order_status, Order::STATUSES) ? [$r->order_status] : [];
+        $pos = $this->pos($r, $status)->when($from, fn ($q) => $q->where('shipment_date', '>=', $from))->when($to, fn ($q) => $q->where('shipment_date', '<=', $to))
             ->orderBy('shipment_date')->get();
         $pass = $this->passByStage($pos->pluck('id'));
         $fg = $this->fgReceived($pos->pluck('id'));
 
         $rows = $pos->map(fn ($po) => [
-            $po->order->order_no . ' · ' . $po->po_no, $po->order->buyer->name ?? '', $po->style->style_no ?? '', $po->color->name ?? '',
+            $po->order->order_no . ' · ' . $po->po_no, Order::STATUSES[$po->order->status][0] ?? ucfirst((string) $po->order->status), $po->order->buyer->name ?? '', $po->style->style_no ?? '', $po->color->name ?? '',
             $po->po_qty, number_format((float) $po->unit_price, 2), (float) $po->total_value,
             $po->pcd_date?->format('d-M-y') ?? '', $po->shipment_date?->format('d-M-y') ?? '',
             $packed = $pass[$po->id]['packing'] ?? 0, $fg[$po->id] ?? 0, max(0, $po->po_qty - $packed),
         ]);
 
         return [
-            'headers' => ['Order · PO', 'Buyer', 'Style', 'Color', 'Qty', 'FOB', 'Value', 'PCD', 'Shipment', 'Packed', 'Finish Store', 'Balance'],
-            'align' => [4 => 'right', 5 => 'right', 6 => 'right', 9 => 'right', 10 => 'right', 11 => 'right'],
+            'headers' => ['Order · PO', 'Status', 'Buyer', 'Style', 'Color', 'Qty', 'FOB', 'Value', 'PCD', 'Shipment', 'Packed', 'Finish Store', 'Balance'],
+            'align' => [5 => 'right', 6 => 'right', 7 => 'right', 10 => 'right', 11 => 'right', 12 => 'right'],
             'rows' => $rows->all(),
-            'totals' => [4 => $rows->sum(4), 6 => $rows->sum(6), 9 => $rows->sum(9), 10 => $rows->sum(10), 11 => $rows->sum(11)],
+            'totals' => [5 => $rows->sum(5), 7 => $rows->sum(7), 10 => $rows->sum(10), 11 => $rows->sum(11), 12 => $rows->sum(12)],
         ];
     }
 
