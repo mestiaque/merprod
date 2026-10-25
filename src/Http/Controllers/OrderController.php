@@ -36,7 +36,13 @@ class OrderController extends Controller
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q
                 ->where('order_no', 'like', '%' . $request->search . '%')
                 ->orWhere('buyer_order_ref', 'like', '%' . $request->search . '%')
-                ->orWhereHas('pos', fn ($q) => $q->where('po_no', 'like', '%' . $request->search . '%'))))
+                ->orWhereHas('pos', fn ($q) => $q->where('po_no', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('style', fn ($q) => $q->where('style_no', 'like', '%' . $request->search . '%')
+                        ->orWhere('name', 'like', '%' . $request->search . '%')))))
+            ->when($request->filled('style'), fn ($q) => $q->whereHas('pos.style', fn ($q) => $q
+                ->where('style_no', 'like', '%' . trim($request->style) . '%')
+                ->orWhere('name', 'like', '%' . trim($request->style) . '%')))
+            ->when($request->filled('po_no'), fn ($q) => $q->whereHas('pos', fn ($q) => $q->where('po_no', 'like', '%' . trim($request->po_no) . '%')))
             ->when($request->filled('buyer_id'), fn ($q) => $q->where('buyer_id', $request->buyer_id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('is_quick_entry'), fn ($q) => $q->where('is_quick_entry', $request->boolean('is_quick_entry')))

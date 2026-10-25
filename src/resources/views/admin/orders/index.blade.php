@@ -21,7 +21,13 @@
         <div class="card-body">
             <form method="GET" class="row mb-3 align-items-end">
                 <div class="col-md-3 mb-2">
-                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search Order / Buyer Ref / PO No" value="{{ request('search') }}">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search Order / Buyer Ref / Style / PO No" value="{{ request('search') }}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="style" class="form-control form-control-sm" placeholder="Style No / Name" value="{{ request('style') }}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <input type="text" name="po_no" class="form-control form-control-sm" placeholder="PO No" value="{{ request('po_no') }}">
                 </div>
                 <div class="col-md-3 mb-2">
                     <select name="buyer_id" class="form-control form-control-sm msfl-select2">
