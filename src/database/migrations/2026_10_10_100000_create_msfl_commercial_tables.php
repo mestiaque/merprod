@@ -14,26 +14,34 @@ return new class extends Migration
     {
         Schema::create('msfl_com_export_lcs', function (Blueprint $table) {
             $table->id();
-            $table->string('lc_no', 30)->unique();
+            $table->string('lc_no', 30);
             $table->string('type', 5)->default('lc');
             $table->string('buyer_lc_no', 100);
-            $table->foreignId('buyer_id')->constrained('msfl_buyers');
-            $table->foreignId('currency_id')->nullable()->constrained('msfl_currencies')->nullOnDelete();
+            $table->unsignedBigInteger('buyer_id');
+            $table->unsignedBigInteger('currency_id')->nullable();
             $table->date('lc_date');
             $table->date('last_shipment_date')->nullable();
             $table->date('expiry_date')->nullable();
             $table->decimal('lc_value', 16, 2);
-            $table->decimal('tolerance_percent', 5, 2)->default(0);
-            $table->string('payment_term', 20)->default('at_sight');
-            $table->unsignedSmallInteger('usance_days')->nullable();
-            $table->string('issuing_bank')->nullable();
-            $table->string('lien_bank')->nullable();
-            $table->string('status', 20)->default('draft')->index();
+            $table->decimal('tolerance_percent', 5, 2)->default(0.00);
+            $table->unsignedBigInteger('payment_term_id')->nullable();
+            $table->unsignedBigInteger('issuing_bank_id')->nullable();
+            $table->unsignedBigInteger('lien_bank_id')->nullable();
+            $table->string('status', 20)->default('draft');
             $table->text('remarks')->nullable();
-            $table->string('attachment')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->text('attachment')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->unique('lc_no');
+            $table->index('status');
+
+            $table->foreign('buyer_id')->references('id')->on('msfl_buyers');
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('currency_id')->references('id')->on('msfl_currencies')->nullOnDelete();
+            $table->foreign('issuing_bank_id')->references('id')->on('msfl_com_banks')->nullOnDelete();
+            $table->foreign('lien_bank_id')->references('id')->on('msfl_com_banks')->nullOnDelete();
+            $table->foreign('payment_term_id')->references('id')->on('msfl_com_payment_terms')->nullOnDelete();
         });
 
         Schema::create('msfl_com_export_lc_pos', function (Blueprint $table) {

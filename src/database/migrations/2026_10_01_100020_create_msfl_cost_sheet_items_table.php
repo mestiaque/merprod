@@ -10,16 +10,21 @@ return new class extends Migration
     {
         Schema::create('msfl_cost_sheet_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cost_sheet_id')->constrained('msfl_cost_sheets')->cascadeOnDelete();
-            $table->string('group', 20); // fabric, trims, process
-            $table->foreignId('item_id')->nullable()->constrained('msfl_items')->nullOnDelete();
+            $table->unsignedBigInteger('cost_sheet_id');
+            $table->string('group', 20);
+            $table->unsignedBigInteger('item_id')->nullable();
             $table->string('description')->nullable();
-            $table->foreignId('uom_id')->nullable()->constrained('msfl_uoms')->nullOnDelete();
-            $table->decimal('consumption', 14, 4)->default(0); // per dozen
-            $table->decimal('rate', 14, 4)->default(0);
-            $table->decimal('amount', 15, 4)->default(0); // consumption x rate, per dozen
+            $table->string('supplier_name', 150)->nullable();
+            $table->unsignedBigInteger('uom_id')->nullable();
+            $table->decimal('consumption', 14, 4)->default(0.0000);
+            $table->decimal('rate', 14, 4)->default(0.0000);
+            $table->decimal('amount', 15, 4)->default(0.0000);
             $table->string('remarks')->nullable();
             $table->timestamps();
+            $table->index('uom_id', 'msfl_cost_sheet_items_uom_id_foreign');
+
+            $table->foreign('cost_sheet_id')->references('id')->on('msfl_cost_sheets')->cascadeOnDelete();
+            $table->foreign('item_id')->references('id')->on('msfl_items')->nullOnDelete();
         });
     }
 

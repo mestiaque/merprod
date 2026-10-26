@@ -15,10 +15,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('msfl_prod_entries', function (Blueprint $table) {
-            $table->unsignedTinyInteger('hour_slot')->nullable()->after('line_id');
-        });
-
         Schema::create('msfl_prod_sewing_plans', function (Blueprint $table) {
             $table->id();
             $table->date('plan_date');
@@ -39,8 +35,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('msfl_prod_sewing_plans');
-        Schema::table('msfl_prod_entries', function (Blueprint $table) {
-            $table->dropColumn('hour_slot');
-        });
     }
 };

@@ -17,12 +17,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Optional stages, per PO (embroidery / washing may or may not apply).
-        Schema::table('msfl_order_pos', function (Blueprint $table) {
-            $table->boolean('needs_embroidery')->default(false)->after('ship_mode_id');
-            $table->boolean('needs_washing')->default(false)->after('needs_embroidery');
-        });
-
         Schema::create('msfl_prod_fabric_requisitions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_po_id')->constrained('msfl_order_pos')->restrictOnDelete();
@@ -56,9 +50,13 @@ return new class extends Migration
 
         Schema::create('msfl_prod_cutting_parts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('cutting_id')->constrained('msfl_prod_cuttings')->cascadeOnDelete();
+            $table->unsignedBigInteger('cutting_id');
             $table->string('part_name', 100);
+            $table->unsignedBigInteger('size_id')->nullable();
             $table->unsignedInteger('qty');
+            $table->index('size_id');
+
+            $table->foreign('cutting_id')->references('id')->on('msfl_prod_cuttings')->cascadeOnDelete();
         });
 
         Schema::create('msfl_prod_bundles', function (Blueprint $table) {
@@ -72,29 +70,41 @@ return new class extends Migration
         Schema::create('msfl_prod_entries', function (Blueprint $table) {
             $table->id();
             $table->string('stage', 20);
+            $table->string('kind', 12)->default('production');
             $table->date('entry_date');
-            $table->foreignId('order_po_id')->constrained('msfl_order_pos')->restrictOnDelete();
-            $table->unsignedBigInteger('size_id')->nullable()->index();
-            $table->foreignId('line_id')->nullable()->constrained('msfl_lines')->nullOnDelete();
+            $table->unsignedBigInteger('order_po_id');
+            $table->unsignedBigInteger('size_id')->nullable();
+            $table->string('part_name', 100)->nullable();
+            $table->unsignedBigInteger('line_id')->nullable();
+            $table->unsignedTinyInteger('hour_slot')->nullable();
             $table->unsignedInteger('input_qty')->default(0);
             $table->unsignedInteger('pass_qty')->default(0);
             $table->unsignedInteger('rework_qty')->default(0);
             $table->unsignedInteger('reject_qty')->default(0);
             $table->string('remarks')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->index(['order_po_id', 'stage']);
+            $table->index('size_id');
+
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('line_id')->references('id')->on('msfl_lines')->nullOnDelete();
+            $table->foreign('order_po_id')->references('id')->on('msfl_order_pos')->restrictOnDelete();
         });
 
         Schema::create('msfl_prod_entry_defects', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('entry_id')->constrained('msfl_prod_entries')->cascadeOnDelete();
-            $table->string('type', 10); // reject | rework
+            $table->unsignedBigInteger('entry_id');
+            $table->string('type', 10);
+            $table->string('severity', 10)->nullable();
             $table->string('part_name', 100)->nullable();
-            $table->unsignedBigInteger('machine_id')->nullable()->index(); // inv_machines
+            $table->unsignedBigInteger('machine_id')->nullable();
             $table->string('defect', 150)->nullable();
             $table->unsignedInteger('qty');
+            $table->index('machine_id');
+
+            $table->foreign('entry_id')->references('id')->on('msfl_prod_entries')->cascadeOnDelete();
         });
     }
 
@@ -107,9 +117,5 @@ return new class extends Migration
         Schema::dropIfExists('msfl_prod_cutting_sizes');
         Schema::dropIfExists('msfl_prod_cuttings');
         Schema::dropIfExists('msfl_prod_fabric_requisitions');
-
-        Schema::table('msfl_order_pos', function (Blueprint $table) {
-            $table->dropColumn(['needs_embroidery', 'needs_washing']);
-        });
     }
 };

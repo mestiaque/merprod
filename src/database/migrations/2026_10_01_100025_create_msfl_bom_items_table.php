@@ -10,20 +10,26 @@ return new class extends Migration
     {
         Schema::create('msfl_bom_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('bom_id')->constrained('msfl_boms')->cascadeOnDelete();
-            $table->foreignId('item_id')->constrained('msfl_items')->restrictOnDelete();
-            $table->string('item_type', 20); // snapshot of msfl_items.type
-            // Blank color / size = the line applies to every color / size of the order.
-            $table->foreignId('color_id')->nullable()->constrained('msfl_colors')->nullOnDelete();
-            $table->foreignId('size_id')->nullable()->constrained('msfl_sizes')->nullOnDelete();
-            $table->string('placement')->nullable(); // garment part / where it is used
-            $table->decimal('consumption', 14, 4); // per piece, in uom
-            $table->foreignId('uom_id')->nullable()->constrained('msfl_uoms')->nullOnDelete();
-            $table->decimal('wastage_percent', 5, 2)->default(0);
+            $table->unsignedBigInteger('bom_id');
+            $table->unsignedBigInteger('item_id');
+            $table->string('item_type', 20);
+            $table->unsignedBigInteger('color_id')->nullable();
+            $table->unsignedBigInteger('size_id')->nullable();
+            $table->string('placement')->nullable();
+            $table->decimal('consumption', 14, 4);
+            $table->unsignedBigInteger('uom_id')->nullable();
+            $table->decimal('wastage_percent', 5, 2)->default(0.00);
             $table->decimal('rate', 12, 4)->nullable();
-            $table->foreignId('supplier_id')->nullable()->constrained('msfl_suppliers')->nullOnDelete();
+            $table->unsignedBigInteger('supplier_id')->nullable();
             $table->string('remarks')->nullable();
             $table->timestamps();
+            $table->index('color_id', 'msfl_bom_items_color_id_foreign');
+            $table->index('size_id', 'msfl_bom_items_size_id_foreign');
+            $table->index('supplier_id', 'msfl_bom_items_supplier_id_foreign');
+            $table->index('uom_id', 'msfl_bom_items_uom_id_foreign');
+
+            $table->foreign('bom_id')->references('id')->on('msfl_boms')->cascadeOnDelete();
+            $table->foreign('item_id')->references('id')->on('msfl_items')->restrictOnDelete();
         });
     }
 

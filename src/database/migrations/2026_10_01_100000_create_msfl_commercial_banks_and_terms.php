@@ -37,51 +37,31 @@ return new class extends Migration
 
         Schema::create('msfl_com_payment_terms', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 50)->unique();
+            $table->string('code', 50);
             $table->string('name');
             $table->string('term_type', 20);
             $table->unsignedSmallInteger('days')->default(0);
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->unique('code');
+
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
         });
 
-        // The standard terms, so buyers' / orders' typed terms can be matched by the next migration.
+        // The standard payment terms.
         foreach ([
             ['LC-SIGHT', 'LC at Sight', 'sight', 0], ['LC-U30', 'LC Usance 30 days', 'usance', 30], ['LC-U60', 'LC Usance 60 days', 'usance', 60],
             ['LC-U90', 'LC Usance 90 days', 'usance', 90], ['LC-U120', 'LC Usance 120 days', 'usance', 120], ['TT-ADV', 'TT in Advance', 'tt_advance', 0],
             ['TT-30', 'TT 30 days after shipment', 'tt', 30], ['DP', 'DP at Sight', 'dp', 0], ['DA-60', 'DA 60 days', 'da', 60],
         ] as [$code, $name, $type, $days]) {
-            DB::table('msfl_com_payment_terms')->insertOrIgnore(['code' => $code, 'name' => $name, 'term_type' => $type, 'days' => $days, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('msfl_com_payment_terms')->insert(['code' => $code, 'name' => $name, 'term_type' => $type, 'days' => $days, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
         }
-
-        if (DB::table('msfl_com_export_lcs')->exists()) {
-            throw new RuntimeException('Export LCs exist — move their bank / term text to the new masters by hand before this migration.');
-        }
-        Schema::table('msfl_com_export_lcs', function (Blueprint $table) {
-            $table->dropColumn(['payment_term', 'usance_days', 'issuing_bank', 'lien_bank']);
-        });
-        Schema::table('msfl_com_export_lcs', function (Blueprint $table) {
-            $table->foreignId('payment_term_id')->nullable()->after('tolerance_percent')->constrained('msfl_com_payment_terms')->nullOnDelete();
-            $table->foreignId('issuing_bank_id')->nullable()->after('payment_term_id')->constrained('msfl_com_banks')->nullOnDelete();
-            $table->foreignId('lien_bank_id')->nullable()->after('issuing_bank_id')->constrained('msfl_com_banks')->nullOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('msfl_com_export_lcs', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('lien_bank_id');
-            $table->dropConstrainedForeignId('issuing_bank_id');
-            $table->dropConstrainedForeignId('payment_term_id');
-        });
-        Schema::table('msfl_com_export_lcs', function (Blueprint $table) {
-            $table->string('payment_term', 20)->default('at_sight');
-            $table->unsignedSmallInteger('usance_days')->nullable();
-            $table->string('issuing_bank')->nullable();
-            $table->string('lien_bank')->nullable();
-        });
         Schema::dropIfExists('msfl_com_payment_terms');
         Schema::dropIfExists('msfl_com_banks');
     }

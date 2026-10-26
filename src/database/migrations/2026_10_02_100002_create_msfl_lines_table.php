@@ -10,17 +10,18 @@ return new class extends Migration
     {
         Schema::create('msfl_lines', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 50)->unique();
-            $table->string('name');
-            $table->string('floor', 100)->nullable();
+            $table->unsignedBigInteger('hr_floor_line_id');
             $table->unsignedInteger('operators')->default(0);
             $table->unsignedInteger('helpers')->default(0);
-            $table->unsignedInteger('working_minutes')->default(600); // per day, incl. OT
-            $table->decimal('efficiency_percent', 5, 2)->default(60);
+            $table->unsignedInteger('working_minutes')->default(600);
+            $table->decimal('efficiency_percent', 5, 2)->default(60.00);
             $table->boolean('is_active')->default(true);
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->unique('hr_floor_line_id');
+
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
         });
     }
 

@@ -10,20 +10,29 @@ return new class extends Migration
     {
         Schema::create('msfl_order_pos', function (Blueprint $table) {
             $table->id();
-            // One row = one PO + one style + one color.
-            $table->foreignId('order_id')->constrained('msfl_orders')->cascadeOnDelete();
-            $table->foreignId('style_id')->constrained('msfl_styles')->restrictOnDelete();
-            $table->foreignId('color_id')->constrained('msfl_colors')->restrictOnDelete();
+            $table->unsignedBigInteger('order_id');
+            $table->unsignedBigInteger('style_id');
+            $table->unsignedBigInteger('color_id');
             $table->string('po_no', 100);
-            $table->unsignedInteger('po_qty')->default(0); // cached sum of size qty
-            $table->decimal('unit_price', 12, 4)->default(0);
-            $table->decimal('total_value', 15, 4)->default(0);
+            $table->unsignedInteger('po_qty')->default(0);
+            $table->decimal('unit_price', 12, 4)->default(0.0000);
+            $table->decimal('total_value', 15, 4)->default(0.0000);
             $table->date('pcd_date')->nullable();
             $table->date('shipment_date')->nullable();
-            $table->foreignId('ship_mode_id')->nullable()->constrained('msfl_ship_modes')->nullOnDelete();
+            $table->unsignedBigInteger('ship_mode_id')->nullable();
+            $table->boolean('needs_embroidery')->default(false);
+            $table->boolean('needs_washing')->default(false);
+            $table->boolean('applique_ih')->default(false);
+            $table->boolean('studs_stones_ih')->default(false);
+            $table->boolean('heat_seal_ih')->default(false);
             $table->string('remarks')->nullable();
-            $table->unique(['order_id', 'po_no', 'style_id', 'color_id'], 'msfl_order_pos_unique');
             $table->timestamps();
+            $table->index('color_id', 'msfl_order_pos_color_id_foreign');
+            $table->unique(['order_id', 'po_no', 'style_id', 'color_id'], 'msfl_order_pos_unique');
+
+            $table->foreign('order_id')->references('id')->on('msfl_orders')->cascadeOnDelete();
+            $table->foreign('ship_mode_id')->references('id')->on('msfl_ship_modes')->nullOnDelete();
+            $table->foreign('style_id')->references('id')->on('msfl_styles')->restrictOnDelete();
         });
     }
 

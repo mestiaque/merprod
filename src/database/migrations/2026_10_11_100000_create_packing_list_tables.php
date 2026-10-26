@@ -18,20 +18,26 @@ return new class extends Migration
     {
         Schema::create('msfl_prod_final_packing_lists', function (Blueprint $table) {
             $table->id();
-            $table->string('fpl_no', 30)->unique();
-            $table->foreignId('order_id')->constrained('msfl_orders');
+            $table->string('fpl_no', 30);
+            $table->unsignedBigInteger('order_id');
             $table->string('po_no', 100);
             $table->date('pack_date');
-            $table->string('status', 20)->default('draft')->index();
+            $table->string('invoice_no', 100)->nullable();
+            $table->string('status', 20)->default('draft');
             $table->date('buyer_approved_on')->nullable();
             $table->string('buyer_approved_by')->nullable();
             $table->string('approval_file')->nullable();
             $table->text('remarks')->nullable();
             $table->json('snapshot')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->unique('fpl_no');
             $table->index(['order_id', 'po_no']);
+            $table->index('status');
+
+            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('order_id')->references('id')->on('msfl_orders');
         });
 
         Schema::create('msfl_prod_final_packing_list_notes', function (Blueprint $table) {

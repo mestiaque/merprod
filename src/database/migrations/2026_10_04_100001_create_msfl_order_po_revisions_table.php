@@ -24,19 +24,10 @@ return new class extends Migration
             $table->timestamp('changed_at')->useCurrent();
             $table->index(['order_po_id', 'field']);
         });
-
-        Schema::table('msfl_order_pos', function (Blueprint $table) {
-            $table->boolean('applique_ih')->default(false)->after('needs_washing');
-            $table->boolean('studs_stones_ih')->default(false)->after('applique_ih');
-            $table->boolean('heat_seal_ih')->default(false)->after('studs_stones_ih');
-        });
     }
 
     public function down(): void
     {
-        Schema::table('msfl_order_pos', function (Blueprint $table) {
-            $table->dropColumn(['applique_ih', 'studs_stones_ih', 'heat_seal_ih']);
-        });
         Schema::dropIfExists('msfl_order_po_revisions');
     }
 };
