@@ -103,8 +103,9 @@ class FabricRequisitionController extends Controller
             ->whereNull('g.deleted_at')->where('g.status', 'posted')->where('g.source_type', 'buyer_supplied')->whereIn('g.msfl_style_id', $styleIds)
             ->groupBy('g.msfl_style_id', 'gi.item_id')->selectRaw('g.msfl_style_id s, gi.item_id i, SUM(gi.received_qty) q')->get();
         $issued = \Illuminate\Support\Facades\DB::table('inv_issue_items as ii')->join('inv_issues as x', 'x.id', '=', 'ii.issue_id')
+            ->leftJoinSub(\ME\SflInventory\Models\InvIssueReturnItem::totalsByIssueItem(), 'rtn', 'rtn.issue_item_id', '=', 'ii.id')
             ->whereNull('x.deleted_at')->whereIn('x.msfl_style_id', $styleIds)
-            ->groupBy('x.msfl_style_id', 'ii.item_id')->selectRaw('x.msfl_style_id s, ii.item_id i, SUM(ii.issued_qty) q')->get()
+            ->groupBy('x.msfl_style_id', 'ii.item_id')->selectRaw('x.msfl_style_id s, ii.item_id i, SUM(ii.issued_qty - COALESCE(rtn.qty, 0)) q')->get()
             ->keyBy(fn ($r) => $r->s . '|' . $r->i);
         $byStyle = $received->groupBy('s')->map(fn ($rows) => $rows->map(function ($r) use ($issued) {
             $out = (float) ($issued[$r->s . '|' . $r->i]->q ?? 0);

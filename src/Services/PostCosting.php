@@ -42,14 +42,15 @@ class PostCosting
         $dz = fn ($perDozen, $pcs) => round((float) $perDozen * $pcs / 12, 2);
         $rate = max(0.0001, (float) ($cs?->currency->exchange_rate ?? 1)); // currency → BDT
 
-        // Material actually issued from Inventory against this PO.
+        // Material actually issued from Inventory against this PO, less what was returned to store.
         $issued = collect();
-        if (class_exists(\ME\SflInventory\Models\InvIssue::class)) {
+        if (class_exists(\ME\SflInventory\Models\InvIssueReturnItem::class)) {
             $issued = DB::table('inv_issues as i')->join('inv_issue_items as ii', 'ii.issue_id', '=', 'i.id')
+                ->leftJoinSub(\ME\SflInventory\Models\InvIssueReturnItem::totalsByIssueItem(), 'rtn', 'rtn.issue_item_id', '=', 'ii.id')
                 ->join('inv_items as it', 'it.id', '=', 'ii.item_id')->leftJoin('inv_units as u', 'u.id', '=', 'it.unit_id')
                 ->where('i.msfl_order_po_id', $po->id)->where('i.status', 'approved')->whereNull('i.deleted_at')
                 ->groupBy('ii.item_id', 'it.item_name', 'u.short_name')
-                ->selectRaw('it.item_name, u.short_name unit, SUM(ii.issued_qty) qty, SUM(ii.amount) amount')->get();
+                ->selectRaw('it.item_name, u.short_name unit, SUM(ii.issued_qty - COALESCE(rtn.qty, 0)) qty, SUM(ii.amount - COALESCE(rtn.amount, 0)) amount')->get();
         }
         $materialBdt = (float) $issued->sum('amount');
         $hasRates = $materialBdt > 0;
