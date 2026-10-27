@@ -44,7 +44,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
     <h6 class="mb-0">Carton Packing List <small class="text-muted">— one row = cartons From…To of one PO packed alike: pcs per size in <strong>each</strong> carton, weight per carton (kg), carton size (cm)</small></h6>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="ctn"><i class="fa-solid fa-plus"></i> Add Row</button>
+    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="ctn" title="Add Row"><i class="fa-solid fa-plus"></i> Add Row</button>
 </div>
 @error('cartons')<div class="alert alert-danger py-1 small">{{ $message }}</div>@enderror
 <div class="table-responsive">

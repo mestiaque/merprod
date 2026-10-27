@@ -13,8 +13,8 @@
                     <p class="mb-0">Are you sure you want to delete this {{ $label }}? This action cannot be undone.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-delete" title="Delete"><i class="fa-solid fa-trash"></i> Delete</button>
                 </div>
             </form>
         </div>

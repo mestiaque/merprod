@@ -21,7 +21,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $definition['title'] }}</h4>
             @can($perm . '.add')
-                <button type="button" class="btn btn-primary btn-sm btn-icon" data-toggle="modal" data-target="#create{{ $modalKey }}Modal" title="Add {{ $definition['singular'] }}"><i class="fa-solid fa-plus"></i></button>
+                <button type="button" class="btn btn-sm ui-act ui-act-create" data-toggle="modal" data-target="#create{{ $modalKey }}Modal" title="Add {{ $definition['singular'] }}"><i class="fa-solid fa-plus"></i> Add</button>
             @endcan
         </div>
         <div class="card-body">
@@ -50,8 +50,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.masters.index', $slug) }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.masters.index', $slug) }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -82,10 +82,10 @@
                                 </td>
                                 <td class="text-right">
                                     @can($perm . '.edit')
-                                        <button type="button" class="btn-custom yellow" data-toggle="modal" data-target="#edit{{ $modalKey }}Modal{{ $record->id }}"><i class="fa-solid fa-pen"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-edit" data-toggle="modal" data-target="#edit{{ $modalKey }}Modal{{ $record->id }}" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
                                     @endcan
                                     @can($perm . '.delete')
-                                        <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#delete{{ $modalKey }}Modal" data-action="{{ route('msfl.masters.destroy', [$slug, $record->id]) }}"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#delete{{ $modalKey }}Modal" data-action="{{ route('msfl.masters.destroy', [$slug, $record->id]) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     @endcan
                                 </td>
                             </tr>
@@ -104,8 +104,8 @@
                                                     @include('merchandising-sfl::admin.masters.partials.fields', ['record' => $record])
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                                    <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                                                    <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Update"><i class="fa-solid fa-floppy-disk"></i> Update</button>
                                                 </div>
                                             </form>
                                         </div>
@@ -138,8 +138,8 @@
                         @include('merchandising-sfl::admin.masters.partials.fields', ['record' => null])
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                     </div>
                 </form>
             </div>

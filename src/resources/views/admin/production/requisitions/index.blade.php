@@ -16,12 +16,12 @@
             <h4 class="mb-0">Fabric Requisition</h4>
             <div class="d-flex flex-wrap gap-1">
             @can('msfl_report.view')
-                <a href="{{ route('msfl.reports.show', 'requisition-details') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-list"></i> Buyer / Style Details</a>
-                <a href="{{ route('msfl.reports.show', 'requisition-summary') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-boxes-stacked"></i> Summary</a>
+                <a href="{{ route('msfl.reports.show', 'requisition-details') }}" class="btn btn-sm ui-act ui-act-view" title="Buyer / Style Details"><i class="fa-solid fa-eye"></i> Buyer / Style Details</a>
+                <a href="{{ route('msfl.reports.show', 'requisition-summary') }}" class="btn btn-sm ui-act ui-act-view" title="Summary"><i class="fa-solid fa-eye"></i> Summary</a>
             @endcan
             @if($available)
                 @can('msfl_prod_requisition.add')
-                    <a href="{{ route('msfl.production.requisitions.create') }}" class="btn btn-primary btn-sm btn-icon" title="New Requisition"><i class="fa-solid fa-plus"></i></a>
+                    <a href="{{ route('msfl.production.requisitions.create') }}" class="btn btn-sm ui-act ui-act-create" title="New Requisition"><i class="fa-solid fa-plus"></i> New Requisition</a>
                 @endcan
             @endif
             </div>
@@ -31,8 +31,8 @@
             <form method="GET" class="row mb-3 align-items-end">
                 @include('merchandising-sfl::admin.production.partials.po-select', ['filter' => true, 'col' => 6])
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -56,7 +56,7 @@
                                     @endforeach
                                 </td>
                                 <td>{{ $link->creator->name ?? '-' }}</td>
-                                <td class="text-right">@if($req)<a href="{{ route('msfl.production.requisitions.show', $link) }}" class="btn-custom success" title="Details"><i class="fa-solid fa-eye"></i></a>@endif</td>
+                                <td class="text-right">@if($req)<a href="{{ route('msfl.production.requisitions.show', $link) }}" class="btn-custom ui-act ui-act-view" title="Details"><i class="fa-solid fa-eye"></i></a>@endif</td>
                             </tr>
                         @empty
                             <tr><td colspan="9" class="text-center text-muted">No requisition yet.</td></tr>

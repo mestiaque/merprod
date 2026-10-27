@@ -50,9 +50,9 @@
                     <input type="text" name="remarks" class="form-control form-control-sm" placeholder="Remarks" value="{{ $mine ? old('remarks') : '' }}">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                    <button type="submit" name="add_another" value="1" class="btn btn-outline-success btn-sm">Save &amp; Next Hour</button>
-                    <button type="submit" class="btn btn-success btn-sm">Save</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                    <button type="submit" name="add_another" value="1" class="btn btn-sm ui-act ui-act-save" title="Save & Next Hour"><i class="fa-solid fa-floppy-disk"></i> Save &amp; Next Hour</button>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                 </div>
             </form>
         </div>

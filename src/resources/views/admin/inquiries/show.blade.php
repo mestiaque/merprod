@@ -16,16 +16,16 @@
             <h4 class="mb-0">Inquiry — {{ $inquiry->inquiry_no }}</h4>
             <div>
                 @can('msfl_style.add')
-                    <a href="{{ route('msfl.styles.create', ['inquiry_id' => $inquiry->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-vest-patches"></i> Create Tech Pack</a>
+                    <a href="{{ route('msfl.styles.create', ['inquiry_id' => $inquiry->id]) }}" class="btn btn-sm ui-act ui-act-create" title="Create Tech Pack"><i class="fa-solid fa-plus"></i> Create Tech Pack</a>
                 @endcan
                 @can('msfl_cost_sheet.add')
-                    <a href="{{ route('msfl.cost-sheets.create', ['inquiry_id' => $inquiry->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-calculator"></i> Create Cost Sheet</a>
+                    <a href="{{ route('msfl.cost-sheets.create', ['inquiry_id' => $inquiry->id]) }}" class="btn btn-sm ui-act ui-act-create" title="Create Cost Sheet"><i class="fa-solid fa-plus"></i> Create Cost Sheet</a>
                 @endcan
                 @can('msfl_inquiry.edit')
-                    <a href="{{ route('msfl.inquiries.edit', $inquiry) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                    <a href="{{ route('msfl.inquiries.edit', $inquiry) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                 @endcan
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.inquiries.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+                <a href="{{ route('msfl.inquiries.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">

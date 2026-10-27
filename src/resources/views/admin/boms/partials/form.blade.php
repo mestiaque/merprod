@@ -31,8 +31,8 @@
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h6 class="mb-0">Items <small class="text-muted">(consumption per piece; blank color / size = applies to all)</small></h6>
         <div>
-            <button type="button" class="btn btn-sm btn-outline-success" id="bomFromCostSheet" style="display:none"><i class="fa-solid fa-file-import"></i> Fill from Cost Sheet <span></span></button>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="bom"><i class="fa-solid fa-plus"></i> Add Item</button>
+            <button type="button" class="btn btn-sm ui-act ui-act-import" id="bomFromCostSheet" style="display:none" title="Fill from Cost Sheet"><i class="fa-solid fa-file-import"></i> Fill from Cost Sheet <span></span></button>
+            <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="bom" title="Add Item"><i class="fa-solid fa-plus"></i> Add Item</button>
         </div>
     </div>
     <div class="table-responsive">

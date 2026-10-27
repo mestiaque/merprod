@@ -46,7 +46,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-2">
     <h6 class="mb-0">Operations <small class="text-muted">— Section blank = same as the row above · W-Place blank = auto · untick “Do” if not done on this style</small></h6>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="bop"><i class="fa-solid fa-plus"></i> Add Operation</button>
+    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="bop" title="Add Operation"><i class="fa-solid fa-plus"></i> Add Operation</button>
 </div>
 <div class="table-responsive">
     <table class="table table-bordered table-sm align-middle">

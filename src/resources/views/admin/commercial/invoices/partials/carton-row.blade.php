@@ -21,7 +21,7 @@
         <td style="width:66px"><input type="number" min="0" step="any" name="{{ $n }}[{{ $f }}]" class="form-control form-control-sm text-right px-1" value="{{ $row[$f] ?? '' }}" placeholder="{{ $ph }}" data-ctn-{{ $f }}></td>
     @endforeach
     <td class="text-nowrap">
-        <button type="button" class="btn-custom success" data-ctn-copy title="Copy (next cartons)"><i class="fa-solid fa-copy"></i></button>
-        <button type="button" class="btn-custom danger" data-line-items-remove title="Remove"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-copy" data-ctn-copy title="Copy (next cartons)"><i class="fa-solid fa-copy"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Remove"><i class="fa-solid fa-trash"></i></button>
     </td>
 </tr>

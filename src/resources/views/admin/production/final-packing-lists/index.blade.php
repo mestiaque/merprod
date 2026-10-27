@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Final Packing Lists</h4>
             @can('msfl_final_packing_list.add')
-                <a href="{{ route('msfl.production.final-packing-lists.create') }}" class="btn btn-primary btn-sm btn-icon" title="New Final Packing List"><i class="fa-solid fa-plus"></i></a>
+                <a href="{{ route('msfl.production.final-packing-lists.create') }}" class="btn btn-sm ui-act ui-act-create" title="New Final Packing List"><i class="fa-solid fa-plus"></i> New Final Packing List</a>
             @endcan
         </div>
         <div class="card-body">
@@ -34,8 +34,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -54,10 +54,10 @@
                                 <td>@include('merchandising-sfl::admin.partials.status-badge', ['model' => $fpl])</td>
                                 <td>{{ $fpl->buyer_approved_on?->format('d M Y') ?? '-' }} {{ $fpl->buyer_approved_by ? '· ' . $fpl->buyer_approved_by : '' }}</td>
                                 <td class="text-right text-nowrap">
-                                    <a href="{{ route('msfl.production.final-packing-lists.show', $fpl) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>
+                                    <a href="{{ route('msfl.production.final-packing-lists.show', $fpl) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a>
                                     @if($fpl->isEditable())
-                                        @can('msfl_final_packing_list.edit')<a href="{{ route('msfl.production.final-packing-lists.edit', $fpl) }}" class="btn-custom yellow"><i class="fa-solid fa-pen"></i></a>@endcan
-                                        @can('msfl_final_packing_list.delete')<button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteFplModal" data-action="{{ route('msfl.production.final-packing-lists.destroy', $fpl) }}"><i class="fa-solid fa-trash"></i></button>@endcan
+                                        @can('msfl_final_packing_list.edit')<a href="{{ route('msfl.production.final-packing-lists.edit', $fpl) }}" class="btn-custom ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>@endcan
+                                        @can('msfl_final_packing_list.delete')<button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteFplModal" data-action="{{ route('msfl.production.final-packing-lists.destroy', $fpl) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>@endcan
                                     @endif
                                 </td>
                             </tr>

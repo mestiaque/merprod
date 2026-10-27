@@ -87,7 +87,7 @@
         <div class="csf-section">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="mb-1">{{ $letter }}. {{ $title }} <small class="text-muted">— total / dz = consumption / dz × unit price</small></h6>
-                <button type="button" class="btn btn-sm btn-outline-primary" data-cs-add="{{ $group }}"><i class="fa-solid fa-plus"></i> Add Row</button>
+                <button type="button" class="btn btn-sm ui-act ui-act-create" data-cs-add="{{ $group }}" title="Add Row"><i class="fa-solid fa-plus"></i> Add Row</button>
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered table-sm align-middle mb-1">

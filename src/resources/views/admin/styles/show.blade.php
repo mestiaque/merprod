@@ -18,19 +18,19 @@
             <h4 class="mb-0">Style — {{ $style->style_no }} <small class="text-muted">{{ $style->name }}</small></h4>
             <div>
                 @can('msfl_cost_sheet.add')
-                    <a href="{{ route('msfl.cost-sheets.create', ['style_id' => $style->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-calculator"></i> Cost Sheet</a>
+                    <a href="{{ route('msfl.cost-sheets.create', ['style_id' => $style->id]) }}" class="btn btn-sm ui-act ui-act-create" title="Cost Sheet"><i class="fa-solid fa-plus"></i> Cost Sheet</a>
                 @endcan
                 @can('msfl_bom.add')
-                    <a href="{{ route('msfl.boms.create', ['style_id' => $style->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-list-check"></i> BOM</a>
+                    <a href="{{ route('msfl.boms.create', ['style_id' => $style->id]) }}" class="btn btn-sm ui-act ui-act-create" title="BOM"><i class="fa-solid fa-plus"></i> BOM</a>
                 @endcan
                 @can('msfl_sample.add')
-                    <a href="{{ route('msfl.samples.create', ['style_id' => $style->id]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-vial"></i> Sample</a>
+                    <a href="{{ route('msfl.samples.create', ['style_id' => $style->id]) }}" class="btn btn-sm ui-act ui-act-create" title="Sample"><i class="fa-solid fa-plus"></i> Sample</a>
                 @endcan
                 @can('msfl_style.edit')
-                    <a href="{{ route('msfl.styles.edit', $style) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                    <a href="{{ route('msfl.styles.edit', $style) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                 @endcan
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.styles.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+                <a href="{{ route('msfl.styles.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">
@@ -77,7 +77,7 @@
                             </select>
                             <input type="text" name="caption" class="form-control form-control-sm mr-1" placeholder="Caption">
                             <input type="file" name="images[]" accept="image/*" multiple required class="form-control form-control-sm mr-1">
-                            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-upload"></i> Upload</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-import" title="Upload"><i class="fa-solid fa-file-import"></i> Upload</button>
                         </form>
                     @endcan
                 </div>
@@ -92,7 +92,7 @@
                                     @can('msfl_style.edit')
                                         <form method="POST" action="{{ route('msfl.styles.images.destroy', [$style, $image]) }}" class="d-inline" onsubmit="return confirm('Delete this image?');">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="btn-custom danger"><i class="fa-solid fa-trash"></i></button>
+                                            <button type="submit" class="btn-custom ui-act ui-act-delete" title="Delete"><i class="fa-solid fa-trash"></i> Delete</button>
                                         </form>
                                     @endcan
                                 </div>

@@ -19,7 +19,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $heading }}</h4>
-            <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             <dl class="row mb-3 small">
@@ -52,7 +52,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="mb-0">Reject / Rework Detail <small class="text-muted">(reject <span data-defect-sum="reject">0</span>, rework <span data-defect-sum="rework">0</span>)</small></h6>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="defect"><i class="fa-solid fa-plus"></i> Add Row</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="defect" title="Add Row"><i class="fa-solid fa-plus"></i> Add Row</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">
@@ -69,8 +69,8 @@
                 </template>
                 @endif
 
-                <button type="submit" class="btn btn-primary mt-2 btn-sm">Save</button>
-                <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light mt-2 btn-sm">Cancel</a>
+                <button type="submit" class="btn mt-2 btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn mt-2 btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
             </form>
         </div>
     </div>

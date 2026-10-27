@@ -15,18 +15,18 @@
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
             <h4 class="mb-0">Commercial Invoice — {{ $invoice->invoice_no }} <small class="text-muted">· Packing List {{ $invoice->packingListNo() }}</small></h4>
             <div>
-                <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'invoice']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-print"></i> Commercial Invoice</a>
-                <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'packing']) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-box"></i> Carton Packing List</a>
+                <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'invoice']) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Commercial Invoice"><i class="fa-solid fa-print"></i> Commercial Invoice</a>
+                <a href="{{ route('msfl.commercial.invoices.print', [$invoice, 'packing']) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Carton Packing List"><i class="fa-solid fa-print"></i> Carton Packing List</a>
                 @if($shipments->isEmpty() && \Illuminate\Support\Facades\Route::has('inventory.shipments.create'))
-                    @can('inv_shipment.add')<a href="{{ route('inventory.shipments.create', ['msfl_invoice_id' => $invoice->id]) }}" class="btn btn-success btn-sm" title="Inventory Shipment from the Finish Store, filled from this invoice"><i class="fa-solid fa-truck"></i> Create Shipment</a>@endcan
+                    @can('inv_shipment.add')<a href="{{ route('inventory.shipments.create', ['msfl_invoice_id' => $invoice->id]) }}" class="btn btn-sm ui-act ui-act-create" title="Inventory Shipment from the Finish Store, filled from this invoice"><i class="fa-solid fa-plus"></i> Create Shipment</a>@endcan
                 @endif
                 @if(\Illuminate\Support\Facades\Route::has('inventory.gate-passes.print'))
                     @foreach($challans as $gp)
-                        <a href="{{ route('inventory.gate-passes.print', $gp->id) }}" target="_blank" class="btn btn-outline-dark btn-sm"><i class="fa-solid fa-print"></i> Delivery Challan {{ $gp->gate_pass_no }}</a>
+                        <a href="{{ route('inventory.gate-passes.print', $gp->id) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Print"><i class="fa-solid fa-print"></i> Delivery Challan {{ $gp->gate_pass_no }}</a>
                     @endforeach
                 @endif
-                @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $invoice) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>@endcan
-                <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $invoice) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>@endcan
+                <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">

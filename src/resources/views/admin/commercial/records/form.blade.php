@@ -17,7 +17,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $heading }}</h4>
-            <a href="{{ $back }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ $back }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ $model->exists ? route("msfl.commercial.$slug.update", $model->id) : route("msfl.commercial.$slug.store") }}" enctype="multipart/form-data">
@@ -52,8 +52,8 @@
                         @endswitch
                     @endforeach
                 </div>
-                <button type="submit" class="btn btn-primary mt-3 btn-sm">Save</button>
-                <a href="{{ $back }}" class="btn btn-light mt-3 btn-sm">Cancel</a>
+                <button type="submit" class="btn mt-3 btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                <a href="{{ $back }}" class="btn mt-3 btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
             </form>
         </div>
     </div>

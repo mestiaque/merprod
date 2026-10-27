@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Cutting</h4>
             @can('msfl_prod_cutting.add')
-                <a href="{{ route('msfl.production.cuttings.create') }}" class="btn btn-primary btn-sm btn-icon" title="New Cutting"><i class="fa-solid fa-plus"></i></a>
+                <a href="{{ route('msfl.production.cuttings.create') }}" class="btn btn-sm ui-act ui-act-create" title="New Cutting"><i class="fa-solid fa-plus"></i> New Cutting</a>
             @endcan
         </div>
         <div class="card-body">
@@ -25,8 +25,8 @@
                 </div>
                 @include('merchandising-sfl::admin.production.partials.po-select', ['filter' => true, 'col' => 6])
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -47,9 +47,9 @@
                                 <td>{{ $cutting->table_no ?? '-' }}</td>
                                 <td class="text-right">{{ number_format($cutting->total_qty) }}</td>
                                 <td class="text-right">
-                                    <a href="{{ route('msfl.production.cuttings.show', $cutting) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>
+                                    <a href="{{ route('msfl.production.cuttings.show', $cutting) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a>
                                     @can('msfl_prod_cutting.delete')
-                                        <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteCuttingModal" data-action="{{ route('msfl.production.cuttings.destroy', $cutting) }}"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteCuttingModal" data-action="{{ route('msfl.production.cuttings.destroy', $cutting) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     @endcan
                                 </td>
                             </tr>

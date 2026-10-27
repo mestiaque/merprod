@@ -25,5 +25,5 @@
     </td>
     <td style="width:115px"><input type="number" step="any" min="0" name="items[{{ $index }}][rate]" class="form-control form-control-sm text-right" value="{{ $line['rate'] ?? '' }}" data-cs-rate></td>
     <td class="text-right font-weight-bold" style="width:110px" data-cs-amount>-</td>
-    <td style="width:40px"><button type="button" class="btn-custom danger" data-cs-remove title="Remove"><i class="fa-solid fa-xmark"></i></button></td>
+    <td style="width:40px"><button type="button" class="btn-custom ui-act ui-act-delete" data-cs-remove title="Remove"><i class="fa-solid fa-trash"></i></button></td>
 </tr>

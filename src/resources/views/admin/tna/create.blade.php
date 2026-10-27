@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">New T&amp;A</h4>
-            <a href="{{ route('msfl.tna.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.tna.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             {{-- Step 1: confirmed order --}}
@@ -79,7 +79,7 @@
 
                     <div class="alert alert-light border" data-tna-preview>Select a style and line(s) to preview the capacity.</div>
 
-                    <button type="submit" class="btn btn-primary btn-sm" @disabled($templates->isEmpty())><i class="fa-solid fa-wand-magic-sparkles"></i> Create &amp; Calculate T&amp;A</button>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-auto" @disabled($templates->isEmpty()) title="Create & Calculate T&A"><i class="fa-solid fa-wand-magic-sparkles"></i> Create &amp; Calculate T&amp;A</button>
                 </form>
             @endif
         </div>

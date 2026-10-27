@@ -15,7 +15,7 @@
 <hr>
 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
     <h6 class="mb-0">PO Lines <small class="text-muted">— one row per PO · style (a PO can have several styles); qty by size</small></h6>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="po"><i class="fa-solid fa-plus"></i> Add Row</button>
+    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="po" title="Add Row"><i class="fa-solid fa-plus"></i> Add Row</button>
 </div>
 @error('pos')<div class="alert alert-danger py-1 small">{{ $message }}</div>@enderror
 <div class="row align-items-end">

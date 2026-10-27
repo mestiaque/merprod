@@ -43,12 +43,12 @@
                     <td class="text-right">
                         @can('msfl_prod_entry.edit')
                             @if($entry->kind === 'production')
-                                <a href="{{ route('msfl.production.entries.edit', ['stage' => $entry->stage, 'entry' => $entry]) }}" class="btn-custom primary"><i class="fa-solid fa-pen"></i></a>
+                                <a href="{{ route('msfl.production.entries.edit', ['stage' => $entry->stage, 'entry' => $entry]) }}" class="btn-custom ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                             @endif
                         @endcan
                         @can('msfl_prod_entry.delete')
-                            <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteEntryModal"
-                                data-action="{{ $entry->kind !== 'production' ? route('msfl.production.' . $entry->kind . '.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}"><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteEntryModal"
+                                data-action="{{ $entry->kind !== 'production' ? route('msfl.production.' . $entry->kind . '.destroy', $entry) : route('msfl.production.entries.destroy', ['stage' => $entry->stage, 'entry' => $entry]) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                         @endcan
                     </td>
                 @endcanany

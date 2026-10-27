@@ -21,5 +21,5 @@
     <td style="width:100px"><input type="number" step="any" min="0" name="items[{{ $index }}][rate]" class="form-control form-control-sm text-right" value="{{ $line['rate'] ?? '' }}" data-bom-rate></td>
     <td style="min-width:140px"><select name="items[{{ $index }}][supplier_id]" class="form-control form-control-sm" data-bom-supplier><option value=""></option>{!! $opt($suppliers, 'supplier_id', fn ($o) => $o->name) !!}</select></td>
     <td><input type="text" name="items[{{ $index }}][remarks]" class="form-control form-control-sm" value="{{ $line['remarks'] ?? '' }}"></td>
-    <td style="width:40px"><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+    <td style="width:40px"><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
 </tr>

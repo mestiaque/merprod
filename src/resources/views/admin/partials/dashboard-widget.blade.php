@@ -19,7 +19,7 @@
 
 <div class="d-flex align-items-center justify-content-between mb-2 mt-1">
     <h5 class="mb-0"><i class="fa-solid fa-shirt text-danger mr-2"></i>Merchandising &amp; Production</h5>
-    @unless($full)<a href="{{ route('msfl.dashboard') }}" class="btn btn-sm btn-outline-secondary">Open dashboard</a>@endunless
+    @unless($full)<a href="{{ route('msfl.dashboard') }}" class="btn btn-sm ui-act ui-act-nav" title="Open dashboard"><i class="fa-solid fa-gauge"></i> Open dashboard</a>@endunless
 </div>
 
 <div class="row">

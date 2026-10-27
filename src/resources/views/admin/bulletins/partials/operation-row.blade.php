@@ -1,8 +1,8 @@
 {{-- props: index, op (array), operationOptions, machineTypes --}}
 <tr data-op-row>
     <td class="text-nowrap" style="width:52px">
-        <button type="button" class="btn-custom primary" data-line-items-up title="Move up"><i class="fa-solid fa-arrow-up"></i></button>
-        <button type="button" class="btn-custom primary" data-line-items-down title="Move down"><i class="fa-solid fa-arrow-down"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-move-up" data-line-items-up title="Move up"><i class="fa-solid fa-arrow-up"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-move-down" data-line-items-down title="Move down"><i class="fa-solid fa-arrow-down"></i></button>
     </td>
     <td class="text-center" data-op-sl></td>
     <td style="min-width:130px"><input type="text" name="operations[{{ $index }}][section]" class="form-control form-control-sm" value="{{ $op['section'] ?? '' }}" list="bulletinSections" data-op-section placeholder="(same as above)"></td>
@@ -43,5 +43,5 @@
         <input type="checkbox" name="operations[{{ $index }}][is_active]" value="1" data-op-active @checked($op['is_active'] ?? true)>
     </td>
     <td style="min-width:110px"><input type="text" name="operations[{{ $index }}][remarks]" class="form-control form-control-sm" value="{{ $op['remarks'] ?? '' }}"></td>
-    <td style="width:30px"><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+    <td style="width:30px"><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
 </tr>

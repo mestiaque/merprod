@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">BOM (Bill of Materials)</h4>
             @can('msfl_bom.add')
-                <a href="{{ route('msfl.boms.create') }}" class="btn btn-primary btn-sm btn-icon" title="New BOM"><i class="fa-solid fa-plus"></i></a>
+                <a href="{{ route('msfl.boms.create') }}" class="btn btn-sm ui-act ui-act-create" title="New BOM"><i class="fa-solid fa-plus"></i> New BOM</a>
             @endcan
         </div>
         <div class="card-body">
@@ -40,8 +40,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.boms.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.boms.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -65,14 +65,14 @@
                                 <td>@include('merchandising-sfl::admin.partials.status-badge', ['model' => $bom])</td>
                                 <td class="text-right">
                                     @can('msfl_bom.view')
-                                        <a href="{{ route('msfl.boms.show', $bom) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>
+                                        <a href="{{ route('msfl.boms.show', $bom) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a>
                                     @endcan
                                     @if($bom->isEditable())
                                         @can('msfl_bom.edit')
-                                            <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn-custom yellow"><i class="fa-solid fa-pen"></i></a>
+                                            <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn-custom ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                                         @endcan
                                         @can('msfl_bom.delete')
-                                            <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteBomModal" data-action="{{ route('msfl.boms.destroy', $bom) }}"><i class="fa-solid fa-trash"></i></button>
+                                            <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteBomModal" data-action="{{ route('msfl.boms.destroy', $bom) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                         @endcan
                                     @endif
                                 </td>

@@ -3,7 +3,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="mb-0">PO Lines</h6>
                 @if($canEditPos)
-                    <a href="{{ route('msfl.orders.edit', $order) }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen"></i> Add / Edit PO Lines</a>
+                    <a href="{{ route('msfl.orders.edit', $order) }}" class="btn btn-sm ui-act ui-act-edit" title="Add / Edit PO Lines"><i class="fa-solid fa-pen-to-square"></i> Add / Edit PO Lines</a>
                 @endif
             </div>
             <div class="table-responsive mb-3">

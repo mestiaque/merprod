@@ -18,15 +18,15 @@
                 <div>
                     @include('merchandising-sfl::admin.partials.print-button')
                     @if($fpl->isEditable())
-                        @can('msfl_final_packing_list.edit')<a href="{{ route('msfl.production.final-packing-lists.edit', $fpl) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>@endcan
+                        @can('msfl_final_packing_list.edit')<a href="{{ route('msfl.production.final-packing-lists.edit', $fpl) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>@endcan
                     @else
                         @can('msfl_final_packing_list.approve')
                             <form method="POST" action="{{ route('msfl.production.final-packing-lists.reopen', $fpl) }}" class="d-inline" onsubmit="return confirm('Re-open? Figures become live from production again.');">
-                                @csrf <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-lock-open"></i> Re-open</button>
+                                @csrf <button type="submit" class="btn btn-sm ui-act ui-act-unlock" title="Re-open"><i class="fa-solid fa-lock-open"></i> Re-open</button>
                             </form>
                         @endcan
                     @endif
-                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
                 </div>
             </div>
             <div class="card-body py-2">
@@ -38,7 +38,7 @@
                             <div class="col-md-3 mb-2"><label class="form-label">Buyer approved on <span class="text-danger">*</span></label><input type="date" name="buyer_approved_on" class="form-control form-control-sm" value="{{ today()->toDateString() }}" required></div>
                             <div class="col-md-3 mb-2"><label class="form-label">Approved by (buyer side)</label><input type="text" name="buyer_approved_by" class="form-control form-control-sm"></div>
                             <div class="col-md-3 mb-2"><label class="form-label">Approved copy</label><input type="file" name="approval_file" class="form-control form-control-sm"></div>
-                            <div class="col-md-3 mb-2"><button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark as Buyer Approved?');"><i class="fa-solid fa-check"></i> Buyer Approved</button></div>
+                            <div class="col-md-3 mb-2"><button type="submit" class="btn btn-sm ui-act ui-act-approve" onclick="return confirm('Mark as Buyer Approved?');" title="Buyer Approved"><i class="fa-solid fa-check"></i> Buyer Approved</button></div>
                         </form>
                     @endcan
                 @else
@@ -71,10 +71,10 @@
                                     <td class="text-right">{{ number_format($a['invoiced']) }}</td>
                                     <td>
                                         @if($fgRoute && $a['fg'] < $a['packed'])
-                                            @can('inv_fg_receive.add')<a href="{{ route('inventory.fg-receives.create', ['msfl_order_po_id' => $a['po']->id]) }}" class="btn btn-sm btn-outline-success"><i class="fa-solid fa-warehouse"></i> Receive in Finish Store ({{ number_format($a['packed'] - $a['fg']) }})</a>@endcan
+                                            @can('inv_fg_receive.add')<a href="{{ route('inventory.fg-receives.create', ['msfl_order_po_id' => $a['po']->id]) }}" class="btn btn-sm btn-icon ui-act ui-act-create" title="Add"><i class="fa-solid fa-plus"></i></a>@endcan
                                         @endif
                                         @if($a['invoiced'] < $a['packed'])
-                                            @can('msfl_com_invoice.add')<a href="{{ route('msfl.commercial.invoices.create') }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-file-invoice-dollar"></i> Commercial Invoice</a>@endcan
+                                            @can('msfl_com_invoice.add')<a href="{{ route('msfl.commercial.invoices.create') }}" class="btn btn-sm btn-icon ui-act ui-act-create" title="Commercial Invoice"><i class="fa-solid fa-plus"></i></a>@endcan
                                         @endif
                                     </td>
                                 </tr>

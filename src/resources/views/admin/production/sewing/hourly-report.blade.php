@@ -14,8 +14,8 @@
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
             <h4 class="mb-0">Daily Hourly Production Report <small class="text-muted">Sewing Floor · {{ $date->format('d M Y') }}</small></h4>
             <div>
-                <a href="{{ route('msfl.production.sewing.index', request()->only('date', 'line_id')) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-shirt"></i> Sewing Board</a>
-                <a href="{{ route('msfl.production.hourly-report.print', request()->only('date', 'line_id')) }}" target="_blank" class="btn btn-warning btn-sm btn-icon" title="Print"><i class="fa-solid fa-print"></i></a>
+                <a href="{{ route('msfl.production.sewing.index', request()->only('date', 'line_id')) }}" class="btn btn-sm ui-act ui-act-nav" title="Sewing Board"><i class="fa-solid fa-shirt"></i> Sewing Board</a>
+                <a href="{{ route('msfl.production.hourly-report.print', request()->only('date', 'line_id')) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Print"><i class="fa-solid fa-print"></i> Print</a>
             </div>
         </div>
         <div class="card-body">
@@ -28,8 +28,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.production.hourly-report.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.production.hourly-report.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                 </div>
             </form>
 

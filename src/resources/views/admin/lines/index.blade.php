@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Lines</h4>
             @can('msfl_line.add')
-                <button type="button" class="btn btn-primary btn-sm btn-icon" data-toggle="modal" data-target="#lineModalnew" title="Add Line"><i class="fa-solid fa-plus"></i></button>
+                <button type="button" class="btn btn-sm ui-act ui-act-create" data-toggle="modal" data-target="#lineModalnew" title="Add Line"><i class="fa-solid fa-plus"></i> Add Line</button>
             @endcan
         </div>
         <div class="card-body">
@@ -38,8 +38,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.lines.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.lines.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -72,10 +72,10 @@
                                 <td><span class="badge badge-{{ $line->is_active ? 'success' : 'secondary' }}">{{ $line->is_active ? 'Active' : 'Inactive' }}</span></td>
                                 <td class="text-right">
                                     @can('msfl_line.edit')
-                                        <button type="button" class="btn-custom yellow" data-toggle="modal" data-target="#lineModal{{ $line->id }}"><i class="fa-solid fa-pen"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-edit" data-toggle="modal" data-target="#lineModal{{ $line->id }}" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
                                     @endcan
                                     @can('msfl_line.delete')
-                                        <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteLineModal" data-action="{{ route('msfl.lines.destroy', $line) }}"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteLineModal" data-action="{{ route('msfl.lines.destroy', $line) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     @endcan
                                 </td>
                             </tr>
@@ -111,8 +111,8 @@
                         @include('merchandising-sfl::admin.lines.partials.fields', ['line' => $modalLine])
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm">{{ $modalLine ? 'Update' : 'Save' }}</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> {{ $modalLine ? 'Update' : 'Save' }}</button>
                     </div>
                 </form>
             </div>

@@ -24,7 +24,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $heading }}</h4>
-            <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             @if($pos->isEmpty())
@@ -67,7 +67,7 @@
                 @endphp
                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
                     <h6 class="mb-0">Sizes <small class="text-muted" id="sizeHint">— pick a style · color above; every size of the PO shows here</small></h6>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="fillAll" title="Put the most each size can take"><i class="fa-solid fa-wand-magic-sparkles"></i> Fill all</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-auto" id="fillAll" title="Put the most each size can take"><i class="fa-solid fa-wand-magic-sparkles"></i> Fill all</button>
                 </div>
                 @if($errors->has('sizes') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'sizes.')))
                     <div class="alert alert-danger py-2 small mb-2">{!! collect($errors->getMessages())->filter(fn ($m, $k) => $k === 'sizes' || str_starts_with($k, 'sizes.'))->flatten()->map(fn ($m) => e($m))->implode('<br>') !!}</div>
@@ -91,7 +91,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="mb-0">Reject / Rework Detail <small class="text-muted">(per size, must add up to that size's reject / rework — <span data-defect-check></span>)</small></h6>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="defect"><i class="fa-solid fa-plus"></i> Add Row</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="defect" title="Add Row"><i class="fa-solid fa-plus"></i> Add Row</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle">
@@ -108,9 +108,9 @@
                 </template>
                 @endif
 
-                <button type="submit" class="btn btn-primary mt-2 btn-sm">Save</button>
-                <button type="submit" name="add_another" value="1" class="btn btn-outline-primary mt-2 btn-sm">Save &amp; Add Another</button>
-                <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn btn-light mt-2 btn-sm">Cancel</a>
+                <button type="submit" class="btn mt-2 btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                <button type="submit" name="add_another" value="1" class="btn mt-2 btn-sm ui-act ui-act-save" title="Save & Add Another"><i class="fa-solid fa-floppy-disk"></i> Save &amp; Add Another</button>
+                <a href="{{ route('msfl.production.entries.index', ['stage' => $stage]) }}" class="btn mt-2 btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
             </form>
         </div>
     </div>

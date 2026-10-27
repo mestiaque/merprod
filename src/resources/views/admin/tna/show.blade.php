@@ -37,17 +37,17 @@
             <div>
                 @include('merchandising-sfl::admin.partials.print-button')
                 @if($editable)
-                    <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#recalcModal"><i class="fa-solid fa-rotate"></i> Recalculate</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-reset" data-toggle="modal" data-target="#recalcModal" title="Recalculate"><i class="fa-solid fa-rotate-left"></i> Recalculate</button>
                 @endif
                 @can('msfl_tna.edit')
-                    @foreach($tna->status === 'active' ? ['completed' => ['Mark Completed', 'success'], 'cancelled' => ['Cancel', 'outline-danger']] : ['active' => ['Re-open', 'outline-primary']] as $status => [$label, $color])
+                    @foreach($tna->status === 'active' ? ['completed' => ['Mark Completed', 'approve', 'fa-check'], 'cancelled' => ['Cancel', 'cancel', 'fa-ban']] : ['active' => ['Re-open', 'unlock', 'fa-lock-open']] as $status => [$label, $act, $icon])
                         <form method="POST" action="{{ route('msfl.tna.status', $tna) }}" class="d-inline" onsubmit="return confirm('{{ $label }}?');">
                             @csrf <input type="hidden" name="status" value="{{ $status }}">
-                            <button type="submit" class="btn btn-{{ $color }} btn-sm">{{ $label }}</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-{{ $act }}" title="{{ $label }}"><i class="fa-solid {{ $icon }}"></i> {{ $label }}</button>
                         </form>
                     @endforeach
                 @endcan
-                <a href="{{ route('msfl.tna.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.tna.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">
@@ -204,7 +204,7 @@
                     </table>
                 </div>
                 @if($editable)
-                    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> Save Updates</button>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save Updates"><i class="fa-solid fa-floppy-disk"></i> Save Updates</button>
                 @endif
             </form>
         </div>
@@ -234,8 +234,8 @@
                         </select>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm">Recalculate</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-auto" title="Recalculate"><i class="fa-solid fa-wand-magic-sparkles"></i> Recalculate</button>
                     </div>
                 </form>
             </div>

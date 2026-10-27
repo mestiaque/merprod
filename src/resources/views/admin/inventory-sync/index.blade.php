@@ -16,7 +16,7 @@
                 @if($available && ($pendingBuyers->count() || $pendingStyles->count()))
                     <form method="POST" action="{{ route('msfl.inventory-sync.sync') }}" onsubmit="return confirm('{{ $pendingBuyers->count() }} buyer(s) + {{ $pendingStyles->count() }} style(s) নিচে লিস্ট করা হয়েছে — সব Merchandising-এ তৈরি করা হবে। চালিয়ে যাবেন?');">
                         @csrf
-                        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-rotate"></i> Sync Now</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-reset" title="Sync Now"><i class="fa-solid fa-rotate-left"></i> Sync Now</button>
                     </form>
                 @endif
             @endcan

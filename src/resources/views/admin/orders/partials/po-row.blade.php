@@ -53,7 +53,7 @@
     </td>
     <td><input type="text" name="{{ $n }}[remarks]" class="form-control form-control-sm" value="{{ $row['remarks'] ?? '' }}" style="min-width:110px"></td>
     <td class="text-nowrap">
-        <button type="button" class="btn-custom success" data-po-copy title="Copy this row (new color / PO)"><i class="fa-solid fa-copy"></i></button>
-        <button type="button" class="btn-custom danger" data-line-items-remove title="Remove"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-create" data-po-copy title="Copy this row (new color / PO)"><i class="fa-solid fa-plus"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Remove"><i class="fa-solid fa-trash"></i></button>
     </td>
 </tr>

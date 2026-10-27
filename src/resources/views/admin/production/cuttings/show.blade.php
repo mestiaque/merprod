@@ -15,9 +15,9 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Cutting {{ $cutting->cutting_no }}</h4>
             <div class="d-flex gap-1">
-                <a href="{{ route('msfl.production.status.show', $cutting->order_po_id) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-chart-column"></i> PO Status</a>
+                <a href="{{ route('msfl.production.status.show', $cutting->order_po_id) }}" class="btn btn-sm ui-act ui-act-view" title="PO Status"><i class="fa-solid fa-eye"></i> PO Status</a>
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+                <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">

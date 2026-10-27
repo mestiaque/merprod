@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Commercial Invoices</h4>
             @can('msfl_com_invoice.add')
-                <a href="{{ route('msfl.commercial.invoices.create') }}" class="btn btn-primary btn-sm btn-icon" title="New Invoice"><i class="fa-solid fa-plus"></i></a>
+                <a href="{{ route('msfl.commercial.invoices.create') }}" class="btn btn-sm ui-act ui-act-create" title="New Invoice"><i class="fa-solid fa-plus"></i> New Invoice</a>
             @endcan
         </div>
         <div class="card-body">
@@ -36,8 +36,8 @@
                 <div class="col-md-2 mb-2"><input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}" title="From"></div>
                 <div class="col-md-2 mb-2"><input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}" title="To"></div>
                 <div class="col-md-2 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -60,9 +60,9 @@
                                 <td class="text-right">{{ number_format($inv->total_cartons) }}</td>
                                 <td class="text-right text-nowrap">{{ $inv->exportLc->currency->code ?? '' }} {{ number_format((float) $inv->total_value, 2) }}</td>
                                 <td class="text-right text-nowrap">
-                                    <a href="{{ route('msfl.commercial.invoices.show', $inv) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>
-                                    @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $inv) }}" class="btn-custom yellow"><i class="fa-solid fa-pen"></i></a>@endcan
-                                    @can('msfl_com_invoice.delete')<button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteInvoiceModal" data-action="{{ route('msfl.commercial.invoices.destroy', $inv) }}"><i class="fa-solid fa-trash"></i></button>@endcan
+                                    <a href="{{ route('msfl.commercial.invoices.show', $inv) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a>
+                                    @can('msfl_com_invoice.edit')<a href="{{ route('msfl.commercial.invoices.edit', $inv) }}" class="btn-custom ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>@endcan
+                                    @can('msfl_com_invoice.delete')<button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteInvoiceModal" data-action="{{ route('msfl.commercial.invoices.destroy', $inv) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>@endcan
                                 </td>
                             </tr>
                         @empty

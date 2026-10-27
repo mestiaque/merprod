@@ -17,7 +17,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Production — {{ $po->label() }}</h4>
             @include('merchandising-sfl::admin.partials.print-button')
-            <a href="{{ route('msfl.production.status.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.production.status.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             <div class="row">
@@ -46,9 +46,9 @@
                                 <td class="text-right">{{ $stage === 'cutting' ? '-' : number_format($row['available']) }}</td>
                                 <td class="text-right">
                                     @if($stage === 'cutting')
-                                        @can('msfl_prod_cutting.add')<a href="{{ route('msfl.production.cuttings.create', ['order_po_id' => $po->id]) }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-plus"></i> Cutting</a>@endcan
+                                        @can('msfl_prod_cutting.add')<a href="{{ route('msfl.production.cuttings.create', ['order_po_id' => $po->id]) }}" class="btn btn-sm btn-icon ui-act ui-act-create" title="Cutting"><i class="fa-solid fa-plus"></i></a>@endcan
                                     @else
-                                        @can('msfl_prod_entry.add')<a href="{{ route('msfl.production.entries.create', ['stage' => $stage, 'order_po_id' => $po->id]) }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-plus"></i> Entry</a>@endcan
+                                        @can('msfl_prod_entry.add')<a href="{{ route('msfl.production.entries.create', ['stage' => $stage, 'order_po_id' => $po->id]) }}" class="btn btn-sm btn-icon ui-act ui-act-create" title="Entry"><i class="fa-solid fa-plus"></i></a>@endcan
                                     @endif
                                 </td>
                             </tr>
@@ -74,7 +74,7 @@
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h6 class="mb-0">Fabric / Material Requisitions <small class="text-muted">(approved & issued in Inventory)</small></h6>
-            @can('msfl_prod_requisition.add')<a href="{{ route('msfl.production.requisitions.create', ['order_po_id' => $po->id]) }}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-plus"></i> Requisition</a>@endcan
+            @can('msfl_prod_requisition.add')<a href="{{ route('msfl.production.requisitions.create', ['order_po_id' => $po->id]) }}" class="btn btn-sm ui-act ui-act-create" title="Requisition"><i class="fa-solid fa-plus"></i> Requisition</a>@endcan
         </div>
         <div class="table-responsive">
             <table class="table table-bordered table-sm align-middle mb-0">

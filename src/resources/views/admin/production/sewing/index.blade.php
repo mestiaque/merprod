@@ -14,12 +14,12 @@
             <h4 class="mb-0">Sewing — Daily Production <small class="text-muted">{{ $date->format('d M Y') }}</small></h4>
             <div>
                 @can('msfl_prod_entry.add')
-                    <button type="button" class="btn btn-primary btn-sm" data-sew-modal="input"><i class="fa-solid fa-arrow-right-to-bracket"></i> Line Input</button>
-                    <button type="button" class="btn btn-success btn-sm" data-sew-modal="hourly"><i class="fa-solid fa-clock"></i> Hourly Output</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-line-input" data-sew-modal="input" title="Line Input"><i class="fa-solid fa-arrow-right-to-bracket"></i> Line Input</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-hourly-output" data-sew-modal="hourly" title="Hourly Output"><i class="fa-solid fa-clock"></i> Hourly Output</button>
                 @endcan
-                <a href="{{ route('msfl.production.sewing.entries', ['from' => $date->toDateString(), 'to' => $date->toDateString()]) }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-list"></i> Entries</a>
-                <a href="{{ route('msfl.production.hourly-report.index', request()->only('date', 'line_id')) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-chart-line"></i> Hourly Report</a>
-                <a href="{{ route('msfl.production.sewing.print', request()->only('date', 'line_id')) }}" target="_blank" class="btn btn-warning btn-sm"><i class="fa-solid fa-print"></i> Print</a>
+                <a href="{{ route('msfl.production.sewing.entries', ['from' => $date->toDateString(), 'to' => $date->toDateString()]) }}" class="btn btn-sm ui-act ui-act-nav" title="Entries"><i class="fa-solid fa-list"></i> Entries</a>
+                <a href="{{ route('msfl.production.hourly-report.index', request()->only('date', 'line_id')) }}" class="btn btn-sm ui-act ui-act-report" title="Hourly Report"><i class="fa-solid fa-chart-column"></i> Hourly Report</a>
+                <a href="{{ route('msfl.production.sewing.print', request()->only('date', 'line_id')) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Print"><i class="fa-solid fa-print"></i> Print</a>
             </div>
         </div>
         <div class="card-body">
@@ -32,8 +32,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.production.sewing.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.production.sewing.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                 </div>
             </form>
 

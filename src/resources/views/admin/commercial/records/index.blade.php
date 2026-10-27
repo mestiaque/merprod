@@ -19,7 +19,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $definition['title'] }}</h4>
             @can($perm . '.add')
-                <a href="{{ route("msfl.commercial.$slug.create") }}" class="btn btn-primary btn-sm btn-icon" title="New {{ $definition['singular'] }}"><i class="fa-solid fa-plus"></i></a>
+                <a href="{{ route("msfl.commercial.$slug.create") }}" class="btn btn-sm ui-act ui-act-create" title="New {{ $definition['singular'] }}"><i class="fa-solid fa-plus"></i> Add</a>
             @endcan
         </div>
         <div class="card-body">
@@ -34,8 +34,8 @@
                     </div>
                 @endforeach
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route("msfl.commercial.$slug.index") }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route("msfl.commercial.$slug.index") }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -59,9 +59,9 @@
                                 @endforeach
                                 @unless($printMode)
                                     <td class="text-right text-nowrap">
-                                        @can($perm . '.view')<a href="{{ route("msfl.commercial.$slug.show", $record->id) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>@endcan
-                                        @can($perm . '.edit')<a href="{{ route("msfl.commercial.$slug.edit", $record->id) }}" class="btn-custom yellow"><i class="fa-solid fa-pen"></i></a>@endcan
-                                        @can($perm . '.delete')<button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteRecordModal" data-action="{{ route("msfl.commercial.$slug.destroy", $record->id) }}"><i class="fa-solid fa-trash"></i></button>@endcan
+                                        @can($perm . '.view')<a href="{{ route("msfl.commercial.$slug.show", $record->id) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a>@endcan
+                                        @can($perm . '.edit')<a href="{{ route("msfl.commercial.$slug.edit", $record->id) }}" class="btn-custom ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>@endcan
+                                        @can($perm . '.delete')<button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteRecordModal" data-action="{{ route("msfl.commercial.$slug.destroy", $record->id) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>@endcan
                                     </td>
                                 @endunless
                             </tr>

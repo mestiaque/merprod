@@ -31,7 +31,7 @@
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">LC / SC expiring in 30 days (or expired)</h5>
-            <a href="{{ route('msfl.reports.show', 'lc-status') }}" class="btn btn-light btn-sm">LC Status report</a>
+            <a href="{{ route('msfl.reports.show', 'lc-status') }}" class="btn btn-sm ui-act ui-act-view" title="LC Status report"><i class="fa-solid fa-eye"></i> LC Status report</a>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -61,7 +61,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Latest commercial invoices</h5>
-            <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm">All invoices</a>
+            <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-sm ui-act ui-act-nav" title="All invoices">All invoices</a>
         </div>
         <div class="card-body">
             <div class="table-responsive">

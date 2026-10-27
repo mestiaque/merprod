@@ -31,5 +31,5 @@
     </td>
     <td><input type="text" name="defects[{{ $index }}][defect]" class="form-control form-control-sm" value="{{ $d['defect'] ?? '' }}" placeholder="e.g. Broken stitch, Oil spot"></td>
     <td><input type="number" min="0" step="1" name="defects[{{ $index }}][qty]" class="form-control form-control-sm text-right" value="{{ $d['qty'] ?? '' }}" data-defect-qty></td>
-    <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+    <td><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
 </tr>

@@ -18,8 +18,8 @@
                 <div class="col-md-3 mb-2"><select name="buyer_id" class="form-control form-control-sm msfl-select2"><option value="">All Buyers</option>
                     @foreach($buyers as $b)<option value="{{ $b->id }}" @selected(request('buyer_id') == $b->id)>{{ $b->name }}</option>@endforeach</select></div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.post-costing.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.post-costing.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -38,7 +38,7 @@
                                 <td class="text-right">{{ $b ? number_format($b['cm'], 2) : '-' }}</td>
                                 <td class="text-right {{ $b && $a['cm_earned'] < $b['cm'] ? 'text-danger' : 'text-success' }}">{{ number_format($a['cm_earned'], 2) }}</td>
                                 <td class="text-right">{{ number_format($a['reject_loss'], 2) }}</td>
-                                <td class="text-right"><a href="{{ route('msfl.post-costing.show', $c['po']) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a></td>
+                                <td class="text-right"><a href="{{ route('msfl.post-costing.show', $c['po']) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a></td>
                             </tr>
                         @empty
                             <tr><td colspan="11" class="text-center text-muted">No confirmed order PO yet.</td></tr>

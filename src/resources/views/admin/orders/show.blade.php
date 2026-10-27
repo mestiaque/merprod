@@ -9,7 +9,7 @@
 
 @php
     $canEditPos = $order->isEditable() && auth()->user()->can('msfl_order.edit');
-    $statusActions = ['confirmed' => ['Confirm Order', 'success', 'fa-check', 'msfl_order.approve'], 'closed' => ['Close', 'dark', 'fa-lock', 'msfl_order.edit'], 'cancelled' => ['Cancel Order', 'danger', 'fa-ban', 'msfl_order.edit']];
+    $statusActions = ['confirmed' => ['Confirm Order', 'approve', 'fa-check', 'msfl_order.approve'], 'closed' => ['Close', 'lock', 'fa-lock', 'msfl_order.edit'], 'cancelled' => ['Cancel Order', 'cancel', 'fa-ban', 'msfl_order.edit']];
 @endphp
 
 @section('contents')
@@ -20,24 +20,24 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Order — {{ $order->order_no }} @if($order->is_quick_entry)<span class="badge badge-warning" title="পুরনো/legacy order — Bulletin/T&amp;A/BOM ছাড়া সরাসরি Production-এ ঢোকানো হয়েছে">Quick Entry</span>@endif</h4>
             <div>
-                @foreach($statusActions as $status => [$label, $color, $icon, $permission])
+                @foreach($statusActions as $status => [$label, $act, $icon, $permission])
                     @if($order->canMoveTo($status))
                         @can($permission)
                             <form method="POST" action="{{ route('msfl.orders.status', $order) }}" class="d-inline" onsubmit="return confirm('{{ $label }}?');">
                                 @csrf
                                 <input type="hidden" name="status" value="{{ $status }}">
-                                <button type="submit" class="btn btn-{{ $color }} btn-sm"><i class="fa-solid {{ $icon }}"></i> {{ $label }}</button>
+                                <button type="submit" class="btn btn-sm ui-act ui-act-{{ $act }}" title="{{ $label }}"><i class="fa-solid {{ $icon }}"></i> {{ $label }}</button>
                             </form>
                         @endcan
                     @endif
                 @endforeach
                 @if($order->isEditable())
                     @can('msfl_order.edit')
-                        <a href="{{ route('msfl.orders.edit', $order) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <a href="{{ route('msfl.orders.edit', $order) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                     @endcan
                 @endif
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.orders.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+                <a href="{{ route('msfl.orders.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">
@@ -97,7 +97,7 @@
                                         <a href="{{ route('msfl.tna.show', $styleTna) }}">{{ $styleTna->tna_no }}</a>
                                     @elseif($order->status === 'confirmed')
                                         @can('msfl_tna.add')
-                                            <a href="{{ route('msfl.tna.create', ['order_id' => $order->id]) }}" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-calendar-check"></i> Create T&amp;A</a>
+                                            <a href="{{ route('msfl.tna.create', ['order_id' => $order->id]) }}" class="btn btn-sm btn-icon ui-act ui-act-create" title="Create T&A"><i class="fa-solid fa-plus"></i></a>
                                         @endcan
                                     @else
                                         <span class="text-muted small">after confirmation</span>
@@ -105,7 +105,7 @@
                                 </td>
                                 <td class="text-right">
                                     @can('msfl_bom.add')
-                                        <a href="{{ route('msfl.boms.create', ['style_id' => $styleId, 'order_id' => $order->id]) }}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-plus"></i> Create BOM</a>
+                                        <a href="{{ route('msfl.boms.create', ['style_id' => $styleId, 'order_id' => $order->id]) }}" class="btn btn-sm btn-icon ui-act ui-act-create" title="Create BOM"><i class="fa-solid fa-plus"></i></a>
                                     @endcan
                                 </td>
                             </tr>

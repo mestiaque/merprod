@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">New Commercial Invoice</h4>
-            <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             {{-- 1. Pick the LC — the page reloads with its POs and what can still be shipped per size. --}}
@@ -31,8 +31,8 @@
                 <form method="POST" action="{{ route('msfl.commercial.invoices.store') }}">
                     @csrf
                     @include('merchandising-sfl::admin.commercial.invoices.partials.form')
-                    <button type="submit" class="btn btn-primary mt-3 btn-sm">Save Invoice</button>
-                    <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn btn-light mt-3 btn-sm">Cancel</a>
+                    <button type="submit" class="btn mt-3 btn-sm ui-act ui-act-save" title="Save Invoice"><i class="fa-solid fa-floppy-disk"></i> Save Invoice</button>
+                    <a href="{{ route('msfl.commercial.invoices.index') }}" class="btn mt-3 btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
                 </form>
             @else
                 <p class="text-muted small mb-0">Pick an active Export LC — its POs with the pcs per size still to ship show up; then enter the carton packing list. No LC? Make one in Commercial → Export LC and activate it.</p>

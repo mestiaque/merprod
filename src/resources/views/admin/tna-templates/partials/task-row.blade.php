@@ -1,8 +1,8 @@
 {{-- props: index, task (array), autoSources --}}
 <tr>
     <td style="width:60px" class="text-nowrap">
-        <button type="button" class="btn-custom primary" data-line-items-up title="Move up"><i class="fa-solid fa-arrow-up"></i></button>
-        <button type="button" class="btn-custom primary" data-line-items-down title="Move down"><i class="fa-solid fa-arrow-down"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-move-up" data-line-items-up title="Move up"><i class="fa-solid fa-arrow-up"></i></button>
+        <button type="button" class="btn-custom ui-act ui-act-move-down" data-line-items-down title="Move down"><i class="fa-solid fa-arrow-down"></i></button>
     </td>
     <td style="min-width:130px"><input type="text" name="tasks[{{ $index }}][group_name]" class="form-control form-control-sm" value="{{ $task['group_name'] ?? '' }}" list="tnaGroups"></td>
     <td style="min-width:120px"><input type="text" name="tasks[{{ $index }}][task_code]" class="form-control form-control-sm" value="{{ $task['task_code'] ?? '' }}" placeholder="PP_APPROVAL"></td>
@@ -34,5 +34,5 @@
         <input type="hidden" name="tasks[{{ $index }}][is_mandatory]" value="0">
         <input type="checkbox" name="tasks[{{ $index }}][is_mandatory]" value="1" @checked(! empty($task['is_mandatory']))>
     </td>
-    <td style="width:40px"><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+    <td style="width:40px"><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
 </tr>

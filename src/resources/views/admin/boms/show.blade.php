@@ -18,23 +18,23 @@
                 @include('merchandising-sfl::admin.partials.print-button')
                 @if($bom->isEditable())
                     @can('msfl_bom.edit')
-                        <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <a href="{{ route('msfl.boms.edit', $bom) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                     @endcan
                     @can('msfl_bom.approve')
                         <form method="POST" action="{{ route('msfl.boms.approve', $bom) }}" class="d-inline" onsubmit="return confirm('Approve this BOM? It cannot be edited afterwards.');">
                             @csrf
-                            <button type="submit" class="btn btn-success btn-sm"><i class="fa-solid fa-check"></i> Approve</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-approve" title="Approve"><i class="fa-solid fa-check"></i> Approve</button>
                         </form>
                     @endcan
                 @else
                     @can('msfl_bom.add')
                         <form method="POST" action="{{ route('msfl.boms.revise', $bom) }}" class="d-inline" onsubmit="return confirm('Create a new draft version from this BOM?');">
                             @csrf
-                            <button type="submit" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-code-branch"></i> Revise</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-revise" title="Revise"><i class="fa-solid fa-code-branch"></i> Revise</button>
                         </form>
                     @endcan
                 @endif
-                <a href="{{ route('msfl.boms.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.boms.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">

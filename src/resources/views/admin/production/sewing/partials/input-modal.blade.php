@@ -26,8 +26,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Save Input</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save Input"><i class="fa-solid fa-floppy-disk"></i> Save Input</button>
                 </div>
             </form>
         </div>

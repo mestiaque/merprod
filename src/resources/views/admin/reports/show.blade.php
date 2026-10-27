@@ -12,9 +12,9 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">{{ $title }} @isset($result['period'])<small class="text-muted">— {{ $result['period'] }}</small>@endisset</h4>
             <div class="d-flex gap-1">
-                <a href="{{ route('msfl.reports.print', ['report' => $key] + request()->query()) }}" target="_blank" class="btn btn-primary btn-sm btn-icon" title="Print"><i class="fa-solid fa-print"></i></a>
-                <a href="{{ route('msfl.reports.print', ['report' => $key, 'blank' => 1] + request()->query()) }}" target="_blank" class="btn btn-outline-secondary btn-sm btn-icon" title="Empty template with 5 blank rows"><i class="fa-regular fa-file"></i></a>
-                <a href="{{ route('msfl.reports.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Reports</a>
+                <a href="{{ route('msfl.reports.print', ['report' => $key] + request()->query()) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Print"><i class="fa-solid fa-print"></i> Print</a>
+                <a href="{{ route('msfl.reports.print', ['report' => $key, 'blank' => 1] + request()->query()) }}" target="_blank" class="btn btn-sm ui-act ui-act-print" title="Empty template with 5 blank rows"><i class="fa-solid fa-print"></i> Empty template with 5 blank rows</a>
+                <a href="{{ route('msfl.reports.index') }}" class="btn btn-sm ui-act ui-act-back" title="Reports"><i class="fa-solid fa-arrow-left"></i> Reports</a>
             </div>
         </div>
         <div class="card-body">
@@ -48,8 +48,8 @@
                         @foreach($lines as $l)<option value="{{ $l->id }}" @selected(request('line_id') == $l->id)>{{ $l->name }}</option>@endforeach</select></div>
                 @endif
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.reports.show', $key) }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.reports.show', $key) }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                 </div>
             </form>
             @include('merchandising-sfl::admin.reports.partials.result', ['result' => $result])

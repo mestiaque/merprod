@@ -17,7 +17,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">New Fabric Requisition</h4>
-            <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ route('msfl.production.requisitions.store') }}">
@@ -39,7 +39,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h6 class="mb-0">Items</h6>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="req"><i class="fa-solid fa-plus"></i> Add Item</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="req" title="Add Item"><i class="fa-solid fa-plus"></i> Add Item</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle" style="max-width:820px">
@@ -53,7 +53,7 @@
                                     </select></td>
                                     <td><input type="number" step="any" min="0" name="items[{{ $i }}][requested_qty]" class="form-control form-control-sm text-right" value="{{ $row['requested_qty'] ?? '' }}"></td>
                                     <td data-req-unit></td>
-                                    <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+                                    <td><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -67,12 +67,12 @@
                         </select></td>
                         <td><input type="number" step="any" min="0" name="items[__INDEX__][requested_qty]" class="form-control form-control-sm text-right"></td>
                         <td data-req-unit></td>
-                        <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+                        <td><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
                     </tr>
                 </template>
 
-                <button type="submit" class="btn btn-primary mt-2 btn-sm">Send to Store</button>
-                <a href="{{ route('msfl.production.requisitions.index') }}" class="btn btn-light mt-2 btn-sm">Cancel</a>
+                <button type="submit" class="btn mt-2 btn-sm ui-act ui-act-dispatch" title="Send to Store"><i class="fa-solid fa-truck-fast"></i> Send to Store</button>
+                <a href="{{ route('msfl.production.requisitions.index') }}" class="btn mt-2 btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
             </form>
         </div>
     </div>

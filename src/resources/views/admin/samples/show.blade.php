@@ -19,29 +19,29 @@
                     @if($sample->status === 'requested')
                         <form method="POST" action="{{ route('msfl.samples.status', $sample) }}" class="d-inline">
                             @csrf <input type="hidden" name="status" value="in_progress">
-                            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-play"></i> Start Making</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-start" title="Start Making"><i class="fa-solid fa-play"></i> Start Making</button>
                         </form>
                     @endif
                     @if($sample->isEditable())
-                        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal" data-target="#submitSampleModal"><i class="fa-solid fa-paper-plane"></i> Submit to Buyer</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-save" data-toggle="modal" data-target="#submitSampleModal" title="Submit to Buyer"><i class="fa-solid fa-floppy-disk"></i> Submit to Buyer</button>
                     @endif
                 @endcan
                 @can('msfl_sample.approve')
                     @if($sample->status === 'submitted')
-                        <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#decideSampleModal"><i class="fa-solid fa-gavel"></i> Buyer Decision</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-approve" data-toggle="modal" data-target="#decideSampleModal" title="Buyer Decision"><i class="fa-solid fa-check"></i> Buyer Decision</button>
                     @endif
                 @endcan
                 @can('msfl_sample.edit')
                     @if($sample->isEditable())
-                        <a href="{{ route('msfl.samples.edit', $sample) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <a href="{{ route('msfl.samples.edit', $sample) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                         <form method="POST" action="{{ route('msfl.samples.status', $sample) }}" class="d-inline" onsubmit="return confirm('Cancel this sample?');">
                             @csrf <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-ban"></i> Cancel</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
                         </form>
                     @endif
                 @endcan
                 @include('merchandising-sfl::admin.partials.print-button')
-                <a href="{{ route('msfl.samples.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.samples.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">
@@ -87,7 +87,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="mb-0">Comments</h6>
                 @can('msfl_sample.edit')
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#commentModal"><i class="fa-solid fa-plus"></i> Add Comment</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-create" data-toggle="modal" data-target="#commentModal" title="Add Comment"><i class="fa-solid fa-plus"></i> Add Comment</button>
                 @endcan
             </div>
             <table class="table table-bordered table-sm align-middle">
@@ -135,8 +135,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-warning btn-sm">Submit</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Submit"><i class="fa-solid fa-floppy-disk"></i> Submit</button>
                     </div>
                 </form>
             </div>
@@ -172,8 +172,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                     </div>
                 </form>
             </div>
@@ -216,8 +216,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success btn-sm">Save Decision</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save Decision"><i class="fa-solid fa-floppy-disk"></i> Save Decision</button>
                     </div>
                 </form>
             </div>

@@ -33,7 +33,7 @@
                     <td colspan="{{ $cols - 2 - ($actions ? 1 : 0) }}" class="text-center small">No Production Running</td>
                     @if($actions)
                         <td class="text-center text-nowrap">
-                            <button type="button" class="btn-custom success" data-sew-modal="input" data-line="{{ $row['line']->id }}" title="Line Input"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+                            <button type="button" class="btn-custom ui-act ui-act-line-input" data-sew-modal="input" data-line="{{ $row['line']->id }}" title="Line Input"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
                         </td>
                     @endif
                 </tr>
@@ -88,8 +88,8 @@
                 <td class="text-right"><strong class="{{ $row['efficiency'] >= 60 ? 'text-success' : 'text-danger' }}">{{ number_format($row['efficiency'], 2) }}%</strong></td>
                 @if($actions)
                     <td class="text-center text-nowrap">
-                        <button type="button" class="btn-custom success" data-sew-modal="input" data-line="{{ $row['line']->id }}" data-po="{{ $po->id }}" title="Line Input"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
-                        <button type="button" class="btn-custom yellow" data-sew-modal="hourly" data-line="{{ $row['line']->id }}" data-po="{{ $po->id }}" title="Hourly Output"><i class="fa-solid fa-clock"></i></button>
+                        <button type="button" class="btn-custom ui-act ui-act-line-input" data-sew-modal="input" data-line="{{ $row['line']->id }}" data-po="{{ $po->id }}" title="Line Input"><i class="fa-solid fa-arrow-right-to-bracket"></i></button>
+                        <button type="button" class="btn-custom ui-act ui-act-hourly-output" data-sew-modal="hourly" data-line="{{ $row['line']->id }}" data-po="{{ $po->id }}" title="Hourly Output"><i class="fa-solid fa-clock"></i></button>
                     </td>
                 @endif
             </tr>

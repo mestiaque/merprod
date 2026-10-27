@@ -15,7 +15,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">T&amp;A (Time &amp; Action)</h4>
             @can('msfl_tna.add')
-                <a href="{{ route('msfl.tna.create') }}" class="btn btn-primary btn-sm btn-icon" title="New T&amp;A"><i class="fa-solid fa-plus"></i></a>
+                <a href="{{ route('msfl.tna.create') }}" class="btn btn-sm ui-act ui-act-create" title="New T&amp;A"><i class="fa-solid fa-plus"></i> New T&amp;A</a>
             @endcan
         </div>
         <div class="card-body">
@@ -40,8 +40,8 @@
                     </select>
                 </div>
                 <div class="col-md-3 mb-2 d-flex align-items-end flex-wrap gap-1">
-                    <button type="submit" class="btn btn-secondary btn-sm btn-icon" title="Filter"><i class="fa-solid fa-filter"></i></button>
-                    <a href="{{ route('msfl.tna.index') }}" class="btn btn-light btn-sm btn-icon" title="Reset"><i class="fa-solid fa-rotate-left"></i></a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-filter" title="Filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <a href="{{ route('msfl.tna.index') }}" class="btn btn-sm ui-act ui-act-reset" title="Reset"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                     @include('merchandising-sfl::admin.partials.print-button')
                 </div>
             </form>
@@ -74,10 +74,10 @@
                                 <td>@include('merchandising-sfl::admin.partials.status-badge', ['model' => $plan])</td>
                                 <td class="text-right">
                                     @can('msfl_tna.view')
-                                        <a href="{{ route('msfl.tna.show', $plan) }}" class="btn-custom success"><i class="fa-solid fa-eye"></i></a>
+                                        <a href="{{ route('msfl.tna.show', $plan) }}" class="btn-custom ui-act ui-act-view" title="View"><i class="fa-solid fa-eye"></i></a>
                                     @endcan
                                     @can('msfl_tna.delete')
-                                        <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteTnaModal" data-action="{{ route('msfl.tna.destroy', $plan) }}"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteTnaModal" data-action="{{ route('msfl.tna.destroy', $plan) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     @endcan
                                 </td>
                             </tr>

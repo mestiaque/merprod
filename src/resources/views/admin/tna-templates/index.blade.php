@@ -17,7 +17,7 @@
             <div>
                 @include('merchandising-sfl::admin.partials.print-button')
                 @can('msfl_tna_template.add')
-                    <button type="button" class="btn btn-primary btn-sm btn-icon" data-toggle="modal" data-target="#createTemplateModal" title="New Template"><i class="fa-solid fa-plus"></i></button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-create" data-toggle="modal" data-target="#createTemplateModal" title="New Template"><i class="fa-solid fa-plus"></i> New Template</button>
                 @endcan
             </div>
         </div>
@@ -41,10 +41,10 @@
                                 <td><span class="badge badge-{{ $template->is_active ? 'success' : 'secondary' }}">{{ $template->is_active ? 'Active' : 'Inactive' }}</span></td>
                                 <td class="text-right">
                                     @can('msfl_tna_template.edit')
-                                        <a href="{{ route('msfl.tna-templates.edit', $template) }}" class="btn-custom yellow"><i class="fa-solid fa-pen"></i></a>
+                                        <a href="{{ route('msfl.tna-templates.edit', $template) }}" class="btn-custom ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
                                     @endcan
                                     @can('msfl_tna_template.delete')
-                                        <button type="button" class="btn-custom danger" data-toggle="modal" data-target="#deleteTemplateModal" data-action="{{ route('msfl.tna-templates.destroy', $template) }}"><i class="fa-solid fa-trash"></i></button>
+                                        <button type="button" class="btn-custom ui-act ui-act-delete" data-toggle="modal" data-target="#deleteTemplateModal" data-action="{{ route('msfl.tna-templates.destroy', $template) }}" title="Delete"><i class="fa-solid fa-trash"></i></button>
                                     @endcan
                                 </td>
                             </tr>
@@ -75,8 +75,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary btn-sm">Create</button>
+                        <button type="button" class="btn btn-sm ui-act ui-act-cancel" data-dismiss="modal" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</button>
+                        <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Create"><i class="fa-solid fa-floppy-disk"></i> Create</button>
                     </div>
                 </form>
             </div>

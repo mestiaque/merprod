@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">New Final Packing List</h4>
-            <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             <form method="GET" class="row align-items-end mb-2">
@@ -31,8 +31,8 @@
                     <input type="hidden" name="order_id" value="{{ $picked['order_id'] }}">
                     <input type="hidden" name="po_no" value="{{ $picked['po_no'] }}">
                     @include('merchandising-sfl::admin.production.final-packing-lists.partials.notes')
-                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-light btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-sm ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+                    <a href="{{ route('msfl.production.final-packing-lists.index') }}" class="btn btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
                 </form>
                 <hr>
                 <h6>Preview</h6>

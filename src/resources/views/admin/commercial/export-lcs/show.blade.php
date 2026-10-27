@@ -22,24 +22,24 @@
             <div>
                 @include('merchandising-sfl::admin.partials.print-button')
                 @can('msfl_export_lc.approve')
-                    @foreach($lc->status === 'draft' ? ['active' => ['Activate', 'success', 'fa-check']] : ($lc->status === 'active' ? ['closed' => ['Close LC', 'dark', 'fa-lock']] : ['active' => ['Re-open', 'outline-primary', 'fa-lock-open']]) as $status => [$label, $color, $icon])
+                    @foreach($lc->status === 'draft' ? ['active' => ['Activate', 'approve', 'fa-check']] : ($lc->status === 'active' ? ['closed' => ['Close LC', 'lock', 'fa-lock']] : ['active' => ['Re-open', 'unlock', 'fa-lock-open']]) as $status => [$label, $act, $icon])
                         <form method="POST" action="{{ route('msfl.commercial.export-lcs.status', $lc) }}" class="d-inline" onsubmit="return confirm('{{ $label }}?');">
                             @csrf <input type="hidden" name="status" value="{{ $status }}">
-                            <button type="submit" class="btn btn-{{ $color }} btn-sm"><i class="fa-solid {{ $icon }}"></i> {{ $label }}</button>
+                            <button type="submit" class="btn btn-sm ui-act ui-act-{{ $act }}" title="{{ $label }}"><i class="fa-solid {{ $icon }}"></i> {{ $label }}</button>
                         </form>
                     @endforeach
                 @endcan
                 @if($lc->status === 'active')
                     @can('msfl_com_invoice.add')
-                        <a href="{{ route('msfl.commercial.invoices.create', ['export_lc_id' => $lc->id]) }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-file-invoice-dollar"></i> New Invoice</a>
+                        <a href="{{ route('msfl.commercial.invoices.create', ['export_lc_id' => $lc->id]) }}" class="btn btn-sm ui-act ui-act-create" title="New Invoice"><i class="fa-solid fa-plus"></i> New Invoice</a>
                     @endcan
                 @endif
                 @if($lc->isEditable())
                     @can('msfl_export_lc.edit')
-                        <a href="{{ route('msfl.commercial.export-lcs.edit', $lc) }}" class="btn btn-outline-primary btn-sm btn-icon" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                        <a href="{{ route('msfl.commercial.export-lcs.edit', $lc) }}" class="btn btn-sm ui-act ui-act-edit" title="Edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                     @endcan
                 @endif
-                <a href="{{ route('msfl.commercial.export-lcs.index') }}" class="btn btn-light btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <a href="{{ route('msfl.commercial.export-lcs.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </div>
         <div class="card-body">

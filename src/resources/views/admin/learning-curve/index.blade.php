@@ -13,7 +13,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">Learning Curve — Production <small class="text-muted">(সবাই দেখবে)</small></h4>
             @can('msfl_learning_curve.calculate')
-                <a href="{{ route('msfl.learning-curve.calculate') }}" class="btn btn-primary btn-sm btn-icon" title="Calculator"><i class="fa-solid fa-calculator"></i></a>
+                <a href="{{ route('msfl.learning-curve.calculate') }}" class="btn btn-sm btn-icon ui-act ui-act-nav" title="Calculator"><i class="fa-solid fa-calculator"></i></a>
             @endcan
         </div>
         <div class="card-body">
@@ -51,7 +51,7 @@
                                     </form>
                                     <td class="align-middle">{{ $lt->name }}</td>
                                     <td><input type="number" min="0" max="60" name="days" value="{{ $lt->days }}" form="lt-form-{{ $lt->id }}" class="form-control form-control-sm"></td>
-                                    <td><button type="submit" form="lt-form-{{ $lt->id }}" class="btn btn-sm btn-outline-primary btn-icon" title="Save"><i class="fa-solid fa-floppy-disk"></i></button></td>
+                                    <td><button type="submit" form="lt-form-{{ $lt->id }}" class="btn btn-sm btn-icon ui-act ui-act-save" title="Save"><i class="fa-solid fa-floppy-disk"></i></button></td>
                                 </tr>
                             @endforeach
                         </tbody>

@@ -12,7 +12,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">New Cutting</h4>
-            <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light btn-sm btn-icon" title="Back"><i class="fa-solid fa-arrow-left"></i></a>
+            <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-sm ui-act ui-act-back" title="Back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
         <div class="card-body">
             <form method="POST" action="{{ route('msfl.production.cuttings.store') }}">
@@ -40,7 +40,7 @@
 
                 <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
                     <h6 class="mb-0">Parts Cut — Color <span id="partColor" class="badge badge-light border">select PO</span> × Size <small class="text-muted">(part from Master Data → Garment Parts; picking a part fills the cut qty — change it if a part has 2 per piece, e.g. Sleeve)</small></h6>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add="part"><i class="fa-solid fa-plus"></i> Add Part</button>
+                    <button type="button" class="btn btn-sm ui-act ui-act-create" data-line-items-add="part" title="Add Part"><i class="fa-solid fa-plus"></i> Add Part</button>
                 </div>
                 @error('parts')<div class="alert alert-danger py-1 small">{{ $message }}</div>@enderror
                 <div class="table-responsive">
@@ -54,7 +54,7 @@
                                         <td data-size-col="{{ $size->id }}"><input type="number" min="0" step="1" name="parts[{{ $i }}][sizes][{{ $size->id }}]" class="form-control form-control-sm text-right" value="{{ $part['sizes'][$size->id] ?? '' }}" data-part-size="{{ $size->id }}"></td>
                                     @endforeach
                                     <td class="text-right" data-part-total>0</td>
-                                    <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+                                    <td><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -67,12 +67,12 @@
                             <td data-size-col="{{ $size->id }}"><input type="number" min="0" step="1" name="parts[__INDEX__][sizes][{{ $size->id }}]" class="form-control form-control-sm text-right" data-part-size="{{ $size->id }}"></td>
                         @endforeach
                         <td class="text-right" data-part-total>0</td>
-                        <td><button type="button" class="btn-custom danger" data-line-items-remove><i class="fa-solid fa-xmark"></i></button></td>
+                        <td><button type="button" class="btn-custom ui-act ui-act-delete" data-line-items-remove title="Delete"><i class="fa-solid fa-trash"></i></button></td>
                     </tr>
                 </template>
 
-                <button type="submit" class="btn btn-primary mt-2 btn-sm">Save Cutting &amp; Make Bundles</button>
-                <a href="{{ route('msfl.production.cuttings.index') }}" class="btn btn-light mt-2 btn-sm">Cancel</a>
+                <button type="submit" class="btn mt-2 btn-sm ui-act ui-act-save" title="Save Cutting & Make Bundles"><i class="fa-solid fa-floppy-disk"></i> Save Cutting &amp; Make Bundles</button>
+                <a href="{{ route('msfl.production.cuttings.index') }}" class="btn mt-2 btn-sm ui-act ui-act-cancel" title="Cancel"><i class="fa-solid fa-ban"></i> Cancel</a>
             </form>
         </div>
     </div>
