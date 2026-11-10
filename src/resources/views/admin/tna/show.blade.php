@@ -154,11 +154,11 @@
                 <div class="table-responsive">
                     <table class="table table-bordered table-sm align-middle tna-grid">
                         <thead>
-                            <tr><th>#</th><th>Step</th><th>Rule</th><th>Plan</th><th>Revised</th><th>Actual</th><th>Status</th><th>N/A</th><th>Responsible</th><th>Remarks</th></tr>
+                            <tr><th>#</th><th>Step</th><th>Rule</th><th>Plan</th><th>Revised</th><th>Actual</th><th>Status</th><th>N/A</th><th>Responsible</th><th>Remarks</th><th>Corrective Action</th></tr>
                         </thead>
                         <tbody>
                             @foreach($tna->tasks->groupBy('group_name') as $group => $tasks)
-                                <tr class="table-secondary"><th colspan="10">{{ $group }}</th></tr>
+                                <tr class="table-secondary"><th colspan="11">{{ $group }}</th></tr>
                                 @foreach($tasks as $task)
                                     @php $f = 'tasks[' . $task->id . ']'; @endphp
                                     <tr @class(['table-danger' => $task->state() === 'delayed', 'text-muted' => $task->is_na])>
@@ -192,10 +192,12 @@
                                                 </select>
                                             </td>
                                             <td><input type="text" name="{{ $f }}[remarks]" class="form-control form-control-sm" value="{{ $task->remarks }}"></td>
+                                            <td><input type="text" name="{{ $f }}[corrective_action]" class="form-control form-control-sm" value="{{ $task->corrective_action }}" maxlength="500" placeholder="If late: what is being done"></td>
                                         @else
                                             <td class="text-center">{{ $task->is_na ? '✓' : '' }}</td>
                                             <td>{{ $task->responsible->name ?? '-' }}</td>
                                             <td>{{ $task->remarks }}</td>
+                                            <td>{{ $task->corrective_action }}</td>
                                         @endif
                                     </tr>
                                 @endforeach

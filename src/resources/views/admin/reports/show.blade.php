@@ -32,6 +32,10 @@
                     <div class="col-md-2 mb-2"><select name="order_status" class="form-control form-control-sm"><option value="">All Status</option>
                         @foreach(\ME\MerchandisingSfl\Models\Order::STATUSES as $statusKey => $status)<option value="{{ $statusKey }}" @selected(request('order_status') === $statusKey)>{{ $status[0] }}</option>@endforeach</select></div>
                 @endif
+                @if(in_array('tna_state', $filters, true))
+                    <div class="col-md-2 mb-2"><select name="tna_state" class="form-control form-control-sm"><option value="">All Status</option>
+                        @foreach(['done' => 'Complete', 'done_late' => 'Complete (Late)', 'due_soon' => 'Due / At Risk', 'delayed' => 'Delayed', 'pending' => 'Pending', 'na' => 'N/A'] as $sk => $sl)<option value="{{ $sk }}" @selected(request('tna_state') === $sk)>{{ $sl }}</option>@endforeach</select></div>
+                @endif
                 @if(in_array('dates', $filters, true))
                     <div class="col-md-2 mb-2"><input type="date" name="from" class="form-control form-control-sm" value="{{ request('from') }}" title="From"></div>
                     <div class="col-md-2 mb-2"><input type="date" name="to" class="form-control form-control-sm" value="{{ request('to') }}" title="To"></div>

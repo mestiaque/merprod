@@ -5,7 +5,7 @@
     <tbody>
         @forelse($result['rows'] as $r => $row)
             @php $status = $statusCol !== null ? ($row[$statusCol] ?? '') : null; @endphp
-            <tr class="{{ $rowClasses[$r] ?? (in_array($status, ['Late', 'Rejected'], true) ? 'table-danger' : (in_array($status, ['At risk'], true) ? 'table-warning' : (in_array($status, ['Packed', 'Approved'], true) ? 'table-success' : ''))) }}">
+            <tr class="{{ $rowClasses[$r] ?? (in_array($status, ['Late', 'Rejected', 'Delayed'], true) ? 'table-danger' : (in_array($status, ['At risk', 'Due / At Risk', 'Complete (Late)'], true) ? 'table-warning' : (in_array($status, ['Packed', 'Approved', 'Complete'], true) ? 'table-success' : ''))) }}">
                 <td>{{ isset($rowClasses[$r]) ? '' : ++$n }}</td>
                 @foreach($row as $i => $v)
                     <td class="{{ ($align[$i] ?? '') === 'right' ? 'text-right' : '' }}">{{ is_float($v) ? number_format($v, 2) : (is_int($v) && ($align[$i] ?? '') === 'right' ? number_format($v) : $v) }}</td>

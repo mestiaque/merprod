@@ -160,6 +160,7 @@ class TnaPlanController extends Controller
             'tasks.*.is_na' => ['nullable', 'boolean'],
             'tasks.*.responsible_id' => ['nullable', Rule::exists('users', 'id')],
             'tasks.*.remarks' => ['nullable', 'string', 'max:255'],
+            'tasks.*.corrective_action' => ['nullable', 'string', 'max:500'],
         ])['tasks'];
 
         DB::transaction(function () use ($tna, $rows) {
@@ -171,6 +172,7 @@ class TnaPlanController extends Controller
                     'is_na' => (bool) ($row['is_na'] ?? false),
                     'responsible_id' => $row['responsible_id'] ?? null,
                     'remarks' => $row['remarks'] ?? null,
+                    'corrective_action' => $row['corrective_action'] ?? null,
                 ]);
             }
         });

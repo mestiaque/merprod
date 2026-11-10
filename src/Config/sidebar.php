@@ -88,6 +88,7 @@ return [
                 ['title' => 'T&A', 'icon' => 'fa-solid fa-calendar-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_tna', 'route' => "$base/tna"],
                 ['title' => 'T&A Sheet', 'icon' => 'fa-solid fa-table-cells', 'icon_color' => 'text-primary', 'permission' => 'msfl_tna', 'route' => "$base/tna-sheet"],
                 ['title' => 'T&A Status', 'icon' => 'fa-solid fa-calendar-xmark', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/tna-status"],
+                ['title' => 'T&A Milestone Control', 'icon' => 'fa-solid fa-flag-checkered', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/reports/tna-milestone"],
             ],
         ],
         [
@@ -118,6 +119,7 @@ return [
                         ['title' => 'Shipment Readiness & Risk', 'icon' => 'fa-solid fa-ship', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/shipment-readiness"],
                         ['title' => 'Pre-Production Readiness', 'icon' => 'fa-solid fa-list-check', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/pre-production"],
                         ['title' => 'Material Shortage', 'icon' => 'fa-solid fa-triangle-exclamation', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/material-shortage"],
+                        ['title' => 'Material Requirement (MRP)', 'icon' => 'fa-solid fa-boxes-packing', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/material-requirement"],
                         ['title' => 'Daily Cutting Production', 'icon' => 'fa-solid fa-scissors', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/cutting-daily"],
                         ['title' => 'Daily Quality DHU & RFT', 'icon' => 'fa-solid fa-magnifying-glass-chart', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/quality-dhu-rft"],
                         ['title' => 'Daily Finishing & Packing', 'icon' => 'fa-solid fa-box', 'icon_color' => 'text-primary', 'permission' => 'msfl_report', 'route' => "$base/ops-reports/finishing-packing"],

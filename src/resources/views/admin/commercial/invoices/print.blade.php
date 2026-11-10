@@ -1,4 +1,4 @@
-{{-- Commercial Invoice ($doc = invoice) or Carton Packing List ($doc = packing) on printMaster2. --}}
+{{-- Commercial Invoice ($doc = invoice, partials.invoice-print) or Carton Packing List ($doc = packing) on printMaster2. --}}
 @extends('printMaster2')
 
 @section('title', $doc === 'packing' ? 'Carton Packing List — ' . $invoice->packingListNo() : 'Commercial Invoice — ' . $invoice->invoice_no)
@@ -23,8 +23,11 @@
 @endpush
 
 @section('contents')
-    @include('merchandising-sfl::admin.partials.print-header', ['title' => $doc === 'packing' ? 'Carton Packing List' : 'Commercial Invoice', 'subtitle' => $doc === 'packing' ? $invoice->packingListNo() : $invoice->invoice_no, 'page' => $doc === 'packing' ? 'A4 landscape' : 'A4 portrait'])
+    @include('merchandising-sfl::admin.partials.print-header', ['title' => $doc === 'packing' ? 'Carton Packing List' : 'Commercial Invoice', 'subtitle' => $doc === 'packing' ? $invoice->packingListNo() : $invoice->invoice_no, 'page' => 'A4 landscape'])
 
+    @if($doc !== 'packing')
+        @include('merchandising-sfl::admin.commercial.invoices.partials.invoice-print')
+    @else
     <table class="ci-box">
         <tr>
             <td class="k">{{ $doc === 'packing' ? 'Packing List No / Date' : 'Invoice No / Date' }}</td><td>{{ $doc === 'packing' ? $invoice->packingListNo() : $invoice->invoice_no }} · {{ $invoice->invoice_date->format('d-M-Y') }}@if($doc === 'packing')<br>Invoice No: {{ $invoice->invoice_no }}@endif</td>
@@ -53,25 +56,9 @@
         </tr>
     </table>
 
-    @if($doc === 'packing')
         @include('merchandising-sfl::admin.commercial.invoices.partials.carton-list', ['print' => true])
         <p class="ci-words">Total {{ number_format($invoice->total_cartons) }} cartons · {{ number_format($invoice->total_qty) }} pcs · Net weight {{ $invoice->net_weight ?? '-' }} kg · Gross weight {{ $invoice->gross_weight ?? '-' }} kg · {{ $invoice->cbm ?? '-' }} CBM</p>
-    @else
-        <table class="ci-lines">
-            <thead><tr><th>PO No</th><th>Style</th><th>Description</th><th>Color</th><th class="r">Qty (pcs)</th><th class="r">Unit Price ({{ $cur }})</th><th class="r">Amount ({{ $cur }})</th></tr></thead>
-            <tbody>
-                @foreach($invoice->lines as $line)
-                    @php $po = $line->orderPo; @endphp
-                    <tr>
-                        <td>{{ $po->po_no }}</td><td>{{ $po->style->style_no ?? '' }}</td><td>{{ $po->style->name ?? '' }}</td><td>{{ $po->color->name ?? '' }}</td>
-                        <td class="r">{{ number_format($line->qty) }}</td><td class="r">{{ number_format((float) $line->unit_price, 4) }}</td><td class="r">{{ number_format((float) $line->amount, 2) }}</td>
-                    </tr>
-                @endforeach
-                <tr class="ci-total"><td colspan="4" class="r">Total</td><td class="r">{{ number_format($invoice->total_qty) }}</td><td></td><td class="r">{{ $cur }} {{ number_format((float) $invoice->total_value, 2) }}</td></tr>
-            </tbody>
-        </table>
-        <p class="ci-words"><strong>In words:</strong> {{ $invoice->amountInWords() }}</p>
-    @endif
 
     <div class="ci-sign"><div>Prepared by</div><div>Checked by</div><div>Authorised Signature</div></div>
+    @endif
 @endsection

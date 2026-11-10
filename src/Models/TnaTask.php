@@ -25,7 +25,7 @@ class TnaTask extends Model
 
     protected $fillable = [
         'tna_plan_id', 'tna_template_task_id', 'sequence', 'group_name', 'task_code', 'task_name', 'anchor', 'offset_days',
-        'auto_source', 'is_mandatory', 'plan_date', 'revised_date', 'actual_date', 'is_na', 'responsible_id', 'remarks',
+        'auto_source', 'is_mandatory', 'plan_date', 'revised_date', 'actual_date', 'is_na', 'responsible_id', 'remarks', 'corrective_action',
     ];
 
     protected $casts = [

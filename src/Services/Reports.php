@@ -34,6 +34,7 @@ class Reports
         'defects' => ['Defect Analysis', 'fa-triangle-exclamation', ['dates', 'stage', 'line'], 'Rejects and rework by stage, part, machine and defect.'],
         'shipment-status' => ['Shipment Status', 'fa-truck-fast', ['buyer', 'dates'], 'POs by shipment date with cut / sewn / packed progress and risk.'],
         'tna-status' => ['T&A Status', 'fa-calendar-check', ['buyer'], 'Open T&A tasks of running plans — overdue and due within 7 days.'],
+        'tna-milestone' => ['T&A Milestone Control', 'fa-flag-checkered', ['buyer', 'style', 'tna_state', 'dates'], 'Time & Action calendar: one row per milestone of every running T&A plan — planned / revised / actual date, status and delay days worked out against the due date. Dates filter on the due date.'],
         'sample-turnaround' => ['Sample Turnaround', 'fa-vial', ['buyer', 'dates'], 'Each sample: requested → submitted → decided, with days taken.'],
         'requisition-details' => ['Requisition Details', 'fa-dolly', ['buyer', 'style', 'dates'], 'Every fabric requisition item by buyer / style / PO: requested, approved, issued — and on which dates the store issued how much.'],
         'requisition-summary' => ['Requisition Summary', 'fa-boxes-stacked', ['buyer', 'style', 'dates'], 'Totals per buyer → style → item: requested, approved, issued, still to issue, first / last issue date.'],
@@ -55,6 +56,7 @@ class Reports
             'defects' => $this->defects($r, $from ?? today()->subDays(29), $to ?? today()->endOfDay()),
             'shipment-status' => $this->shipmentStatus($r, $from ?? today()->subDays(7), $to ?? today()->addDays(60)),
             'tna-status' => $this->tnaStatus($r),
+            'tna-milestone' => $this->tnaMilestone($r, $from, $to),
             'sample-turnaround' => $this->sampleTurnaround($r, $from, $to),
             'requisition-details' => $this->requisitionDetails($r, $from, $to),
             'requisition-summary' => $this->requisitionSummary($r, $from, $to),
@@ -226,6 +228,115 @@ class Reports
             'headers' => ['T&A', 'Buyer', 'Style', 'Group', 'Task', 'Due', 'When', 'Mandatory', 'Responsible', 'Status'],
             'align' => [], 'rows' => $rows->all(), 'totals' => null, 'status_col' => 9,
         ];
+    }
+
+    /**
+     * T&A Milestone Control (the factory's Time & Action calendar sheet).
+     *
+     * Responsible Department: always the Planning Department (it owns the T&A).
+     * Dependency: worked out from the task (see tnaDependency()).
+     * Corrective Action: typed per step on the T&A page (msfl_tna_tasks.corrective_action).
+     * PO: a T&A plan is per order + style, so every PO no of that order + style is listed.
+     */
+    private function tnaMilestone(Request $r, $from, $to): array
+    {
+        $tasks = TnaTask::query()->with(['plan.order.buyer', 'plan.style', 'responsible'])
+            ->whereHas('plan', fn ($q) => $q->where('status', '!=', 'cancelled')
+                ->when($r->filled('style_id'), fn ($q) => $q->where('style_id', $r->style_id))
+                ->when($r->filled('buyer_id'), fn ($q) => $q->whereHas('order', fn ($q) => $q->where('buyer_id', $r->buyer_id))))
+            ->when($from, fn ($q) => $q->whereRaw('COALESCE(revised_date, plan_date) >= ?', [$from->toDateString()]))
+            ->when($to, fn ($q) => $q->whereRaw('COALESCE(revised_date, plan_date) <= ?', [$to->toDateString()]))
+            ->join('msfl_tna_plans as tp', 'tp.id', '=', 'msfl_tna_tasks.tna_plan_id')
+            ->orderBy('tp.ex_factory_date')->orderBy('tp.id')->orderBy('msfl_tna_tasks.sequence')
+            ->select('msfl_tna_tasks.*')->get();
+
+        if ($r->filled('tna_state')) {
+            $tasks = $tasks->filter(fn ($t) => $t->state() === $r->tna_state)->values();
+        }
+
+        // PO numbers per order + style.
+        $poNos = OrderPo::query()
+            ->whereIn('order_id', $tasks->pluck('plan.order_id')->filter()->unique())
+            ->orderBy('po_no')->get(['order_id', 'style_id', 'po_no'])
+            ->groupBy(fn ($po) => $po->order_id . '-' . $po->style_id)
+            ->map(fn ($g) => $g->pluck('po_no')->unique()->implode(', '));
+
+        $count = ['total' => 0, 'done' => 0, 'due' => 0, 'delayed' => 0];
+        $rows = $tasks->map(function ($t) use ($poNos, &$count) {
+            $plan = $t->plan;
+            $due = $t->dueDate();
+            $state = $t->state();
+            $delay = match ($state) {
+                'done_late' => (int) $due->diffInDays($t->actual_date),
+                'delayed' => (int) $due->diffInDays(today()),
+                default => null,
+            };
+            $label = ['done' => 'Complete', 'done_late' => 'Complete (Late)', 'delayed' => 'Delayed', 'due_soon' => 'Due / At Risk'][$state]
+                ?? TnaTask::STATES[$state][0];
+
+            if ($state !== 'na') {
+                $count['total']++;
+                $count['done'] += in_array($state, ['done', 'done_late'], true) ? 1 : 0;
+                $count['due'] += $state === 'due_soon' ? 1 : 0;
+                $count['delayed'] += $state === 'delayed' ? 1 : 0;
+            }
+
+            return [
+                $plan->order->buyer->name ?? '',
+                $plan->style->style_no ?? '',
+                $poNos[$plan->order_id . '-' . $plan->style_id] ?? '',
+                (int) $plan->order_qty,
+                $plan->order?->confirmed_at?->format('d-M-y') ?? '',
+                $plan->ex_factory_date?->format('d-M-y') ?? '',
+                $t->task_name,
+                'Planning Department',
+                $t->plan_date?->format('d-M-y') ?? '',
+                $t->actual_date?->format('d-M-y') ?? '',
+                $label,
+                $delay,
+                $this->tnaDependency($t->group_name, $t->task_code),
+                $t->corrective_action ?? '',
+                $t->responsible->name ?? '',
+                $t->revised_date?->format('d-M-y') ?? '',
+                $t->remarks ?? '',
+            ];
+        });
+
+        return [
+            'headers' => ['Buyer', 'Style', 'PO', 'Order Qty', 'Order Confirmation', 'Ex-Factory Date', 'Activity / Milestone', 'Responsible Department',
+                'Planned Date', 'Actual Date', 'Status', 'Delay Days', 'Dependency', 'Corrective Action', 'Action Owner', 'Revised Date', 'Remarks'],
+            'align' => [3 => 'right', 11 => 'right'],
+            'rows' => $rows->all(), 'totals' => null, 'status_col' => 10,
+            'summary' => [
+                'Total Milestones' => $count['total'],
+                'Complete' => $count['done'],
+                'Due / At Risk' => $count['due'],
+                'Delayed' => $count['delayed'],
+            ],
+            'period' => $from || $to ? trim(($from?->format('d-M-Y') ?? '…') . ' – ' . ($to?->format('d-M-Y') ?? '…')) : null,
+        ];
+    }
+
+    /**
+     * What a T&A step depends on: the buyer's purchase order, fabric, accessories order, or our
+     * production capacity & achievement. Read from the task code / group of the Standard T&A
+     * template; a step that fits none of them (e.g. a custom task) stays blank.
+     */
+    private function tnaDependency(?string $group, ?string $code): string
+    {
+        $code = strtoupper((string) $code);
+        $group = strtolower(trim((string) $group));
+
+        return match (true) {
+            $group === 'order' => 'Purchase Order',
+            in_array($code, ['PP_SUBMIT', 'PP_APPROVAL', 'SIZE_SET'], true) => 'Fabric, Accessories Order',
+            in_array($code, ['FIT_APPROVAL', 'WASH_STANDARD'], true) => 'Fabric',
+            in_array($code, ['BOM_APPROVAL', 'PULLOUT'], true) => 'Fabric, Accessories Order',
+            str_contains($code, 'TRIMS') => 'Accessories Order',
+            str_contains($code, 'FABRIC') || str_contains($code, 'LAB_DIP') || str_contains($code, 'SHADE') => 'Fabric',
+            in_array($group, ['pre-production', 'production', 'shipment'], true) => 'Production Capacity & Achievement',
+            default => '',
+        };
     }
 
     private function sampleTurnaround(Request $r, $from, $to): array
